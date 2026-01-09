@@ -7,7 +7,23 @@
       "Bash(cat:*)",
       "Bash(git init:*)",
       "Bash(git branch:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo list:*)",
+      "Bash(git remote add:*)",
+      "Bash(git fetch:*)",
+      "Bash(git push:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(gh auth:*)",
+      "Bash(brew install:*)",
+      "Bash(sudo chown:*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(unzip:*)",
+      "Bash(/tmp/gh_2.40.1_macOS_amd64/bin/gh auth login --web -h github.com)",
+      "Bash(/tmp/gh_2.40.1_macOS_amd64/bin/gh auth:*)",
+      "Bash(/tmp/gh_2.40.1_macOS_amd64/bin/gh repo view:*)"
     ]
   }
 }

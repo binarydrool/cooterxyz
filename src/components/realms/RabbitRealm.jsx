@@ -8,21 +8,21 @@ import GameHUD from '../ui/GameHUD';
 import IntroModal from '../ui/IntroModal';
 import { getInput, useIsMobile, setActionState } from '@/hooks/useGameInput';
 
-// Difficulty settings - balanced for 45x45 maze
+// Difficulty settings - optimized for 25x25 maze (smaller = faster)
 const DIFFICULTY_SETTINGS = {
-  beginner: { foxCount: 2, foxSpeed: 1.0, powerUpDuration: 20, carrots: 40, foxSpawnRate: 60 },
-  easy: { foxCount: 3, foxSpeed: 1.2, powerUpDuration: 18, carrots: 50, foxSpawnRate: 55 },
-  normal: { foxCount: 4, foxSpeed: 1.4, powerUpDuration: 15, carrots: 60, foxSpawnRate: 50 },
-  hard: { foxCount: 5, foxSpeed: 1.6, powerUpDuration: 12, carrots: 70, foxSpawnRate: 45 },
-  expert: { foxCount: 6, foxSpeed: 1.8, powerUpDuration: 10, carrots: 80, foxSpawnRate: 40 },
-  master: { foxCount: 7, foxSpeed: 2.0, powerUpDuration: 8, carrots: 90, foxSpawnRate: 35 },
-  impossible: { foxCount: 8, foxSpeed: 2.5, powerUpDuration: 6, carrots: 100, foxSpawnRate: 30 },
+  beginner: { foxCount: 1, foxSpeed: 1.0, powerUpDuration: 20, carrots: 15, foxSpawnRate: 90 },
+  easy: { foxCount: 2, foxSpeed: 1.2, powerUpDuration: 18, carrots: 20, foxSpawnRate: 80 },
+  normal: { foxCount: 2, foxSpeed: 1.4, powerUpDuration: 15, carrots: 25, foxSpawnRate: 70 },
+  hard: { foxCount: 3, foxSpeed: 1.6, powerUpDuration: 12, carrots: 30, foxSpawnRate: 60 },
+  expert: { foxCount: 3, foxSpeed: 1.8, powerUpDuration: 10, carrots: 35, foxSpawnRate: 50 },
+  master: { foxCount: 4, foxSpeed: 2.0, powerUpDuration: 8, carrots: 40, foxSpawnRate: 45 },
+  impossible: { foxCount: 5, foxSpeed: 2.5, powerUpDuration: 6, carrots: 45, foxSpawnRate: 40 },
 };
 
 // Carrot respawn delay in seconds
 const CARROT_RESPAWN_TIME = 8;
 const INVISIBILITY_DURATION = 5;
-const MAX_FOXES = 6;
+const MAX_FOXES = 4;
 
 // Maze generation - balanced: feels like a maze but easy to navigate
 function generateMaze(width, height) {
@@ -56,14 +56,47 @@ function generateMaze(width, height) {
   return maze;
 }
 
-// Hay Bale - SMALL walls = wide paths (single mesh for performance)
-function HayBale({ position, height = 1.0 }) {
-  const color = useMemo(() => `hsl(${38 + Math.random() * 12}, 50%, 58%)`, []);
+// Instanced Hay Bales - ALL walls in ONE draw call for massive performance
+function HayBaleInstances({ maze, mazeSize }) {
+  const meshRef = useRef();
+
+  const count = useMemo(() => {
+    let c = 0;
+    for (let y = 0; y < mazeSize; y++) {
+      for (let x = 0; x < mazeSize; x++) {
+        if (maze[y]?.[x] === 1) c++;
+      }
+    }
+    return c;
+  }, [maze, mazeSize]);
+
+  useEffect(() => {
+    if (!meshRef.current) return;
+
+    const tempObject = new THREE.Object3D();
+    let i = 0;
+
+    for (let y = 0; y < mazeSize; y++) {
+      for (let x = 0; x < mazeSize; x++) {
+        if (maze[y]?.[x] === 1) {
+          tempObject.position.set(x + 0.5, 0.5, y + 0.5);
+          tempObject.scale.set(0.7, 1, 0.7);
+          tempObject.updateMatrix();
+          meshRef.current.setMatrixAt(i, tempObject.matrix);
+          i++;
+        }
+      }
+    }
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [maze, mazeSize]);
+
+  if (count === 0) return null;
+
   return (
-    <mesh position={[position[0], height / 2, position[2]]}>
-      <boxGeometry args={[0.7, height, 0.7]} />
-      <meshBasicMaterial color={color} />
-    </mesh>
+    <instancedMesh ref={meshRef} args={[null, null, count]} frustumCulled={false}>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshBasicMaterial color="#c9a227" />
+    </instancedMesh>
   );
 }
 
@@ -381,24 +414,8 @@ function FollowCamera({ target }) {
   return null;
 }
 
-// Generate sparse decoration positions - PERFORMANCE OPTIMIZED (only 12 pumpkins)
-const generateDecorationPositions = (mazeSize) => {
-  const pumpkins = [];
-
-  // Only 12 pumpkins near corners and edges
-  for (let i = 0; i < 12; i++) {
-    pumpkins.push({
-      position: [
-        Math.random() < 0.5 ? Math.random() * 4 : mazeSize - Math.random() * 4,
-        0,
-        Math.random() * mazeSize
-      ],
-      scale: 0.25 + Math.random() * 0.1,
-    });
-  }
-
-  return { pumpkins };
-};
+// No decorations for maximum performance
+const generateDecorationPositions = () => ({ pumpkins: [] });
 
 // Main game scene
 function GameScene({
@@ -439,22 +456,8 @@ function GameScene({
         <Pumpkin key={`pumpkin-${i}`} position={p.position} scale={p.scale} />
       ))}
 
-      {/* Hay bale maze walls */}
-      {maze.map((row, y) =>
-        row.map((cell, x) => {
-          if (cell === 1) {
-            const height = 1.0 + Math.sin(x * 0.5) * Math.cos(y * 0.5) * 0.3;
-            return (
-              <HayBale
-                key={`hay-${x}-${y}`}
-                position={[x + 0.5, 0, y + 0.5]}
-                height={height}
-              />
-            );
-          }
-          return null;
-        })
-      )}
+      {/* Hay bale maze walls - INSTANCED for performance */}
+      <HayBaleInstances maze={maze} mazeSize={mazeSize} />
 
       {/* Elf - find him to get the key! */}
       <Elf position={elfPos} found={elfFound} />
@@ -535,7 +538,7 @@ export default function RabbitRealm({
   onExit,
 }) {
   const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.normal;
-  const mazeSize = 45; // Balanced size for good performance
+  const mazeSize = 25; // Smaller = much faster performance
 
   // Game state
   const [maze, setMaze] = useState(() => generateMaze(mazeSize, mazeSize));
@@ -668,8 +671,8 @@ export default function RabbitRealm({
     }));
     setCarrots(newCarrots);
 
-    // Place coins - balanced for smaller maze
-    const coinCells = shuffled.slice(settings.carrots, settings.carrots + 50);
+    // Place coins - fewer for performance
+    const coinCells = shuffled.slice(settings.carrots, settings.carrots + 20);
     setCoins(coinCells.map(pos => ({ ...pos, collected: false })));
 
     // Place power pellets in corners
@@ -1146,7 +1149,7 @@ export default function RabbitRealm({
         }
       }
 
-    }, 1000 / 60);
+    }, 1000 / 30); // 30fps for better performance
 
     return () => clearInterval(gameLoop);
   }, [gameStarted, gameOver, gameWon, isPaused, isPoweredUp, isInvisible, playerPos, maze, settings, checkCollision, movePlayer, spawnParticles, onDeath, onComplete, time, score, invincibleTimer, isJumping, jumpHeight, jumpVelocity, lastFoxSpawnTime, spawnFox, carrotsCollected, coinsCollected, mazeSize, elfPos, elfFound]);

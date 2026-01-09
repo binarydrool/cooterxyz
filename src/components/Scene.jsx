@@ -175,8 +175,8 @@ export default function Scene({ onCameraModeChange, onTimeStoppedChange, onStopD
       {/* Ocean far below the clock */}
       <Ocean />
 
-      {/* Seagulls flying in the background */}
-      <Seagulls count={6} />
+      {/* Seagulls flying in the background - reduced for performance */}
+      <Seagulls count={2} />
 
       {/* Base ambient light (supplements sun/moon lighting) */}
       <ambientLight intensity={isMobile ? 0.6 : 0.5} />

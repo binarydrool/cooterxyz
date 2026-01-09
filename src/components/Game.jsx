@@ -761,36 +761,39 @@ function GameContent() {
 
   return (
     <>
-      <ErrorBoundary>
-        <Suspense fallback={<Loading />}>
-          <Canvas
-            camera={{ position: [0, 5, 10], fov: 60 }}
-            style={{ background: '#ffffff' }}
-            gl={{
-              antialias: !isMobile,
-              alpha: false,
-              powerPreference: isMobile ? 'low-power' : 'high-performance',
-              failIfMajorPerformanceCaveat: false,
-            }}
-            dpr={isMobile ? 1 : [1, 2]}
-            shadows={isMobile ? false : "soft"}
-            frameloop="always"
-          >
-            <Scene
-              onCameraModeChange={handleCameraModeChange}
-              onTimeStoppedChange={handleTimeStoppedChange}
-              onStopDataChange={handleStopDataChange}
-              onInteractTargetChange={handleInteractTargetChange}
-              onGrainClaimed={handleGrainClaimed}
-              victoryCeremony={victoryCeremony}
-              unlockedRealms={unlockedRealms}
-              animalEnteringPortal={animalEnteringPortal}
-              activeRealm={activeRealm}
-              pyramidShards={inventory.pyramidShards}
-            />
-          </Canvas>
-        </Suspense>
-      </ErrorBoundary>
+      {/* Only render hub scene when in hub - prevents double canvas lag */}
+      {activeRealm === 'hub' && (
+        <ErrorBoundary>
+          <Suspense fallback={<Loading />}>
+            <Canvas
+              camera={{ position: [0, 5, 10], fov: 60 }}
+              style={{ background: '#ffffff' }}
+              gl={{
+                antialias: false,
+                alpha: false,
+                powerPreference: 'low-power',
+                failIfMajorPerformanceCaveat: false,
+              }}
+              dpr={1}
+              shadows={false}
+              frameloop="demand"
+            >
+              <Scene
+                onCameraModeChange={handleCameraModeChange}
+                onTimeStoppedChange={handleTimeStoppedChange}
+                onStopDataChange={handleStopDataChange}
+                onInteractTargetChange={handleInteractTargetChange}
+                onGrainClaimed={handleGrainClaimed}
+                victoryCeremony={victoryCeremony}
+                unlockedRealms={unlockedRealms}
+                animalEnteringPortal={animalEnteringPortal}
+                activeRealm={activeRealm}
+                pyramidShards={inventory.pyramidShards}
+              />
+            </Canvas>
+          </Suspense>
+        </ErrorBoundary>
+      )}
 
       {/* Top Navigation Bar - single unified bar - ALWAYS on top */}
       <div style={{

@@ -12,7 +12,7 @@ import AEIOU from '../characters/AEIOU';
 const ARENA_SIZE = 200;
 const CAT_SPEED = 35; // Base cat speed - much faster than fish (fish are 3-6)
 const SPRINT_SPEED = 55; // Sprint speed - extremely fast for escaping
-const TURN_SPEED = 12; // Rotation speed (radians per second) - VERY quick turning
+const TURN_SPEED = 4; // Rotation speed (radians per second) - smoother turning
 const STAMINA_MAX = 10;
 const STAMINA_RECHARGE_RATE = 4;
 const SAFE_SPAWN_RADIUS = 50;

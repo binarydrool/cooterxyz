@@ -32,11 +32,16 @@ export const GRADES = {
 const STORAGE_KEY = 'cooter_inventory';
 
 const initialInventory = {
+  // Time Grains - collected from the clock by stopping time with Y
+  // Used to unlock realm portals: cat=3, frog=6, rabbit=9
+  grains: 0,
+  // Essences - collected INSIDE the realms (3 per realm)
+  // Used to unlock owl realm: need 9 total (3 golden + 3 forest + 3 amber)
   essences: {
-    forest: 0,
-    golden: 0,
-    amber: 0,
-    violet: 0,
+    forest: 0,   // From frog realm (The Lily Marsh)
+    golden: 0,   // From rabbit realm (The Warren)
+    amber: 0,    // From cat realm (The Rooftops)
+    violet: 0,   // Reserved for future use
   },
   shards: {
     amber: null,   // { grade: 1-7, score: number, time: number, date: string }
@@ -44,7 +49,7 @@ const initialInventory = {
     emerald: null,
     amethyst: null,
   },
-  // Pyramid shards - 4 layers (rabbit=1, frog=2, cat=3, owl=4) - pieces of Dimitrius
+  // Pyramid shards - 4 layers (rabbit=1, frog=2, cat=3, owl=4) - pieces of AEIOU
   pyramidShards: {
     rabbit: false,  // Layer 1 (base) - from The Warren
     frog: false,    // Layer 2 - from The Lily Marsh
@@ -58,11 +63,11 @@ const initialInventory = {
     cat: false,
     owl: false,
   },
-  // Dimitrius restoration state
+  // AEIOU restoration state
   dimitriusRestored: false,  // True after fusion spell is cast
   prismKeys: [],  // Array of { grade: 1-7, components: { amber, citrine, emerald, amethyst }, date: string }
   victoryCrowns: [], // Array of { grade: 1-7, lives: number, score: number, time: number, date: string, pure: boolean }
-  timeGrains: 0,  // Legacy time grains collected
+  timeGrains: 0,  // Legacy time grains collected (deprecated, use grains)
 };
 
 const InventoryContext = createContext(null);
@@ -72,7 +77,29 @@ function loadInventory() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return { ...initialInventory, ...JSON.parse(saved) };
+      const parsed = JSON.parse(saved);
+      // Deep merge to ensure all nested objects have all required fields
+      return {
+        ...initialInventory,
+        ...parsed,
+        // Ensure grains exists (new field)
+        grains: parsed.grains ?? initialInventory.grains,
+        // Ensure essences has all types
+        essences: {
+          ...initialInventory.essences,
+          ...(parsed.essences || {}),
+        },
+        // Ensure pyramidShards has all realms
+        pyramidShards: {
+          ...initialInventory.pyramidShards,
+          ...(parsed.pyramidShards || {}),
+        },
+        // Ensure blackShards has all realms
+        blackShards: {
+          ...initialInventory.blackShards,
+          ...(parsed.blackShards || {}),
+        },
+      };
     }
   } catch (e) {
     console.error('Failed to load inventory:', e);
@@ -132,7 +159,23 @@ export function InventoryProvider({ children }) {
     return inventory.essences[type] >= count;
   }, [inventory.essences]);
 
-  // Add random essence (called when blocking second hand)
+  // Add time grain (collected from clock by stopping time with Y)
+  const addGrain = useCallback(() => {
+    setInventory(prev => ({
+      ...prev,
+      grains: prev.grains + 1,
+    }));
+  }, []);
+
+  // Remove grains (spent to unlock portals)
+  const removeGrains = useCallback((count) => {
+    setInventory(prev => ({
+      ...prev,
+      grains: Math.max(0, prev.grains - count),
+    }));
+  }, []);
+
+  // Add random essence (called when collecting essences INSIDE realms only)
   const addRandomEssence = useCallback(() => {
     const types = Object.keys(ESSENCE_TYPES).map(k => ESSENCE_TYPES[k].id);
     const randomType = types[Math.floor(Math.random() * types.length)];
@@ -284,8 +327,18 @@ export function InventoryProvider({ children }) {
     return Object.values(inventory.shards).filter(s => s !== null).length;
   }, [inventory.shards]);
 
+  // Reset all inventory to initial state
+  const resetInventory = useCallback(() => {
+    setInventory(initialInventory);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
   const value = {
     ...inventory,
+    addGrain,
+    removeGrains,
     addEssence,
     removeEssence,
     hasEssence,
@@ -303,6 +356,7 @@ export function InventoryProvider({ children }) {
     addTimeGrain,
     getTotalEssences,
     getShardCount,
+    resetInventory,
   };
 
   return (

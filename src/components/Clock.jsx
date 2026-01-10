@@ -182,9 +182,11 @@ function Fireflies() {
 function SandGrain({ position, spawnTime, turtlePosition, id, onNearGrain, essenceType = 'golden' }) {
   const groupRef = useRef();
   const meshRef = useRef();
+  const lightRef = useRef();
   const grainPos = useRef({ x: position[0], y: position[1], z: position[2] });
   const spawnComplete = useRef(false);
-  const [glowIntensity, setGlowIntensity] = useState(0.3);
+  const glowIntensity = useRef(0.3);
+  const wasNear = useRef(false);
 
   const essenceColor = ESSENCE_COLORS[essenceType] || ESSENCE_COLORS.golden;
 
@@ -210,11 +212,24 @@ function SandGrain({ position, spawnTime, turtlePosition, id, onNearGrain, essen
     const dist = Math.sqrt(dx * dx + dz * dz);
 
     const isNear = dist < CLAIM_DISTANCE;
-    if (onNearGrain) {
-      onNearGrain(id, isNear);
+
+    // Only call callback when state changes to avoid re-renders
+    if (isNear !== wasNear.current) {
+      wasNear.current = isNear;
+      if (onNearGrain) {
+        onNearGrain(id, isNear);
+      }
     }
 
-    setGlowIntensity(isNear ? 0.6 : 0.3);
+    // Update glow intensity directly via refs (no setState)
+    const targetGlow = isNear ? 0.6 : 0.3;
+    glowIntensity.current = targetGlow;
+    if (meshRef.current.material) {
+      meshRef.current.material.emissiveIntensity = targetGlow;
+    }
+    if (lightRef.current) {
+      lightRef.current.intensity = targetGlow * 2;
+    }
 
     const bobY = Math.sin(Date.now() / 300) * 0.05;
     groupRef.current.position.x = grainPos.current.x;
@@ -231,11 +246,11 @@ function SandGrain({ position, spawnTime, turtlePosition, id, onNearGrain, essen
           metalness={0.7}
           roughness={0.2}
           emissive={essenceColor.emissive}
-          emissiveIntensity={glowIntensity}
+          emissiveIntensity={0.3}
           flatShading={true}
         />
       </mesh>
-      <pointLight color={essenceColor.color} intensity={glowIntensity * 2} distance={1} decay={2} />
+      <pointLight ref={lightRef} color={essenceColor.color} intensity={0.6} distance={1} decay={2} />
     </group>
   );
 }
@@ -457,7 +472,7 @@ function HootsOnHand() {
   const TAIL_Z = -CLOCK_RADIUS * 0.25;
 
   return (
-    <group position={[0, 0.08, TAIL_Z]} rotation={[0, Math.PI, 0]} scale={[HOOTS_SCALE, HOOTS_SCALE, HOOTS_SCALE]}>
+    <group position={[0, 0.01, TAIL_Z]} rotation={[0, Math.PI, 0]} scale={[HOOTS_SCALE, HOOTS_SCALE, HOOTS_SCALE]}>
       {/* Body - brown back */}
       <mesh position={[0, 0.3, 0]} castShadow>
         <sphereGeometry args={[0.3, 10, 8]} />
@@ -484,6 +499,16 @@ function HootsOnHand() {
           <sphereGeometry args={[0.25, 10, 8]} />
           <meshStandardMaterial color={BROWN_LIGHT} roughness={0.9} />
         </mesh>
+        {/* Left ear tuft */}
+        <mesh position={[-0.15, 0.22, 0]} rotation={[0, 0, 0.4]} castShadow>
+          <coneGeometry args={[0.06, 0.18, 4]} />
+          <meshStandardMaterial color={BROWN_DARK} roughness={0.9} />
+        </mesh>
+        {/* Right ear tuft */}
+        <mesh position={[0.15, 0.22, 0]} rotation={[0, 0, -0.4]} castShadow>
+          <coneGeometry args={[0.06, 0.18, 4]} />
+          <meshStandardMaterial color={BROWN_DARK} roughness={0.9} />
+        </mesh>
         {/* Heart-shaped face disk - white (barn owl characteristic) */}
         <mesh position={[0, 0, 0.12]}>
           <circleGeometry args={[0.22, 16]} />
@@ -494,28 +519,41 @@ function HootsOnHand() {
           <ringGeometry args={[0.2, 0.24, 16]} />
           <meshStandardMaterial color={BROWN_LIGHT} roughness={0.9} />
         </mesh>
-        {/* Eyes - dark with golden ring */}
-        <mesh position={[-0.08, 0.02, 0.18]}>
-          <circleGeometry args={[0.055, 12]} />
-          <meshStandardMaterial color="#1a1a1a" />
+        {/* Large owl eyes with golden iris - using spheres for visibility */}
+        {/* Left eye - golden outer */}
+        <mesh position={[-0.08, 0.02, 0.2]}>
+          <sphereGeometry args={[0.08, 12, 12]} />
+          <meshStandardMaterial color="#FFD700" />
         </mesh>
-        <mesh position={[0.08, 0.02, 0.18]}>
-          <circleGeometry args={[0.055, 12]} />
-          <meshStandardMaterial color="#1a1a1a" />
+        {/* Left pupil - large black */}
+        <mesh position={[-0.08, 0.02, 0.26]}>
+          <sphereGeometry args={[0.045, 10, 10]} />
+          <meshStandardMaterial color="#000000" />
         </mesh>
-        {/* Eye highlights */}
-        <mesh position={[-0.07, 0.03, 0.19]}>
-          <circleGeometry args={[0.015, 8]} />
+        {/* Left eye highlight */}
+        <mesh position={[-0.06, 0.04, 0.29]}>
+          <sphereGeometry args={[0.015, 8, 8]} />
           <meshBasicMaterial color="#FFFFFF" />
         </mesh>
-        <mesh position={[0.09, 0.03, 0.19]}>
-          <circleGeometry args={[0.015, 8]} />
+        {/* Right eye - golden outer */}
+        <mesh position={[0.08, 0.02, 0.2]}>
+          <sphereGeometry args={[0.08, 12, 12]} />
+          <meshStandardMaterial color="#FFD700" />
+        </mesh>
+        {/* Right pupil - large black */}
+        <mesh position={[0.08, 0.02, 0.26]}>
+          <sphereGeometry args={[0.045, 10, 10]} />
+          <meshStandardMaterial color="#000000" />
+        </mesh>
+        {/* Right eye highlight */}
+        <mesh position={[0.1, 0.04, 0.29]}>
+          <sphereGeometry args={[0.015, 8, 8]} />
           <meshBasicMaterial color="#FFFFFF" />
         </mesh>
         {/* Beak - small and hooked */}
-        <mesh position={[0, -0.06, 0.18]} rotation={[0.4, 0, 0]}>
-          <coneGeometry args={[0.03, 0.06, 4]} />
-          <meshStandardMaterial color="#4a4a4a" roughness={0.6} />
+        <mesh position={[0, -0.08, 0.16]} rotation={[0.4, 0, 0]}>
+          <coneGeometry args={[0.035, 0.08, 4]} />
+          <meshStandardMaterial color="#FF8C00" roughness={0.6} />
         </mesh>
       </group>
       {/* Wings - brown with lighter edges */}
@@ -1449,10 +1487,10 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
         ))}
       </group>
 
-      {/* Glass clock face */}
+      {/* Glass clock face - simplified material to avoid ghosting/doubling */}
       <mesh position={[0, 0, 0]} receiveShadow>
         <cylinderGeometry args={[CLOCK_RADIUS, CLOCK_RADIUS, CLOCK_THICKNESS, 64]} />
-        <meshPhysicalMaterial color="#f5f5f0" transparent={true} opacity={0.25} roughness={0.02} metalness={0.05} transmission={0.85} thickness={0.3} ior={1.5} clearcoat={0.5} />
+        <meshStandardMaterial color="#f5f5f0" transparent={true} opacity={0.15} roughness={0.1} metalness={0.0} />
       </mesh>
 
       {/* Gold rims */}
@@ -1555,8 +1593,7 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
         <CeremonyShard gnomePosition={[GNOME_POS_X, CLOCK_THICKNESS / 2 + 0.5, GNOME_POS_Z - 0.8]} isFading={victoryCeremony.isFading || false} />
       )}
 
-      {/* Fireflies */}
-      <Fireflies />
+      {/* Fireflies removed for performance */}
     </group>
   );
 });

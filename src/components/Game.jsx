@@ -202,6 +202,213 @@ const PYRAMID_SHARDS = {
   owl: { layer: 4, name: 'Capstone', direction: 'above', color: '#4B0082' },
 };
 
+// Mind Fusion Spell Sequence - plays when all 4 pyramid shards are collected
+function MindFusionSpell({ onComplete }) {
+  const [phase, setPhase] = useState(0);
+  // Phase 0: Y casts spell
+  // Phase 1: AEIOU turns around, looks at Y
+  // Phase 2: AEIOU turns back and opens noon portal
+  // Phase 3: Portal opens, ceremony complete
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setPhase(1), 3000),  // After 3s, AEIOU turns
+      setTimeout(() => setPhase(2), 5000),  // After 5s, AEIOU looks at Y
+      setTimeout(() => setPhase(3), 7000),  // After 7s, portal opens
+      setTimeout(() => onComplete?.(), 10000), // After 10s, complete
+    ];
+    return () => timers.forEach(t => clearTimeout(t));
+  }, [onComplete]);
+
+  const phaseTexts = [
+    { title: "Y Casts the Mind Fusion Spell!", subtitle: "The power of the pyramid flows through Y..." },
+    { title: "AEIOU Awakens!", subtitle: "The spell breaks through to Dimitrius's consciousness..." },
+    { title: "AEIOU Looks at Y", subtitle: "Recognition dawns in his ancient eyes..." },
+    { title: "The Noon Portal Opens!", subtitle: "AEIOU turns and reveals the path forward..." },
+  ];
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'rgba(0, 0, 0, 0.95)',
+      backdropFilter: 'blur(8px)',
+      zIndex: 2000,
+    }}>
+      {/* Magical particle effects */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: phase >= 3
+          ? 'radial-gradient(circle at 50% 30%, rgba(255, 215, 0, 0.3) 0%, transparent 50%)'
+          : 'radial-gradient(circle at 50% 50%, rgba(138, 43, 226, 0.2) 0%, transparent 50%)',
+        animation: 'pulse 2s ease-in-out infinite',
+        transition: 'background 1s ease',
+      }} />
+
+      <div style={{
+        textAlign: 'center',
+        padding: '40px',
+        maxWidth: '500px',
+        position: 'relative',
+      }}>
+        {/* Characters */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '60px',
+          marginBottom: '40px',
+        }}>
+          {/* Y (Turtle) */}
+          <div style={{
+            transform: phase >= 1 ? 'scale(1.1)' : 'scale(1)',
+            transition: 'transform 0.5s ease',
+          }}>
+            <svg width="80" height="80" viewBox="0 0 16 16" fill="none">
+              <ellipse cx="8" cy="10" rx="6" ry="4" fill="#4ade80" />
+              <ellipse cx="8" cy="7" rx="4" ry="3" fill="#5b8c5a" />
+              <circle cx="6" cy="6" r="1" fill="#333" />
+              <circle cx="10" cy="6" r="1" fill="#333" />
+            </svg>
+            <div style={{ color: '#4ade80', fontSize: '14px', marginTop: '8px' }}>Y</div>
+            {phase === 0 && (
+              <div style={{
+                position: 'absolute',
+                top: '-20px',
+                left: '50%',
+                transform: 'translateX(-100%)',
+                animation: 'float 1s ease-in-out infinite',
+              }}>
+                <span style={{ fontSize: '24px' }}>*</span>
+              </div>
+            )}
+          </div>
+
+          {/* Spell effect between them */}
+          {phase >= 0 && phase < 3 && (
+            <div style={{
+              width: '60px',
+              height: '4px',
+              background: 'linear-gradient(90deg, #8b5cf6, #ffd700, #8b5cf6)',
+              borderRadius: '2px',
+              animation: 'pulse 0.5s ease-in-out infinite',
+              boxShadow: '0 0 20px #8b5cf6',
+            }} />
+          )}
+
+          {/* AEIOU (Dimitrius) */}
+          <div style={{
+            transform: phase >= 1 ? 'scaleX(-1)' : 'scaleX(1)',
+            transition: 'transform 0.8s ease',
+          }}>
+            <svg width="80" height="80" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1 L4 8 L12 8 Z" fill="#2E8B57" />
+              <circle cx="8" cy="11" r="4" fill="#F5DEB3" />
+              <circle cx="6.5" cy="10" r="0.8" fill="#333" />
+              <circle cx="9.5" cy="10" r="0.8" fill="#333" />
+              <path d="M2 6 L4 8" stroke="#F5DEB3" strokeWidth="2" />
+              <path d="M14 6 L12 8" stroke="#F5DEB3" strokeWidth="2" />
+            </svg>
+            <div style={{ color: '#c4a000', fontSize: '14px', marginTop: '8px' }}>AEIOU</div>
+          </div>
+        </div>
+
+        {/* Noon Portal appearing */}
+        {phase >= 3 && (
+          <div style={{
+            width: '120px',
+            height: '120px',
+            margin: '0 auto 30px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, #ffd700 0%, #ff8c00 50%, transparent 70%)',
+            boxShadow: '0 0 60px #ffd700, 0 0 100px #ff8c00',
+            animation: 'pulse 1s ease-in-out infinite',
+          }}>
+            <div style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '32px',
+              color: '#fff',
+              textShadow: '0 0 20px #ffd700',
+            }}>
+              12
+            </div>
+          </div>
+        )}
+
+        {/* Pyramid complete indicator */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginBottom: '20px',
+        }}>
+          <div style={{
+            width: '30px', height: '20px',
+            background: '#4B0082',
+            borderRadius: '4px 4px 0 0',
+            boxShadow: '0 0 10px #4B0082',
+          }} />
+          <div style={{
+            width: '45px', height: '20px',
+            background: '#FF8C00',
+            boxShadow: '0 0 10px #FF8C00',
+          }} />
+          <div style={{
+            width: '60px', height: '20px',
+            background: '#228B22',
+            boxShadow: '0 0 10px #228B22',
+          }} />
+          <div style={{
+            width: '75px', height: '20px',
+            background: '#8B4513',
+            borderRadius: '0 0 4px 4px',
+            boxShadow: '0 0 10px #8B4513',
+          }} />
+        </div>
+
+        {/* Phase text */}
+        <h2 style={{
+          color: phase >= 3 ? '#ffd700' : '#8b5cf6',
+          fontSize: '28px',
+          fontWeight: 700,
+          marginBottom: '12px',
+          textShadow: phase >= 3 ? '0 0 20px #ffd700' : '0 0 20px #8b5cf6',
+          transition: 'color 0.5s, text-shadow 0.5s',
+        }}>
+          {phaseTexts[phase].title}
+        </h2>
+        <p style={{
+          color: '#aaa',
+          fontSize: '16px',
+        }}>
+          {phaseTexts[phase].subtitle}
+        </p>
+      </div>
+
+      <style jsx global>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0) translateX(-100%); }
+          50% { transform: translateY(-10px) translateX(-100%); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // Victory ceremony text overlay - shows message with exit button
 function VictoryCeremony({ ceremony, onComplete }) {
   const shardInfo = PYRAMID_SHARDS[ceremony?.realm] || PYRAMID_SHARDS.rabbit;
@@ -432,6 +639,7 @@ function GameContent() {
   const [chatAnimal, setChatAnimal] = useState(null);
   const [showDifficultySelect, setShowDifficultySelect] = useState(false);
   const [selectedRealm, setSelectedRealm] = useState(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Active realm for quick-jump
   const [activeRealm, setActiveRealm] = useState('hub');
@@ -469,15 +677,23 @@ function GameContent() {
   // Victory ceremony state (after completing rabbit realm)
   const [victoryCeremony, setVictoryCeremony] = useState(null);
 
+  // Mind Fusion Spell state (when all 4 pyramid shards are collected)
+  const [showMindFusionSpell, setShowMindFusionSpell] = useState(false);
+
   useEffect(() => {
     setMounted(true);
 
-    // Check if mobile
-    setIsMobile(
-      'ontouchstart' in window ||
-      navigator.maxTouchPoints > 0 ||
-      window.innerWidth <= 768
-    );
+    // Check if mobile - include resize listener for responsive testing
+    const checkMobile = () => {
+      setIsMobile(
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        window.innerWidth <= 768
+      );
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
 
     try {
       const canvas = document.createElement('canvas');
@@ -488,6 +704,8 @@ function GameContent() {
     } catch (e) {
       setWebglSupported(false);
     }
+
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   // Initialize global keyboard listeners for game input
@@ -615,14 +833,13 @@ function GameContent() {
     audio.playSound(SOUNDS.COLLECT_ESSENCE);
   }, [inventory, audio]);
 
-  // Grain claimed handler - checks freeMode to determine if mint is needed
+  // Grain claimed handler - grains from clock unlock portals (NOT essences)
   const handleGrainClaimed = useCallback((grain) => {
     audio.playSound(SOUNDS.COLLECT_ESSENCE);
     if (gameState.freeMode) {
-      // Free mode: collect directly to inventory
-      const essenceType = grain.essenceType || 'golden';
-      inventory.addEssence(essenceType);
-      setEssenceNotification(essenceType);
+      // Free mode: collect grain directly to inventory
+      inventory.addGrain();
+      setEssenceNotification('grain'); // Show grain notification
     } else {
       // Paid mode: show mint modal first
       setPendingMintGrain(grain);
@@ -633,9 +850,8 @@ function GameContent() {
   // Handle minting a grain (confirms the mint and adds to inventory)
   const handleMintGrain = useCallback(() => {
     if (!pendingMintGrain) return;
-    const essenceType = pendingMintGrain.essenceType || 'golden';
-    inventory.addEssence(essenceType);
-    setEssenceNotification(essenceType);
+    inventory.addGrain(); // Add grain, NOT essence
+    setEssenceNotification('grain');
     setPendingMintGrain(null);
   }, [pendingMintGrain, inventory]);
 
@@ -643,6 +859,18 @@ function GameContent() {
   const handleCancelMint = useCallback(() => {
     setPendingMintGrain(null);
   }, []);
+
+  // Reset game - clears all progress
+  const handleResetGame = useCallback(() => {
+    inventory.resetInventory();
+    setUnlockedRealms({});
+    setShowResetConfirm(false);
+    setActiveRealm('hub');
+    // Clear unlocked realms from localStorage too
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('cooter_unlocked_realms');
+    }
+  }, [inventory]);
 
   // Handle interaction (E key or button press) - disabled during realm gameplay
   const handleInteract = useCallback(() => {
@@ -700,14 +928,21 @@ function GameContent() {
     }
   }, [gameState, selectedRealm, audio]);
 
-  // Handle realm quick-jump selection
+  // Handle realm quick-jump selection - show difficulty selection first
   const handleRealmSelect = useCallback((realmId) => {
     // Elf realm requires all 4 pyramid shards
     if (realmId === 'elf' && !inventory.isPyramidComplete()) {
       // Could show a message here, but for now just don't allow
       return;
     }
-    setActiveRealm(realmId);
+    // Hub doesn't need difficulty selection
+    if (realmId === 'hub') {
+      setActiveRealm('hub');
+      return;
+    }
+    // Show difficulty selection for all game realms
+    setSelectedRealm(realmId);
+    setShowDifficultySelect(true);
   }, [inventory]);
 
   // Handle realm exit (return to hub)
@@ -795,18 +1030,18 @@ function GameContent() {
         </ErrorBoundary>
       )}
 
-      {/* Top Navigation Bar - single unified bar - ALWAYS on top */}
+      {/* Top Navigation Bar - responsive for mobile */}
       <div style={{
         position: 'fixed',
-        top: '12px',
-        left: '12px',
-        right: '12px',
+        top: '8px',
+        left: '8px',
+        right: isMobile ? '60px' : '8px', // Leave space for right sidebar on mobile
         zIndex: 9999,
         pointerEvents: 'auto',
         display: 'flex',
         alignItems: 'center',
-        gap: '20px',
-        padding: '10px 16px',
+        gap: isMobile ? '8px' : '20px',
+        padding: isMobile ? '8px 12px' : '10px 16px',
         background: 'rgba(0, 0, 0, 0.7)',
         borderRadius: '10px',
         backdropFilter: 'blur(12px)',
@@ -818,113 +1053,196 @@ function GameContent() {
           onToggleFreeMode={gameState.toggleFreeMode}
         />
 
-        {/* Divider */}
-        <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }} />
-
-        {/* Essence counters */}
-        {Object.values(ESSENCE_TYPES).map(essence => (
-          <div
-            key={essence.id}
-            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-            title={essence.name}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24">
-              {essence.shape === 'tetrahedron' && (
-                <polygon points="12,2 2,22 22,22" fill={essence.color} />
-              )}
-              {essence.shape === 'cube' && (
-                <rect x="4" y="4" width="16" height="16" fill={essence.color} transform="rotate(45 12 12)" />
-              )}
-              {essence.shape === 'octahedron' && (
-                <polygon points="12,1 23,12 12,23 1,12" fill={essence.color} />
-              )}
-              {essence.shape === 'icosahedron' && (
-                <polygon points="12,2 22,8 22,16 12,22 2,16 2,8" fill={essence.color} />
-              )}
-            </svg>
-            <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', fontWeight: 500 }}>
-              {inventory.essences[essence.id] || 0}
-            </span>
-          </div>
-        ))}
-
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Pyramid indicator */}
+        {/* Time Grains counter - always visible */}
         <div
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px' }}
-          title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/4 shards`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '2px 8px',
+            background: 'rgba(212, 175, 55, 0.2)',
+            borderRadius: '4px',
+          }}
+          title="Time Grains - Stop time to collect, offer to guardians to unlock portals"
         >
-          {[
-            { realm: 'owl', color: '#4B0082' },
-            { realm: 'cat', color: '#FF8C00' },
-            { realm: 'frog', color: '#228B22' },
-            { realm: 'rabbit', color: '#8B4513' },
-          ].map((layer, index) => (
-            <div
-              key={layer.realm}
-              style={{
-                width: `${8 + index * 6}px`,
-                height: '5px',
-                background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
-                borderRadius: index === 0 ? '2px 2px 0 0' : index === 3 ? '0 0 2px 2px' : '0',
-              }}
-            />
-          ))}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <path d="M7 4h10v6l-5 8-5-8V4z" fill="#D4AF37" fillOpacity="0.4" stroke="#D4AF37" strokeWidth="1.5"/>
+            <path d="M7 20h10v-6l-5-8-5 8v6z" fill="#D4AF37" stroke="#D4AF37" strokeWidth="1.5"/>
+            <rect x="6" y="2" width="12" height="2" rx="1" fill="#8B7355"/>
+            <rect x="6" y="20" width="12" height="2" rx="1" fill="#8B7355"/>
+          </svg>
+          <span style={{
+            color: '#D4AF37',
+            fontSize: '13px',
+            fontWeight: 600,
+          }}>
+            {inventory.grains || 0}
+          </span>
         </div>
 
-        {/* Realm quick-jump buttons */}
-        {[
-          { id: 'hub', color: '#4ade80' },
-          { id: 'rabbit', color: '#ffd700' },
-          { id: 'cat', color: '#ffa500' },
-          { id: 'frog', color: '#22c55e' },
-          { id: 'owl', color: '#8b5cf6' },
-          { id: 'elf', color: '#c4a000', requiresPyramid: true },
-        ].map(realm => {
-          const IconComponent = RealmIcons[realm.id];
-          const isLocked = realm.requiresPyramid && !inventory.isPyramidComplete();
-          return (
-            <button
-              key={realm.id}
-              onClick={() => handleRealmSelect(realm.id)}
-              title={isLocked ? 'Complete all 4 realms to unlock' : realm.id.charAt(0).toUpperCase() + realm.id.slice(1)}
+        {/* Desktop only: Essence counters and pyramid */}
+        {!isMobile && (
+          <>
+            {/* Divider */}
+            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.15)' }} />
+
+            {/* Essence counters - collected from realms (3 per realm, 9 total max) */}
+            {Object.values(ESSENCE_TYPES).filter(e => e.id !== 'violet').map(essence => (
+              <div
+                key={essence.id}
+                style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                title={`${essence.name} (from ${essence.animal} realm) - max 3`}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24">
+                  {essence.shape === 'tetrahedron' && (
+                    <polygon points="12,2 2,22 22,22" fill={essence.color} />
+                  )}
+                  {essence.shape === 'cube' && (
+                    <rect x="4" y="4" width="16" height="16" fill={essence.color} transform="rotate(45 12 12)" />
+                  )}
+                  {essence.shape === 'octahedron' && (
+                    <polygon points="12,1 23,12 12,23 1,12" fill={essence.color} />
+                  )}
+                </svg>
+                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', fontWeight: 500 }}>
+                  {Math.min(inventory.essences[essence.id] || 0, 3)}
+                </span>
+              </div>
+            ))}
+
+            {/* Total essence counter for owl unlock - gem icon */}
+            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.15)' }} />
+            <div
               style={{
-                width: '28px',
-                height: '28px',
-                background: activeRealm === realm.id ? `${realm.color}30` : 'transparent',
-                border: activeRealm === realm.id ? `2px solid ${realm.color}` : '2px solid transparent',
-                borderRadius: '6px',
-                cursor: isLocked ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                padding: 0,
-                opacity: isLocked ? 0.4 : 1,
+                gap: '4px',
+                padding: '2px 6px',
+                background: 'rgba(147, 112, 219, 0.3)',
+                borderRadius: '4px',
               }}
+              title="Total Essences for Owl Realm (9 required)"
             >
-              <IconComponent size={16} />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <polygon points="12,2 20,8 20,16 12,22 4,16 4,8" fill="#9370DB" stroke="#BA55D3" strokeWidth="1"/>
+                <polygon points="12,5 16,9 16,15 12,19 8,15 8,9" fill="#DDA0DD" opacity="0.5"/>
+              </svg>
+              <span style={{
+                color: Math.min(Object.values(inventory.essences).reduce((a, b) => a + b, 0), 9) >= 9 ? '#90EE90' : '#DDA0DD',
+                fontSize: '12px',
+                fontWeight: 600,
+              }}>
+                {Math.min(Object.values(inventory.essences).reduce((a, b) => a + b, 0), 9)}/9
+              </span>
+            </div>
+
+            {/* Spacer */}
+            <div style={{ flex: 1 }} />
+
+            {/* Pyramid indicator - desktop */}
+            <div
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px' }}
+              title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/4 shards`}
+            >
+              {[
+                { realm: 'owl', color: '#4B0082' },
+                { realm: 'cat', color: '#FF8C00' },
+                { realm: 'frog', color: '#228B22' },
+                { realm: 'rabbit', color: '#8B4513' },
+              ].map((layer, index) => (
+                <div
+                  key={layer.realm}
+                  style={{
+                    width: `${8 + index * 6}px`,
+                    height: '5px',
+                    background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: index === 0 ? '2px 2px 0 0' : index === 3 ? '0 0 2px 2px' : '0',
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Realm quick-jump buttons - desktop */}
+            {[
+              { id: 'hub', color: '#4ade80' },
+              { id: 'rabbit', color: '#ffd700' },
+              { id: 'cat', color: '#ffa500' },
+              { id: 'frog', color: '#22c55e' },
+              { id: 'owl', color: '#8b5cf6' },
+              { id: 'elf', color: '#c4a000', requiresPyramid: true },
+            ].map(realm => {
+              const IconComponent = RealmIcons[realm.id];
+              const isLocked = realm.requiresPyramid && !inventory.isPyramidComplete();
+              return (
+                <button
+                  key={realm.id}
+                  onClick={() => handleRealmSelect(realm.id)}
+                  title={isLocked ? 'Complete all 4 realms to unlock' : realm.id.charAt(0).toUpperCase() + realm.id.slice(1)}
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    background: activeRealm === realm.id ? `${realm.color}30` : 'transparent',
+                    border: activeRealm === realm.id ? `2px solid ${realm.color}` : '2px solid transparent',
+                    borderRadius: '6px',
+                    cursor: isLocked ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0,
+                    opacity: isLocked ? 0.4 : 1,
+                  }}
+                >
+                  <IconComponent size={16} />
+                </button>
+              );
+            })}
+
+            {/* Spacer */}
+            <div style={{ flex: 1 }} />
+
+            {/* Reset button - desktop */}
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              style={{
+                background: 'rgba(255, 100, 100, 0.2)',
+                border: '1px solid rgba(255, 100, 100, 0.4)',
+                borderRadius: '6px',
+                color: '#ff6b6b',
+                fontSize: '11px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                padding: '4px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+              title="Reset all game progress"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+              Reset
             </button>
-          );
-        })}
+          </>
+        )}
 
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
+        {/* Spacer - mobile */}
+        {isMobile && <div style={{ flex: 1 }} />}
 
-        {/* Right items */}
+        {/* Testnet ETH link */}
         <a
           href="https://console.optimism.io/faucet"
           target="_blank"
           rel="noopener noreferrer"
           style={{
             color: 'rgba(255,255,255,0.8)',
-            fontSize: '13px',
+            fontSize: isMobile ? '11px' : '13px',
             fontWeight: 500,
             textDecoration: 'none',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
           }}
         >
           <svg width="12" height="12" viewBox="0 0 256 417" fill="none">
@@ -933,7 +1251,7 @@ function GameContent() {
             <path fill="currentColor" fillOpacity="0.6" d="M127.961 312.187l-1.575 1.92v98.199l1.575 4.601L256 236.587z"/>
             <path fill="currentColor" d="M127.962 416.905v-104.72L0 236.585z"/>
           </svg>
-          Testnet
+          {!isMobile && 'Testnet'}
         </a>
 
         <WalletButton />
@@ -955,6 +1273,83 @@ function GameContent() {
         </button>
       </div>
 
+      {/* Mobile Right Sidebar - Realms and Pyramid */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          top: '8px',
+          right: '8px',
+          zIndex: 9999,
+          pointerEvents: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '8px',
+          background: 'rgba(0, 0, 0, 0.7)',
+          borderRadius: '10px',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+        }}>
+          {/* Pyramid indicator */}
+          <div
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', marginBottom: '4px' }}
+            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/4 shards`}
+          >
+            {[
+              { realm: 'owl', color: '#4B0082' },
+              { realm: 'cat', color: '#FF8C00' },
+              { realm: 'frog', color: '#228B22' },
+              { realm: 'rabbit', color: '#8B4513' },
+            ].map((layer, index) => (
+              <div
+                key={layer.realm}
+                style={{
+                  width: `${6 + index * 4}px`,
+                  height: '4px',
+                  background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: index === 0 ? '2px 2px 0 0' : index === 3 ? '0 0 2px 2px' : '0',
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Realm buttons - vertical column */}
+          {[
+            { id: 'hub', color: '#4ade80' },
+            { id: 'rabbit', color: '#ffd700' },
+            { id: 'cat', color: '#ffa500' },
+            { id: 'frog', color: '#22c55e' },
+            { id: 'owl', color: '#8b5cf6' },
+            { id: 'elf', color: '#c4a000', requiresPyramid: true },
+          ].map(realm => {
+            const IconComponent = RealmIcons[realm.id];
+            const isLocked = realm.requiresPyramid && !inventory.isPyramidComplete();
+            return (
+              <button
+                key={realm.id}
+                onClick={() => handleRealmSelect(realm.id)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  background: activeRealm === realm.id ? `${realm.color}30` : 'transparent',
+                  border: activeRealm === realm.id ? `2px solid ${realm.color}` : '2px solid rgba(255,255,255,0.2)',
+                  borderRadius: '6px',
+                  cursor: isLocked ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                  opacity: isLocked ? 0.4 : 1,
+                }}
+              >
+                <IconComponent size={18} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <UI
         timeStopped={timeStopped}
         stopData={stopData}
@@ -974,6 +1369,7 @@ function GameContent() {
           onExit={handleRealmExit}
           onQuit={handleRealmExit}
           onNavigateRealm={handleNavigateRealm}
+          onEssenceCollected={handleEssenceCollected}
         />
       )}
       {activeRealm === 'cat' && (
@@ -1032,6 +1428,7 @@ function GameContent() {
         inventory={inventory}
         onUnlockRealm={handleUnlockRealm}
         freeMode={gameState.freeMode}
+        unlockedRealms={unlockedRealms}
       />
 
       {/* Difficulty Select Modal */}
@@ -1042,6 +1439,80 @@ function GameContent() {
         realmName={selectedRealm ? realmNames[selectedRealm] : ''}
         bestScores={gameState.bestScores}
       />
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div
+          onClick={() => setShowResetConfirm(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 10000,
+          }}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(180deg, #2a2520 0%, #1a1815 100%)',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 100, 100, 0.3)',
+            }}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="2" style={{ marginBottom: '16px' }}>
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            <h2 style={{ color: '#ff6b6b', fontSize: '20px', fontWeight: 600, marginBottom: '12px' }}>
+              Reset Game Progress?
+            </h2>
+            <p style={{ color: '#888', fontSize: '14px', marginBottom: '24px', lineHeight: 1.5 }}>
+              This will clear all your Time Grains, Essences, unlocked portals, and pyramid shards. You'll start from the beginning.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                style={{
+                  padding: '12px 24px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  borderRadius: '8px',
+                  color: '#ccc',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetGame}
+                style={{
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, #ff6b6b 0%, #cc5555 100%)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Reset Everything
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Essence notification */}
       {essenceNotification && (
@@ -1057,45 +1528,71 @@ function GameContent() {
           ceremony={victoryCeremony}
           onComplete={() => {
             // Add pyramid shard for the completed realm
-            if (victoryCeremony.realm) {
-              inventory.addPyramidShard(victoryCeremony.realm);
+            const completedRealm = victoryCeremony.realm;
+            if (completedRealm) {
+              inventory.addPyramidShard(completedRealm);
             }
+
+            // Check if pyramid will be complete after adding this shard
+            // Count existing shards + the one we just added
+            const existingShards = Object.values(inventory.pyramidShards || {}).filter(Boolean).length;
+            const willBeComplete = existingShards + 1 >= 4;
+
             // Mark as fading instead of removing immediately
             setVictoryCeremony(prev => prev ? { ...prev, isFading: true } : null);
             // Clear ceremony after fade animation completes
             setTimeout(() => {
               setVictoryCeremony(null);
+              // If this was the 4th shard, trigger Mind Fusion Spell!
+              if (willBeComplete) {
+                setShowMindFusionSpell(true);
+              }
             }, 600); // Slightly longer than fade duration to ensure animation completes
+          }}
+        />
+      )}
+
+      {/* Mind Fusion Spell Sequence - when all 4 pyramid shards collected */}
+      {showMindFusionSpell && (
+        <MindFusionSpell
+          onComplete={() => {
+            setShowMindFusionSpell(false);
+            // After mind fusion spell, the elf realm should now be accessible
+            // The pyramid is complete and the noon portal is open!
           }}
         />
       )}
 
       {/* Mint Grain Modal - shown when collecting a grain in paid mode */}
       {pendingMintGrain && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'rgba(28, 26, 22, 0.9)',
-          backdropFilter: 'blur(12px)',
-          zIndex: 1000,
-        }}>
-          <div style={{
-            background: 'linear-gradient(180deg, #1a1520 0%, #0f0a15 100%)',
-            borderRadius: '16px',
-            padding: '40px 48px',
-            maxWidth: '400px',
-            width: '90%',
-            textAlign: 'center',
-            boxShadow: '0 0 60px rgba(138, 43, 226, 0.3), 0 40px 80px rgba(0, 0, 0, 0.5)',
-            position: 'relative',
-            border: '1px solid rgba(138, 43, 226, 0.3)',
+        <div
+          onClick={handleCancelMint}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(28, 26, 22, 0.9)',
+            backdropFilter: 'blur(12px)',
+            zIndex: 1000,
           }}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(180deg, #1a1520 0%, #0f0a15 100%)',
+              borderRadius: '16px',
+              padding: '40px 48px',
+              maxWidth: '400px',
+              width: '90%',
+              textAlign: 'center',
+              boxShadow: '0 0 60px rgba(138, 43, 226, 0.3), 0 40px 80px rgba(0, 0, 0, 0.5)',
+              position: 'relative',
+              border: '1px solid rgba(138, 43, 226, 0.3)',
+            }}>
             {/* Glowing orb animation */}
             <div style={{
               width: '80px',
@@ -1200,29 +1697,33 @@ function GameContent() {
 
       {/* Legacy NFT Claim Modal - kept for backwards compatibility */}
       {showClaimModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'rgba(28, 26, 22, 0.9)',
-          backdropFilter: 'blur(12px)',
-          zIndex: 1000,
-        }}>
-          <div style={{
-            background: 'linear-gradient(180deg, #fffef9 0%, #f8f6f0 100%)',
-            borderRadius: '2px',
-            padding: '56px 48px 48px',
-            maxWidth: '340px',
-            width: '90%',
-            textAlign: 'center',
-            boxShadow: '0 1px 0 rgba(212, 175, 55, 0.3), 0 40px 80px rgba(0, 0, 0, 0.4)',
-            position: 'relative',
+        <div
+          onClick={() => setShowClaimModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(28, 26, 22, 0.9)',
+            backdropFilter: 'blur(12px)',
+            zIndex: 1000,
           }}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(180deg, #fffef9 0%, #f8f6f0 100%)',
+              borderRadius: '2px',
+              padding: '56px 48px 48px',
+              maxWidth: '340px',
+              width: '90%',
+              textAlign: 'center',
+              boxShadow: '0 1px 0 rgba(212, 175, 55, 0.3), 0 40px 80px rgba(0, 0, 0, 0.4)',
+              position: 'relative',
+            }}>
             <div style={{
               position: 'absolute',
               top: 0,
@@ -1285,7 +1786,7 @@ function GameContent() {
       {/* Global Mobile Controls - works across all realms including hub */}
       <GlobalMobileControls
         showJump={activeRealm !== 'hub'}
-        showSprint={activeRealm === 'cat' || activeRealm === 'rabbit'}
+        showSprint={activeRealm === 'cat' || activeRealm === 'rabbit' || activeRealm === 'owl'}
         disabled={!!chatAnimal || showDifficultySelect}
       />
 

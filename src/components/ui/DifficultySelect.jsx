@@ -37,28 +37,32 @@ export default function DifficultySelect({
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'rgba(0, 0, 0, 0.8)',
-      backdropFilter: 'blur(8px)',
-      zIndex: 1100,
-      pointerEvents: 'auto',
-    }}>
-      <div style={{
-        background: 'linear-gradient(180deg, #1a1815 0%, #0f0e0c 100%)',
-        borderRadius: '12px',
-        width: '90%',
-        maxWidth: '450px',
-        overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(212, 175, 55, 0.15)',
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.8)',
+        backdropFilter: 'blur(8px)',
+        zIndex: 1100,
+        pointerEvents: 'auto',
       }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'linear-gradient(180deg, #1a1815 0%, #0f0e0c 100%)',
+          borderRadius: '12px',
+          width: '90%',
+          maxWidth: '450px',
+          overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(212, 175, 55, 0.15)',
+        }}>
         {/* Header */}
         <div style={{
           display: 'flex',

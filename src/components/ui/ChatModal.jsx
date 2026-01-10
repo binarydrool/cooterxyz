@@ -134,6 +134,7 @@ export default function ChatModal({
   inventory,
   onUnlockRealm,
   freeMode = false,
+  unlockedRealms = {},  // Track which portals are already open
 }) {
   const [dialogueHistory, setDialogueHistory] = useState([]);
   const [realmUnlocked, setRealmUnlocked] = useState(false);
@@ -160,7 +161,10 @@ export default function ChatModal({
   const isOwlRealm = riddle?.isOwlRealm || animal === 'owl';  // Hoots' realm needs victory essences
   const grainsNeeded = riddle?.grainsNeeded || 0;
 
-  // Calculate total essences from inventory
+  // Total GRAINS - for unlocking portals (cat=3, frog=6, rabbit=9)
+  const totalGrains = inventory?.grains || 0;
+
+  // Total ESSENCES - for unlocking owl realm (9 total from realms)
   const totalEssences = inventory ? Object.values(inventory.essences).reduce((sum, count) => sum + count, 0) : 0;
 
   // Reset state when modal opens
@@ -214,7 +218,7 @@ export default function ChatModal({
     ]);
   }, []);
 
-  // Handle grain submission (player guesses the amount)
+  // Handle grain submission (player offers time grains to unlock portals)
   const handleSubmitGrains = useCallback(() => {
     if (realmUnlocked || !grainInput) return;
 
@@ -224,28 +228,18 @@ export default function ChatModal({
       return;
     }
 
-    if (amount > totalEssences) {
-      setAttemptFeedback({ success: false, message: "You don't have that many essences!" });
+    if (amount > totalGrains) {
+      setAttemptFeedback({ success: false, message: "You don't have that many grains!" });
       return;
     }
 
     // Check if the amount matches what the animal needs
     if (amount === grainsNeeded) {
-      // Correct! Remove essences from inventory
-      let remaining = amount;
-      const essenceTypes = ['forest', 'golden', 'amber', 'violet'];
-      for (const type of essenceTypes) {
-        const available = inventory.essences[type];
-        const toRemove = Math.min(available, remaining);
-        if (toRemove > 0) {
-          inventory.removeEssence(type, toRemove);
-          remaining -= toRemove;
-        }
-        if (remaining <= 0) break;
-      }
+      // Correct! Remove grains from inventory
+      inventory.removeGrains(amount);
 
       setDialogueHistory(prev => [...prev,
-        { role: 'player', content: `*offers ${amount} Time Essences*` },
+        { role: 'player', content: `*offers ${amount} Time Grains*` },
         { role: 'animal', content: riddle.unlockMessage, isSuccess: true },
       ]);
       setRealmUnlocked(true);
@@ -260,28 +254,30 @@ export default function ChatModal({
       }, 1200);
     } else {
       setDialogueHistory(prev => [...prev,
-        { role: 'player', content: `*offers ${amount} Time Essences*` },
+        { role: 'player', content: `*offers ${amount} Time Grains*` },
         { role: 'animal', content: riddle.wrongMessage },
       ]);
       setAttemptFeedback({ success: false, message: "That's not the right amount..." });
     }
     setGrainInput('');
-  }, [realmUnlocked, grainInput, totalEssences, grainsNeeded, inventory, riddle, animal, onUnlockRealm, onClose]);
+  }, [realmUnlocked, grainInput, totalGrains, grainsNeeded, inventory, riddle, animal, onUnlockRealm, onClose]);
 
-  // Handle owl special unlock (needs specific essences)
+  // Handle owl special unlock (needs 9 essences: 3 from each realm)
   const handleOwlUnlock = useCallback(() => {
     if (realmUnlocked || !inventory) return;
 
     const result = checkOwlRequirements(inventory);
 
     if (result.correct) {
-      // Remove one of each required essence
-      result.essencesUsed.forEach(type => {
-        inventory.removeEssence(type, 1);
-      });
+      // Remove 3 of each essence type
+      if (result.essenceAmounts) {
+        Object.entries(result.essenceAmounts).forEach(([type, amount]) => {
+          inventory.removeEssence(type, amount);
+        });
+      }
 
       setDialogueHistory(prev => [...prev,
-        { role: 'player', content: `*presents the three victory essences*` },
+        { role: 'player', content: `*presents nine essences from three realms*` },
         { role: 'animal', content: result.message, isSuccess: true },
       ]);
       setRealmUnlocked(true);
@@ -305,29 +301,33 @@ export default function ChatModal({
   const IconComponent = AnimalIcons[animal] || AnimalIcons.gnome;
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'rgba(0, 0, 0, 0.7)',
-      backdropFilter: 'blur(4px)',
-      zIndex: 1000,
-      pointerEvents: 'auto',
-    }}>
-      <div style={{
-        background: 'linear-gradient(180deg, #2a2520 0%, #1a1815 100%)',
-        borderRadius: '12px',
-        width: '90%',
-        maxWidth: '700px',
-        maxHeight: '80vh',
-        overflow: 'hidden',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.2)',
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0, 0, 0, 0.7)',
+        backdropFilter: 'blur(4px)',
+        zIndex: 1000,
+        pointerEvents: 'auto',
       }}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'linear-gradient(180deg, #2a2520 0%, #1a1815 100%)',
+          borderRadius: '12px',
+          width: '90%',
+          maxWidth: '700px',
+          maxHeight: '80vh',
+          overflow: 'hidden',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.2)',
+        }}>
         {/* Header */}
         <div style={{
           display: 'flex',
@@ -349,7 +349,7 @@ export default function ChatModal({
               </div>
               {!isTutorial && !isHoots && (
                 <div style={{ color: '#888', fontSize: '12px' }}>
-                  {riddle.clockPosition} o'clock position
+                  Guardian of the Clock
                 </div>
               )}
               {isHoots && (
@@ -463,331 +463,431 @@ export default function ChatModal({
 
           {/* Right side - Tutorial/Nox questions or Grain input */}
           <div style={{
-            width: '240px',
+            width: '280px',
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            gap: '12px',
             overflowY: 'auto',
           }}>
-            {isShattered ? (
-              // Gimble is shattered - simple sad dialogue
-              <>
-                <div style={{ color: '#888', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>
-                  SPEAK TO GIMBLE
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {riddle.dialogueOptions?.map((option, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleAskQuestion(option, index)}
-                      disabled={askedQuestions.includes(index)}
-                      style={{
-                        padding: '10px 12px',
-                        background: askedQuestions.includes(index)
-                          ? 'rgba(128, 128, 128, 0.2)'
-                          : 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid',
-                        borderColor: askedQuestions.includes(index)
-                          ? 'rgba(128, 128, 128, 0.4)'
-                          : 'rgba(128, 128, 128, 0.3)',
-                        borderRadius: '8px',
-                        color: askedQuestions.includes(index) ? '#888' : '#aaa',
-                        fontSize: '12px',
-                        textAlign: 'left',
-                        cursor: askedQuestions.includes(index) ? 'default' : 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      {option.question}
-                    </button>
-                  ))}
-                </div>
-                <div style={{
-                  padding: '12px',
-                  background: 'rgba(128, 128, 128, 0.1)',
-                  borderRadius: '8px',
-                  color: '#888',
-                  fontSize: '11px',
-                  textAlign: 'center',
-                  fontStyle: 'italic',
-                }}>
-                  AEIOU seems... broken. Something terrible has happened here...
-                </div>
-              </>
-            ) : (isGuide || isTutorial || isHoots) ? (
-              // Guide NPCs with dialogue options (Nox, Hoots)
-              <>
-                <div style={{ color: '#888', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>
-                  {isGuide ? 'ASK Y' : isHoots ? 'ASK HOOTS' : 'ASK GIMBLE'}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {riddle.dialogueOptions?.map((option, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleAskQuestion(option, index)}
-                      disabled={askedQuestions.includes(index)}
-                      style={{
-                        padding: '10px 12px',
-                        background: askedQuestions.includes(index)
-                          ? 'rgba(100, 255, 100, 0.1)'
-                          : 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid',
-                        borderColor: askedQuestions.includes(index)
-                          ? 'rgba(100, 255, 100, 0.3)'
-                          : isGuide ? 'rgba(139, 69, 19, 0.5)' : 'rgba(212, 175, 55, 0.3)',
-                        borderRadius: '8px',
-                        color: askedQuestions.includes(index) ? '#90EE90' : isGuide ? '#cd853f' : '#d4af37',
-                        fontSize: '12px',
-                        textAlign: 'left',
-                        cursor: askedQuestions.includes(index) ? 'default' : 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      {askedQuestions.includes(index) && <span style={{ marginRight: '4px' }}>&#10003;</span>}
-                      {option.question}
-                    </button>
-                  ))}
-                </div>
-                {askedQuestions.length === riddle.dialogueOptions?.length && (
-                  <div style={{
-                    padding: '12px',
-                    background: isGuide ? 'rgba(139, 69, 19, 0.2)' : 'rgba(212, 175, 55, 0.1)',
-                    borderRadius: '8px',
-                    color: isGuide ? '#cd853f' : '#d4af37',
-                    fontSize: '11px',
-                    textAlign: 'center',
-                    fontStyle: 'italic',
-                  }}>
-                    {isGuide
-                      ? "Now you know the path, time-walker. Restore AEIOU and open the gates..."
-                      : isHoots
-                        ? "Hoo-hoo... Now you know how to unlock The Night Sky!"
-                        : "You've learned all you need! Now go explore the clock!"
-                    }
-                  </div>
-                )}
-              </>
-            ) : isOwlRealm ? (
-              // Owl realm special UI - needs victory essences from other realms
-              <>
-                <div style={{ color: '#888', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>
-                  VICTORY ESSENCES
-                </div>
+            {/* Check if portal is already unlocked */}
+            {(() => {
+              const portalRealm = animal === 'hoots' ? 'owl' : animal;
+              const isPortalUnlocked = unlockedRealms[portalRealm] === true;
 
-                <div style={{
-                  padding: '16px',
-                  background: 'rgba(139, 69, 19, 0.2)',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(139, 69, 19, 0.4)',
-                }}>
-                  <div style={{ color: '#ccc', fontSize: '12px', marginBottom: '12px', textAlign: 'center' }}>
-                    Hoots requires one victory essence from each realm:
-                  </div>
-
-                  {/* Required essences display */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {[
-                      { type: 'golden', realm: 'The Warren', animal: 'Rabbit' },
-                      { type: 'forest', realm: 'The Lily Marsh', animal: 'Frog' },
-                      { type: 'amber', realm: 'The Rooftops', animal: 'Cat' },
-                    ].map(({ type, realm, animal: animalName }) => {
-                      const hasIt = inventory?.essences[type] >= 1;
-                      return (
-                        <div
-                          key={type}
+              if (isShattered) {
+                // Gimble is shattered - simple sad dialogue
+                return (
+                  <>
+                    <div style={{ color: '#888', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>
+                      SPEAK TO GIMBLE
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {riddle.dialogueOptions?.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleAskQuestion(option, index)}
+                          disabled={askedQuestions.includes(index)}
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '8px',
-                            background: hasIt ? 'rgba(100, 255, 100, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                            borderRadius: '6px',
-                            border: hasIt ? '1px solid rgba(100, 255, 100, 0.3)' : '1px solid rgba(255,255,255,0.1)',
+                            padding: '10px 12px',
+                            background: askedQuestions.includes(index)
+                              ? 'rgba(128, 128, 128, 0.2)'
+                              : 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid',
+                            borderColor: askedQuestions.includes(index)
+                              ? 'rgba(128, 128, 128, 0.4)'
+                              : 'rgba(128, 128, 128, 0.3)',
+                            borderRadius: '8px',
+                            color: askedQuestions.includes(index) ? '#888' : '#aaa',
+                            fontSize: '12px',
+                            textAlign: 'left',
+                            cursor: askedQuestions.includes(index) ? 'default' : 'pointer',
+                            transition: 'all 0.15s ease',
                           }}
                         >
-                          <EssenceIcon type={type} size={20} />
-                          <div style={{ flex: 1 }}>
-                            <div style={{ color: hasIt ? '#90EE90' : '#888', fontSize: '11px' }}>
-                              {animalName}
-                            </div>
-                            <div style={{ color: '#666', fontSize: '10px' }}>
-                              {realm}
-                            </div>
-                          </div>
-                          <div style={{ color: hasIt ? '#90EE90' : '#666', fontSize: '12px' }}>
-                            {hasIt ? '1' : '0'}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Offer essences button */}
-                {!realmUnlocked && (
-                  <button
-                    onClick={handleOwlUnlock}
-                    disabled={!inventory || !['golden', 'forest', 'amber'].every(t => inventory.essences[t] >= 1)}
-                    style={{
-                      padding: '14px',
-                      background: inventory && ['golden', 'forest', 'amber'].every(t => inventory.essences[t] >= 1)
-                        ? 'linear-gradient(135deg, #8B4513 0%, #654321 100%)'
-                        : 'rgba(255, 255, 255, 0.1)',
-                      border: 'none',
+                          {option.question}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{
+                      padding: '12px',
+                      background: 'rgba(128, 128, 128, 0.1)',
                       borderRadius: '8px',
-                      color: inventory && ['golden', 'forest', 'amber'].every(t => inventory.essences[t] >= 1) ? '#fff' : '#666',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      cursor: inventory && ['golden', 'forest', 'amber'].every(t => inventory.essences[t] >= 1) ? 'pointer' : 'not-allowed',
-                      opacity: inventory && ['golden', 'forest', 'amber'].every(t => inventory.essences[t] >= 1) ? 1 : 0.6,
-                    }}
-                  >
-                    Offer Victory Essences
-                  </button>
-                )}
-
-                {/* Portal unlocked */}
-                {realmUnlocked && (
-                  <div style={{
-                    padding: '16px',
-                    background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.3) 0%, rgba(75, 0, 130, 0.2) 100%)',
-                    borderRadius: '8px',
-                    textAlign: 'center',
-                    border: '1px solid rgba(139, 69, 19, 0.4)',
-                  }}>
-                    <div style={{ color: '#FFD700', fontWeight: 600, marginBottom: '4px' }}>Portal Opened!</div>
-                    <div style={{ color: '#888', fontSize: '11px' }}>
-                      The Night Sky awaits...
+                      color: '#888',
+                      fontSize: '11px',
+                      textAlign: 'center',
+                      fontStyle: 'italic',
+                    }}>
+                      AEIOU seems... broken. Something terrible has happened here...
                     </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              // Regular animal - grain input
-              <>
-                <div style={{ color: '#888', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>
-                  YOUR ESSENCES
-                </div>
+                  </>
+                );
+              }
 
-                {/* Essence counter display */}
-                <div style={{
-                  padding: '16px',
-                  background: 'rgba(212, 175, 55, 0.1)',
-                  borderRadius: '12px',
-                  textAlign: 'center',
-                  border: '1px solid rgba(212, 175, 55, 0.3)',
-                }}>
-                  <HourglassIcon size={40} />
-                  <div style={{
-                    fontSize: '28px',
-                    fontWeight: 700,
-                    color: '#d4af37',
-                    marginTop: '8px',
-                  }}>
-                    {totalEssences}
-                  </div>
-                  <div style={{ color: '#888', fontSize: '11px' }}>
-                    Total Essences
-                  </div>
-
-                  {/* Breakdown */}
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '12px' }}>
-                    {Object.values(ESSENCE_TYPES).map(essence => (
-                      <div key={essence.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <EssenceIcon type={essence.id} size={14} />
-                        <span style={{ color: '#888', fontSize: '11px' }}>{inventory?.essences[essence.id] || 0}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Grain input - player guesses the number */}
-                {!realmUnlocked && (
-                  <div style={{
-                    padding: '12px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '8px',
-                  }}>
-                    <div style={{ color: '#888', fontSize: '11px', marginBottom: '8px', textAlign: 'center' }}>
-                      How many essences will you offer?
+              if (isGuide || isTutorial) {
+                // Guide NPCs with dialogue options only (Nox, tutorial)
+                return (
+                  <>
+                    <div style={{ color: '#888', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>
+                      {isGuide ? 'ASK Y' : 'ASK GIMBLE'}
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <input
-                        type="number"
-                        min="1"
-                        max={totalEssences}
-                        value={grainInput}
-                        onChange={(e) => setGrainInput(e.target.value)}
-                        placeholder="?"
-                        style={{
-                          flex: 1,
-                          padding: '10px',
-                          background: 'rgba(0, 0, 0, 0.3)',
-                          border: '1px solid rgba(212, 175, 55, 0.3)',
-                          borderRadius: '6px',
-                          color: '#d4af37',
-                          fontSize: '18px',
-                          fontWeight: 600,
-                          textAlign: 'center',
-                          outline: 'none',
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSubmitGrains();
-                        }}
-                      />
-                      <button
-                        onClick={handleSubmitGrains}
-                        disabled={!grainInput || parseInt(grainInput) > totalEssences}
-                        style={{
-                          padding: '10px 16px',
-                          background: grainInput && parseInt(grainInput) <= totalEssences
-                            ? 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)'
-                            : 'rgba(255, 255, 255, 0.1)',
-                          border: 'none',
-                          borderRadius: '6px',
-                          color: grainInput && parseInt(grainInput) <= totalEssences ? '#000' : '#666',
-                          fontSize: '14px',
-                          fontWeight: 600,
-                          cursor: grainInput && parseInt(grainInput) <= totalEssences ? 'pointer' : 'not-allowed',
-                        }}
-                      >
-                        Offer
-                      </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {riddle.dialogueOptions?.map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleAskQuestion(option, index)}
+                          disabled={askedQuestions.includes(index)}
+                          style={{
+                            padding: '10px 12px',
+                            background: askedQuestions.includes(index)
+                              ? 'rgba(100, 255, 100, 0.1)'
+                              : 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid',
+                            borderColor: askedQuestions.includes(index)
+                              ? 'rgba(100, 255, 100, 0.3)'
+                              : isGuide ? 'rgba(139, 69, 19, 0.5)' : 'rgba(212, 175, 55, 0.3)',
+                            borderRadius: '8px',
+                            color: askedQuestions.includes(index) ? '#90EE90' : isGuide ? '#cd853f' : '#d4af37',
+                            fontSize: '12px',
+                            textAlign: 'left',
+                            cursor: askedQuestions.includes(index) ? 'default' : 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {askedQuestions.includes(index) && <span style={{ marginRight: '4px' }}>&#10003;</span>}
+                          {option.question}
+                        </button>
+                      ))}
                     </div>
-                    {attemptFeedback && (
+                    {askedQuestions.length === riddle.dialogueOptions?.length && (
                       <div style={{
-                        marginTop: '8px',
-                        padding: '8px',
-                        borderRadius: '4px',
-                        background: attemptFeedback.success ? 'rgba(100, 255, 100, 0.1)' : 'rgba(255, 100, 100, 0.1)',
-                        color: attemptFeedback.success ? '#90EE90' : '#ff6b6b',
+                        padding: '12px',
+                        background: isGuide ? 'rgba(139, 69, 19, 0.2)' : 'rgba(212, 175, 55, 0.1)',
+                        borderRadius: '8px',
+                        color: isGuide ? '#cd853f' : '#d4af37',
                         fontSize: '11px',
                         textAlign: 'center',
+                        fontStyle: 'italic',
                       }}>
-                        {attemptFeedback.message}
+                        {isGuide
+                          ? "Now you know the path, time-walker. Restore AEIOU and open the gates..."
+                          : "You've learned all you need! Now go explore the clock!"
+                        }
                       </div>
                     )}
-                  </div>
-                )}
+                  </>
+                );
+              }
 
-                {/* Portal unlocked indicator */}
-                {realmUnlocked && (
-                  <div style={{
-                    padding: '16px',
-                    background: 'linear-gradient(135deg, rgba(100, 255, 100, 0.2) 0%, rgba(0, 255, 100, 0.1) 100%)',
-                    borderRadius: '8px',
-                    textAlign: 'center',
-                    border: '1px solid rgba(100, 255, 100, 0.3)',
-                  }}>
-                    <div style={{ color: '#90EE90', fontWeight: 600 }}>Portal Opened!</div>
-                    <div style={{ color: '#888', fontSize: '11px', marginTop: '4px' }}>
-                      Look for the portal near {riddle.name}
+              if (isHoots || isOwlRealm) {
+                // Hoots/Owl realm - needs 9 essences (3 from each of 3 realms)
+                // Also show dialogue options for Hoots
+                return (
+                  <>
+                    {/* Dialogue options for Hoots */}
+                    {isHoots && riddle.dialogueOptions && (
+                      <>
+                        <div style={{ color: '#888', fontSize: '11px', fontWeight: 600, letterSpacing: '1px' }}>
+                          ASK HOOTS
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {riddle.dialogueOptions.map((option, index) => (
+                            <button
+                              key={index}
+                              onClick={() => handleAskQuestion(option, index)}
+                              disabled={askedQuestions.includes(index)}
+                              style={{
+                                padding: '8px 10px',
+                                background: askedQuestions.includes(index)
+                                  ? 'rgba(100, 255, 100, 0.1)'
+                                  : 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid',
+                                borderColor: askedQuestions.includes(index)
+                                  ? 'rgba(100, 255, 100, 0.3)'
+                                  : 'rgba(212, 175, 55, 0.3)',
+                                borderRadius: '6px',
+                                color: askedQuestions.includes(index) ? '#90EE90' : '#d4af37',
+                                fontSize: '11px',
+                                textAlign: 'left',
+                                cursor: askedQuestions.includes(index) ? 'default' : 'pointer',
+                              }}
+                            >
+                              {askedQuestions.includes(index) && <span style={{ marginRight: '4px' }}>&#10003;</span>}
+                              {option.question}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Check if owl portal already unlocked */}
+                    {isPortalUnlocked ? (
+                      <div style={{
+                        padding: '16px',
+                        background: 'linear-gradient(135deg, rgba(100, 255, 100, 0.2) 0%, rgba(0, 255, 100, 0.1) 100%)',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                        border: '1px solid rgba(100, 255, 100, 0.3)',
+                      }}>
+                        <div style={{ color: '#90EE90', fontWeight: 600 }}>Portal Already Open!</div>
+                        <div style={{ color: '#888', fontSize: '11px', marginTop: '4px' }}>
+                          The Night Sky portal is at 12 o'clock
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ color: '#888', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', marginTop: '8px' }}>
+                          OFFER ESSENCES
+                        </div>
+
+                        <div style={{
+                          padding: '12px',
+                          background: 'rgba(139, 69, 19, 0.2)',
+                          borderRadius: '10px',
+                          border: '1px solid rgba(139, 69, 19, 0.4)',
+                        }}>
+                          {/* Required essences display */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {[
+                              { type: 'golden', realm: 'Warren', animal: 'Rabbit', needed: 3 },
+                              { type: 'forest', realm: 'Marsh', animal: 'Frog', needed: 3 },
+                              { type: 'amber', realm: 'Rooftops', animal: 'Cat', needed: 3 },
+                            ].map(({ type, realm, animal: animalName, needed }) => {
+                              const count = inventory?.essences[type] || 0;
+                              const hasEnough = count >= needed;
+                              return (
+                                <div
+                                  key={type}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '6px',
+                                    background: hasEnough ? 'rgba(100, 255, 100, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                                    borderRadius: '4px',
+                                    border: hasEnough ? '1px solid rgba(100, 255, 100, 0.3)' : '1px solid rgba(255,255,255,0.1)',
+                                  }}
+                                >
+                                  <EssenceIcon type={type} size={16} />
+                                  <div style={{ flex: 1, color: hasEnough ? '#90EE90' : '#888', fontSize: '10px' }}>
+                                    {animalName}
+                                  </div>
+                                  <div style={{ color: hasEnough ? '#90EE90' : count > 0 ? '#ffd700' : '#666', fontSize: '11px', fontWeight: 600 }}>
+                                    {count}/{needed}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Total counter */}
+                          <div style={{
+                            marginTop: '8px',
+                            padding: '6px',
+                            background: 'rgba(0,0,0,0.3)',
+                            borderRadius: '4px',
+                            textAlign: 'center',
+                          }}>
+                            <span style={{ color: '#888', fontSize: '10px' }}>Total: </span>
+                            <span style={{ color: totalEssences >= 9 ? '#90EE90' : '#ffd700', fontSize: '13px', fontWeight: 600 }}>
+                              {totalEssences}/9
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Offer essences button */}
+                        {!realmUnlocked && (
+                          <button
+                            onClick={handleOwlUnlock}
+                            disabled={!inventory || totalEssences < 9 || !['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3)}
+                            style={{
+                              padding: '12px',
+                              background: inventory && totalEssences >= 9 && ['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3)
+                                ? 'linear-gradient(135deg, #8B4513 0%, #654321 100%)'
+                                : 'rgba(255, 255, 255, 0.1)',
+                              border: 'none',
+                              borderRadius: '8px',
+                              color: inventory && totalEssences >= 9 && ['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3) ? '#fff' : '#666',
+                              fontSize: '13px',
+                              fontWeight: 600,
+                              cursor: inventory && totalEssences >= 9 && ['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3) ? 'pointer' : 'not-allowed',
+                              opacity: inventory && totalEssences >= 9 && ['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3) ? 1 : 0.6,
+                            }}
+                          >
+                            Offer 9 Essences
+                          </button>
+                        )}
+
+                        {/* Portal unlocked */}
+                        {realmUnlocked && (
+                          <div style={{
+                            padding: '12px',
+                            background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.3) 0%, rgba(75, 0, 130, 0.2) 100%)',
+                            borderRadius: '8px',
+                            textAlign: 'center',
+                            border: '1px solid rgba(139, 69, 19, 0.4)',
+                          }}>
+                            <div style={{ color: '#FFD700', fontWeight: 600, marginBottom: '4px' }}>Portal Opened!</div>
+                            <div style={{ color: '#888', fontSize: '10px' }}>
+                              The Night Sky awaits at 12 o'clock...
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                );
+              }
+
+              // Regular animal - grain input (cat=3, frog=6, rabbit=9)
+              return (
+                <>
+                  {/* Check if portal already unlocked */}
+                  {isPortalUnlocked ? (
+                    <div style={{
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, rgba(100, 255, 100, 0.2) 0%, rgba(0, 255, 100, 0.1) 100%)',
+                      borderRadius: '8px',
+                      textAlign: 'center',
+                      border: '1px solid rgba(100, 255, 100, 0.3)',
+                    }}>
+                      <div style={{ color: '#90EE90', fontWeight: 600 }}>Portal Already Open!</div>
+                      <div style={{ color: '#888', fontSize: '11px', marginTop: '4px' }}>
+                        Look for {riddle.name}'s portal nearby
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
+                  ) : (
+                    <>
+                      <div style={{ color: '#888', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>
+                        YOUR TIME GRAINS
+                      </div>
+
+                      {/* Grain counter display */}
+                      <div style={{
+                        padding: '16px',
+                        background: 'rgba(212, 175, 55, 0.1)',
+                        borderRadius: '12px',
+                        textAlign: 'center',
+                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                      }}>
+                        <HourglassIcon size={40} />
+                        <div style={{
+                          fontSize: '28px',
+                          fontWeight: 700,
+                          color: '#d4af37',
+                          marginTop: '8px',
+                        }}>
+                          {totalGrains}
+                        </div>
+                        <div style={{ color: '#888', fontSize: '11px' }}>
+                          Time Grains
+                        </div>
+                        <div style={{ color: '#666', fontSize: '10px', marginTop: '4px' }}>
+                          (Collected from clock by stopping time)
+                        </div>
+                      </div>
+
+                      {/* Hint - clock position */}
+                      <div style={{
+                        padding: '10px',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderRadius: '6px',
+                        textAlign: 'center',
+                      }}>
+                        <div style={{ color: '#888', fontSize: '11px', fontStyle: 'italic' }}>
+                          "Where I stand on the clock holds the answer..."
+                        </div>
+                      </div>
+
+                      {/* Grain input - player offers time grains */}
+                      {!realmUnlocked && (
+                        <div style={{
+                          padding: '12px',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '8px',
+                        }}>
+                          <div style={{ color: '#888', fontSize: '11px', marginBottom: '8px', textAlign: 'center' }}>
+                            How many grains will you offer?
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <input
+                              type="number"
+                              min="1"
+                              max={totalGrains}
+                              value={grainInput}
+                              onChange={(e) => setGrainInput(e.target.value)}
+                              placeholder="?"
+                              style={{
+                                flex: 1,
+                                padding: '10px',
+                                background: 'rgba(0, 0, 0, 0.3)',
+                                border: '1px solid rgba(212, 175, 55, 0.3)',
+                                borderRadius: '6px',
+                                color: '#d4af37',
+                                fontSize: '18px',
+                                fontWeight: 600,
+                                textAlign: 'center',
+                                outline: 'none',
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSubmitGrains();
+                              }}
+                            />
+                            <button
+                              onClick={handleSubmitGrains}
+                              disabled={!grainInput || parseInt(grainInput) > totalGrains}
+                              style={{
+                                padding: '10px 16px',
+                                background: grainInput && parseInt(grainInput) <= totalGrains
+                                  ? 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)'
+                                  : 'rgba(255, 255, 255, 0.1)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                color: grainInput && parseInt(grainInput) <= totalGrains ? '#000' : '#666',
+                                fontSize: '14px',
+                                fontWeight: 600,
+                                cursor: grainInput && parseInt(grainInput) <= totalGrains ? 'pointer' : 'not-allowed',
+                              }}
+                            >
+                              Offer
+                            </button>
+                          </div>
+                          {attemptFeedback && (
+                            <div style={{
+                              marginTop: '8px',
+                              padding: '8px',
+                              borderRadius: '4px',
+                              background: attemptFeedback.success ? 'rgba(100, 255, 100, 0.1)' : 'rgba(255, 100, 100, 0.1)',
+                              color: attemptFeedback.success ? '#90EE90' : '#ff6b6b',
+                              fontSize: '11px',
+                              textAlign: 'center',
+                            }}>
+                              {attemptFeedback.message}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Portal unlocked indicator */}
+                      {realmUnlocked && (
+                        <div style={{
+                          padding: '16px',
+                          background: 'linear-gradient(135deg, rgba(100, 255, 100, 0.2) 0%, rgba(0, 255, 100, 0.1) 100%)',
+                          borderRadius: '8px',
+                          textAlign: 'center',
+                          border: '1px solid rgba(100, 255, 100, 0.3)',
+                        }}>
+                          <div style={{ color: '#90EE90', fontWeight: 600 }}>Portal Opened!</div>
+                          <div style={{ color: '#888', fontSize: '11px', marginTop: '4px' }}>
+                            Look for the portal near {riddle.name}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
 

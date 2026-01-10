@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { setTouchInput } from "@/hooks/useKeyboard";
+import { useEffect, useState } from "react";
 import HelpModal from "./HelpModal";
 
 // Detect if device is mobile/touch
@@ -24,181 +23,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-// D-Pad control component for mobile
-function DPad() {
-  const handleTouch = useCallback((key, isPressed) => {
-    setTouchInput(key, isPressed);
-  }, []);
-
-  const buttonStyle = {
-    width: '50px',
-    height: '50px',
-    background: 'rgba(60, 60, 60, 0.7)',
-    border: '2px solid rgba(100, 100, 100, 0.8)',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '20px',
-    color: 'rgba(255, 255, 255, 0.95)',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-    touchAction: 'none',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
-  };
-
-  return (
-    <div style={{
-      position: 'absolute',
-      bottom: '20px',
-      left: '20px',
-      display: 'grid',
-      gridTemplateColumns: '50px 50px 50px',
-      gridTemplateRows: '50px 50px 50px',
-      gap: '4px',
-      pointerEvents: 'auto',
-    }}>
-      {/* Up */}
-      <div style={{ gridColumn: 2, gridRow: 1 }}>
-        <button
-          style={buttonStyle}
-          onTouchStart={(e) => { e.preventDefault(); handleTouch('forward', true); }}
-          onTouchEnd={(e) => { e.preventDefault(); handleTouch('forward', false); }}
-          onTouchCancel={(e) => { e.preventDefault(); handleTouch('forward', false); }}
-        >
-          <span style={{ fontSize: '24px' }}>&#8593;</span>
-        </button>
-      </div>
-      {/* Left */}
-      <div style={{ gridColumn: 1, gridRow: 2 }}>
-        <button
-          style={buttonStyle}
-          onTouchStart={(e) => { e.preventDefault(); handleTouch('left', true); }}
-          onTouchEnd={(e) => { e.preventDefault(); handleTouch('left', false); }}
-          onTouchCancel={(e) => { e.preventDefault(); handleTouch('left', false); }}
-        >
-          <span style={{ fontSize: '24px' }}>&#8592;</span>
-        </button>
-      </div>
-      {/* Down */}
-      <div style={{ gridColumn: 2, gridRow: 3 }}>
-        <button
-          style={buttonStyle}
-          onTouchStart={(e) => { e.preventDefault(); handleTouch('backward', true); }}
-          onTouchEnd={(e) => { e.preventDefault(); handleTouch('backward', false); }}
-          onTouchCancel={(e) => { e.preventDefault(); handleTouch('backward', false); }}
-        >
-          <span style={{ fontSize: '24px' }}>&#8595;</span>
-        </button>
-      </div>
-      {/* Right */}
-      <div style={{ gridColumn: 3, gridRow: 2 }}>
-        <button
-          style={buttonStyle}
-          onTouchStart={(e) => { e.preventDefault(); handleTouch('right', true); }}
-          onTouchEnd={(e) => { e.preventDefault(); handleTouch('right', false); }}
-          onTouchCancel={(e) => { e.preventDefault(); handleTouch('right', false); }}
-        >
-          <span style={{ fontSize: '24px' }}>&#8594;</span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// Action buttons (Jump and Interact)
-function ActionButtons({ interactTarget, onInteract }) {
-  const handleTouch = useCallback((key, isPressed) => {
-    setTouchInput(key, isPressed);
-  }, []);
-
-  const hasTarget = !!interactTarget;
-  const targetType = interactTarget?.type || null;
-
-  const jumpButtonStyle = {
-    width: '70px',
-    height: '70px',
-    background: 'rgba(60, 60, 60, 0.7)',
-    border: '2px solid rgba(100, 100, 100, 0.8)',
-    borderRadius: '35px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.95)',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-    touchAction: 'none',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.4)',
-  };
-
-  // Interact button changes color based on target
-  const getInteractStyle = () => {
-    if (targetType === 'rabbit' || targetType === 'cat' || targetType === 'frog' || targetType === 'gnome' || targetType === 'hoots' || targetType === 'nox') {
-      return {
-        ...jumpButtonStyle,
-        background: 'rgba(100, 180, 255, 0.8)',
-        border: '2px solid rgba(100, 180, 255, 0.9)',
-        color: '#000',
-        boxShadow: '0 2px 12px rgba(100, 180, 255, 0.5)',
-      };
-    } else if (targetType === 'grain') {
-      return {
-        ...jumpButtonStyle,
-        background: 'rgba(212, 175, 55, 0.8)',
-        border: '2px solid rgba(212, 175, 55, 0.9)',
-        color: '#000',
-        boxShadow: '0 2px 12px rgba(212, 175, 55, 0.5)',
-      };
-    } else if (targetType === 'portal') {
-      return {
-        ...jumpButtonStyle,
-        background: 'rgba(138, 43, 226, 0.8)',
-        border: '2px solid rgba(138, 43, 226, 0.9)',
-        color: '#fff',
-        boxShadow: '0 2px 12px rgba(138, 43, 226, 0.5)',
-      };
-    }
-    return jumpButtonStyle;
-  };
-
-  return (
-    <div style={{
-      position: 'absolute',
-      bottom: '20px',
-      right: '20px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '12px',
-      pointerEvents: 'auto',
-    }}>
-      {/* Interact button - E (only shows when near something) */}
-      {hasTarget && (
-        <button
-          style={getInteractStyle()}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            if (onInteract) {
-              onInteract();
-            }
-          }}
-        >
-          E
-        </button>
-      )}
-      {/* Jump button */}
-      <button
-        style={jumpButtonStyle}
-        onTouchStart={(e) => { e.preventDefault(); handleTouch('jump', true); }}
-        onTouchEnd={(e) => { e.preventDefault(); handleTouch('jump', false); }}
-        onTouchCancel={(e) => { e.preventDefault(); handleTouch('jump', false); }}
-      >
-        JUMP
-      </button>
-    </div>
-  );
-}
+// D-Pad and ActionButtons removed - using GlobalMobileControls instead
 
 // Format seconds as M:SS
 function formatTime(seconds) {
@@ -280,13 +105,7 @@ export default function UI({ timeStopped = false, stopData = {}, interactTarget 
     }}>
 
 
-      {/* Mobile touch controls */}
-      {isMobile && (
-        <>
-          <DPad />
-          <ActionButtons interactTarget={interactTarget} onInteract={onInteract} />
-        </>
-      )}
+      {/* Mobile touch controls removed - using GlobalMobileControls instead */}
 
       {/* Camera mode indicator removed - navbar has realm buttons now */}
 

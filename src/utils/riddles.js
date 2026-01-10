@@ -9,11 +9,11 @@ export const RIDDLES = {
     clockPosition: 3,  // 3 o'clock
     grainsNeeded: 3,
     greeting: "Mrrrow... A turtle who walks with time. Curious...",
-    riddle: "Where the morning sun first warms my fur, at the hour when shadows stretch long to the west... bring me essences to match that moment, and my realm shall open.",
-    hint: "Think about where 3 o'clock is on the clock face...",
+    riddle: "Where the morning sun first warms my fur, at the hour when shadows stretch long to the west... bring me Time Grains to match that moment, and my realm shall open.",
+    hint: "Where does the cat rest on the clock face? That hour is the answer...",
     unlockMessage: "Purrfect... You understand the language of time. The Rooftops await you above! Seek the shattered piece of the jester within...",
     wrongMessage: "Mrrrow... That doesn't match the hour where I rest. Think again, little turtle.",
-    notEnoughMessage: "You haven't gathered enough essences yet. Return when your collection matches my hour.",
+    notEnoughMessage: "You haven't gathered enough Time Grains yet. Return when your collection matches my hour.",
   },
 
   frog: {
@@ -21,11 +21,11 @@ export const RIDDLES = {
     clockPosition: 6,  // 6 o'clock
     grainsNeeded: 6,
     greeting: "Ribbit! Welcome to the bottom of time's wheel!",
-    riddle: "At the lowest point where the hand points down, where evening meals begin... that's how many essences I seek! Ribbit!",
+    riddle: "At the lowest point where the hand points down, where evening meals begin... that's how many Time Grains I seek! Ribbit!",
     hint: "The bottom of the clock... what hour is that?",
     unlockMessage: "RIBBIT! You've cracked it! The Lily Marsh opens before you! A piece of the broken one awaits in the depths...",
     wrongMessage: "Croak... That's not my number. Look at where I sit on the clock!",
-    notEnoughMessage: "Ribbit... Not enough essences yet. Hop along and collect more!",
+    notEnoughMessage: "Ribbit... Not enough Time Grains yet. Hop along and collect more!",
   },
 
   rabbit: {
@@ -37,38 +37,39 @@ export const RIDDLES = {
     hint: "Three quarters around the clock from 12... which hour is that?",
     unlockMessage: "Wonderful! You've figured it out! Follow me into The Warren! The jester's fragment hides within my burrows...",
     wrongMessage: "Hmm, that's not quite right... Count the hours more carefully!",
-    notEnoughMessage: "You need more essences, friend. Keep stopping time!",
+    notEnoughMessage: "You need more Time Grains, friend. Keep stopping time!",
   },
 
   owl: {
     name: 'Hoots',
     clockPosition: 12,  // 12 o'clock position for the owl realm portal
     isOwlRealm: true,  // Hoots owns The Night Sky realm
-    greeting: "Hoo-hoo! A brave turtle on a noble quest! I see you seek to help poor AEIOU...",
+    essencesNeeded: 9,  // 3 from each of 3 realms = 9 total
+    greeting: "Hoo-hoo! The square root of wisdom multiplied by three realms... brings you to me...",
     dialogueOptions: [
       {
         question: "Who are you?",
-        answer: "I am Hoots, rider of the second hand! Round and round I go, watching all that happens on this clock. I saw when AEIOU was shattered... a terrible sight, hoo-hoo...",
+        answer: "Hoo-hoo... I am Hoots, keeper of calculations eternal! Three squared equals my desire, but nine divided by three realms... that is your task. Each realm holds three gems of time...",
       },
       {
         question: "How do I open your portal?",
-        answer: "My realm - The Night Sky - requires THREE victory essences! One GOLDEN from The Warren, one FOREST GREEN from The Lily Marsh, and one AMBER from The Rooftops. Complete each realm and bring their treasures to me!",
+        answer: "The root of eighty-one, divided by the root of nine... equals the essences per realm you must find. Hoo-hoo! Three from The Warren... three from The Marsh... three from The Rooftops. Nine in total, the square of three!",
       },
       {
-        question: "Where do I get victory essences?",
-        answer: "Each realm grants a special essence when you find AEIOU's shard within! The Warren gives GOLDEN, The Lily Marsh gives FOREST GREEN, The Rooftops give AMBER. Collect all three to prove your worth!",
+        question: "Where do I get essences?",
+        answer: "Hoo... Each realm guards three golden crystals of time. Three times three equals nine. The sum of all parts forms the whole. Bunzy, Pepe, and Kittle each hold a trinity of essences... gather them all!",
       },
       {
         question: "What's in The Night Sky?",
-        answer: "The fourth and final piece of AEIOU awaits in my realm! Without it, Y cannot cast the Fusion Spell. I guard the most precious shard... but only the worthy may enter, hoo-hoo!",
+        answer: "Hoo-hoo-hoo! The fourth shard of AEIOU's shattered mind awaits in my domain! But only those who understand the mathematics of time may enter... Nine is the key, turtle. Three cubed minus eighteen equals your goal!",
       },
       {
-        question: "Tell me about stopping time.",
-        answer: "Stand in the path of the second hand, brave turtle! Don't move, and you'll stop time itself! Hold for 33 seconds and a Time Essence will crystallize. These are the keys to opening the portals!",
+        question: "Can you speak plainly?",
+        answer: "Hoo... plainly? Very well: collect ALL 3 essences from The Warren, ALL 3 from The Lily Marsh, and ALL 3 from The Rooftops. That's 9 total. Bring them to me. The math is simple... hoo-hoo!",
       },
     ],
     riddle: "",
-    hint: "Hoots knows how to unlock The Night Sky. You need victory essences from the three other realms.",
+    hint: "Hoots speaks in riddles. He needs 9 essences total - 3 from each of the three other realms.",
   },
 
   nox: {
@@ -108,20 +109,27 @@ export const RIDDLES = {
 
   hoots: {
     name: 'Hoots',
-    greeting: "Hoo-hoo! I ride the second hand! Talk to me when I pass by!",
-    isHoots: true,  // Hoots on the second hand - quick dialogue
+    greeting: "Hoo-hoo! I ride the second hand! To enter my realm, you need NINE essences!",
+    isHoots: true,  // Hoots on the second hand
+    isOwlRealm: true,  // Also requires essences to unlock
+    essencesNeeded: 9,  // 3 from each of 3 realms = 9 total
     dialogueOptions: [
       {
-        question: "Who are you?",
-        answer: "I am Hoots! I ride the second hand round and round! If you want to enter my realm, find me at the 12 o'clock position - that's where my portal appears!",
+        question: "How do I unlock your realm?",
+        answer: "Hoo! You need NINE essences to enter The Night Sky! Three from The Warren (golden), three from The Lily Marsh (forest green), and three from The Rooftops (amber). Offer them here!",
+      },
+      {
+        question: "Where is your portal?",
+        answer: "My portal appears at the 12 o'clock position once you offer 9 essences! No shortcuts, hoo-hoo!",
       },
       {
         question: "Any tips?",
-        answer: "Watch out for Y at 12 o'clock - he stops time! Stand in the second hand's path to collect Time Essences. And talk to Y, he knows everything about saving AEIOU!",
+        answer: "Complete the other 3 realms - each has 3 essences to find inside! Complete all three realms, gather 9 total, then offer them to me!",
       },
     ],
     riddle: "",
-    hint: "Hoots on the second hand points you toward his portal at 12 o'clock.",
+    hint: "Hoots needs 9 essences total to open The Night Sky - 3 from each of the three other realms.",
+    unlockMessage: "Hoo-hoo! The mathematics align! The Night Sky opens before you! Seek the final shard of AEIOU's mind!",
   },
 
   gnome: {
@@ -175,24 +183,42 @@ export function checkGrainCount(animal, grainCount) {
   }
 }
 
-// Check if player has required essences for Y's portal
+// Check if player has required essences for owl's portal (9 total: 3 from each realm)
 export function checkOwlRequirements(inventory) {
-  const requiredEssences = ['golden', 'forest', 'amber'];
+  const ESSENCES_NEEDED = 9;
 
-  const hasAll = requiredEssences.every(essenceType => inventory.essences[essenceType] >= 1);
+  // Count total essences from all types
+  const totalEssences = Object.values(inventory.essences).reduce((sum, count) => sum + count, 0);
 
-  if (hasAll) {
+  // Check if we have at least 3 of each type (golden from rabbit, forest from frog, amber from cat)
+  const goldenCount = inventory.essences.golden || 0;
+  const forestCount = inventory.essences.forest || 0;
+  const amberCount = inventory.essences.amber || 0;
+
+  const hasEnough = totalEssences >= ESSENCES_NEEDED &&
+    goldenCount >= 3 && forestCount >= 3 && amberCount >= 3;
+
+  if (hasEnough) {
+    // Remove 3 of each type
     return {
       correct: true,
-      message: "The three victory essences glow with ancient power... The Night Sky awaits you, time-walker!",
-      essencesUsed: requiredEssences,
+      message: "Hoo-hoo! Nine essences... three squared... the mathematics of time align! The Night Sky opens before you!",
+      essencesUsed: ['golden', 'golden', 'golden', 'forest', 'forest', 'forest', 'amber', 'amber', 'amber'],
+      essenceAmounts: { golden: 3, forest: 3, amber: 3 },
     };
   } else {
-    const missing = requiredEssences.filter(e => inventory.essences[e] < 1);
+    const needed = {
+      golden: Math.max(0, 3 - goldenCount),
+      forest: Math.max(0, 3 - forestCount),
+      amber: Math.max(0, 3 - amberCount),
+    };
+    const totalNeeded = ESSENCES_NEEDED - totalEssences;
     return {
       correct: false,
-      message: "You need victory essences from all three realms to enter The Night Sky.",
-      missing,
+      message: `Hoo... The equation is incomplete. You need ${totalNeeded > 0 ? totalNeeded + ' more essences' : 'the right combination'}. Golden: ${goldenCount}/3, Forest: ${forestCount}/3, Amber: ${amberCount}/3.`,
+      needed,
+      totalHave: totalEssences,
+      totalNeeded: ESSENCES_NEEDED,
     };
   }
 }

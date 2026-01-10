@@ -837,8 +837,17 @@ export default function OwlRealm3D({
           elf.found = true;
           setElfFound(true);
           setElfState({ ...elf });
-          setScore(s => s + 1000);
-          setTimeout(() => setGameState('won'), 1500);
+          const newScore = score + 1000;
+          setScore(newScore);
+          // After brief celebration, immediately return to clock for shard ceremony
+          setTimeout(() => {
+            if (onComplete) {
+              const timeBonus = Math.max(0, 300 - time) * 5;
+              const livesBonus = lives * 200;
+              const finalScore = newScore + timeBonus + livesBonus;
+              onComplete({ score: finalScore, time, difficulty, lives });
+            }
+          }, 1500);
         }
 
         // Distance hints

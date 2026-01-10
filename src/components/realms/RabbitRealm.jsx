@@ -7,16 +7,17 @@ import * as THREE from 'three';
 import GameHUD from '../ui/GameHUD';
 import IntroModal from '../ui/IntroModal';
 import { getInput, useIsMobile, setActionState } from '@/hooks/useGameInput';
+import { useAudio, SOUNDS } from '@/hooks/useAudio';
 
-// Difficulty settings - optimized for 25x25 maze (smaller = faster)
+// Difficulty settings - maze size and speed scale with difficulty
 const DIFFICULTY_SETTINGS = {
-  beginner: { foxCount: 1, foxSpeed: 1.0, powerUpDuration: 20, carrots: 15, foxSpawnRate: 90 },
-  easy: { foxCount: 2, foxSpeed: 1.2, powerUpDuration: 18, carrots: 20, foxSpawnRate: 80 },
-  normal: { foxCount: 2, foxSpeed: 1.4, powerUpDuration: 15, carrots: 25, foxSpawnRate: 70 },
-  hard: { foxCount: 3, foxSpeed: 1.6, powerUpDuration: 12, carrots: 30, foxSpawnRate: 60 },
-  expert: { foxCount: 3, foxSpeed: 1.8, powerUpDuration: 10, carrots: 35, foxSpawnRate: 50 },
-  master: { foxCount: 4, foxSpeed: 2.0, powerUpDuration: 8, carrots: 40, foxSpawnRate: 45 },
-  impossible: { foxCount: 5, foxSpeed: 2.5, powerUpDuration: 6, carrots: 45, foxSpawnRate: 40 },
+  beginner: { foxCount: 1, foxSpeed: 1.0, powerUpDuration: 20, carrots: 15, foxSpawnRate: 90, mazeSize: 21 },
+  easy: { foxCount: 2, foxSpeed: 1.2, powerUpDuration: 18, carrots: 20, foxSpawnRate: 80, mazeSize: 23 },
+  normal: { foxCount: 2, foxSpeed: 1.4, powerUpDuration: 15, carrots: 25, foxSpawnRate: 70, mazeSize: 25 },
+  hard: { foxCount: 3, foxSpeed: 1.6, powerUpDuration: 12, carrots: 30, foxSpawnRate: 60, mazeSize: 29 },
+  expert: { foxCount: 3, foxSpeed: 1.8, powerUpDuration: 10, carrots: 35, foxSpawnRate: 50, mazeSize: 33 },
+  master: { foxCount: 4, foxSpeed: 2.0, powerUpDuration: 8, carrots: 40, foxSpawnRate: 45, mazeSize: 37 },
+  impossible: { foxCount: 5, foxSpeed: 2.5, powerUpDuration: 6, carrots: 45, foxSpawnRate: 40, mazeSize: 41 },
 };
 
 // Carrot respawn delay in seconds
@@ -46,19 +47,40 @@ function generateMaze(width, height) {
 
   carve(1, 1);
 
-  // Add extra paths for easier navigation (balanced)
-  for (let i = 0; i < width * height / 6; i++) {
+  // Add extra paths for easier navigation - more openings for wider corridors
+  for (let i = 0; i < width * height / 4; i++) {
     const x = 1 + Math.floor(Math.random() * (width - 2));
     const y = 1 + Math.floor(Math.random() * (height - 2));
     maze[y][x] = 0;
   }
 
+  // Create wider corridors by removing walls next to paths
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (maze[y][x] === 0) {
+        // 30% chance to widen corridor
+        if (Math.random() < 0.3) {
+          const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+          const dir = dirs[Math.floor(Math.random() * dirs.length)];
+          const nx = x + dir[0];
+          const ny = y + dir[1];
+          if (nx > 0 && nx < width - 1 && ny > 0 && ny < height - 1) {
+            maze[ny][nx] = 0;
+          }
+        }
+      }
+    }
+  }
+
   return maze;
 }
 
-// Instanced Hay Bales - ALL walls in ONE draw call for massive performance
+// Instanced Hay Bales - rectangular bales with straw texture lines
 function HayBaleInstances({ maze, mazeSize }) {
   const meshRef = useRef();
+  const topMeshRef = useRef();
+  const bandMeshRef = useRef();
+  const strawRef = useRef();
 
   const count = useMemo(() => {
     let c = 0;
@@ -79,24 +101,102 @@ function HayBaleInstances({ maze, mazeSize }) {
     for (let y = 0; y < mazeSize; y++) {
       for (let x = 0; x < mazeSize; x++) {
         if (maze[y]?.[x] === 1) {
-          tempObject.position.set(x + 0.5, 0.5, y + 0.5);
-          tempObject.scale.set(0.7, 1, 0.7);
+          // Main rectangular hay bale body
+          tempObject.position.set(x + 0.5, 0.35, y + 0.5);
+          tempObject.rotation.set(0, 0, 0);
+          tempObject.scale.set(0.42, 0.35, 0.42);
           tempObject.updateMatrix();
           meshRef.current.setMatrixAt(i, tempObject.matrix);
+
+          // Top layer - slightly smaller
+          if (topMeshRef.current) {
+            tempObject.position.set(x + 0.5, 0.72, y + 0.5);
+            tempObject.rotation.set(0, Math.PI / 6, 0);
+            tempObject.scale.set(0.38, 0.32, 0.38);
+            tempObject.updateMatrix();
+            topMeshRef.current.setMatrixAt(i, tempObject.matrix);
+          }
+
+          // Twine bands around the bale
+          if (bandMeshRef.current) {
+            tempObject.position.set(x + 0.5, 0.35, y + 0.5);
+            tempObject.rotation.set(Math.PI / 2, 0, 0);
+            tempObject.scale.set(0.44, 0.44, 0.06);
+            tempObject.updateMatrix();
+            bandMeshRef.current.setMatrixAt(i, tempObject.matrix);
+          }
+
+          // Straw texture lines on top
+          if (strawRef.current) {
+            tempObject.position.set(x + 0.5, 0.88, y + 0.5);
+            tempObject.rotation.set(0, 0, 0);
+            tempObject.scale.set(0.35, 0.02, 0.35);
+            tempObject.updateMatrix();
+            strawRef.current.setMatrixAt(i, tempObject.matrix);
+          }
+
           i++;
         }
       }
     }
     meshRef.current.instanceMatrix.needsUpdate = true;
+    if (topMeshRef.current) topMeshRef.current.instanceMatrix.needsUpdate = true;
+    if (bandMeshRef.current) bandMeshRef.current.instanceMatrix.needsUpdate = true;
+    if (strawRef.current) strawRef.current.instanceMatrix.needsUpdate = true;
   }, [maze, mazeSize]);
 
   if (count === 0) return null;
 
   return (
-    <instancedMesh ref={meshRef} args={[null, null, count]} frustumCulled={false}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshBasicMaterial color="#c9a227" />
-    </instancedMesh>
+    <group>
+      {/* Main rectangular hay bale - golden straw color */}
+      <instancedMesh ref={meshRef} args={[null, null, count]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial color="#c9a227" />
+      </instancedMesh>
+      {/* Top stacked bale - slightly different shade */}
+      <instancedMesh ref={topMeshRef} args={[null, null, count]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial color="#b8941f" />
+      </instancedMesh>
+      {/* Twine bands - dark brown rope */}
+      <instancedMesh ref={bandMeshRef} args={[null, null, count]} frustumCulled={false}>
+        <torusGeometry args={[1, 0.08, 4, 8]} />
+        <meshBasicMaterial color="#5d4037" />
+      </instancedMesh>
+      {/* Straw texture on top - lighter yellow */}
+      <instancedMesh ref={strawRef} args={[null, null, count]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial color="#daa520" />
+      </instancedMesh>
+    </group>
+  );
+}
+
+// Corn stalk decoration
+function CornStalk({ position }) {
+  return (
+    <group position={position}>
+      {/* Main stalk */}
+      <mesh position={[0, 0.6, 0]}>
+        <cylinderGeometry args={[0.03, 0.04, 1.2, 4]} />
+        <meshBasicMaterial color="#7a9a4a" />
+      </mesh>
+      {/* Leaves */}
+      <mesh position={[-0.15, 0.5, 0]} rotation={[0.3, 0, -0.5]}>
+        <boxGeometry args={[0.25, 0.03, 0.08]} />
+        <meshBasicMaterial color="#5d8a3a" />
+      </mesh>
+      <mesh position={[0.12, 0.7, 0]} rotation={[-0.2, 0, 0.4]}>
+        <boxGeometry args={[0.22, 0.03, 0.07]} />
+        <meshBasicMaterial color="#6d9a4a" />
+      </mesh>
+      {/* Corn cob */}
+      <mesh position={[0.08, 0.45, 0.05]} rotation={[0, 0, 0.3]}>
+        <capsuleGeometry args={[0.04, 0.12, 3, 6]} />
+        <meshBasicMaterial color="#f4d03f" />
+      </mesh>
+    </group>
   );
 }
 
@@ -117,13 +217,86 @@ function Pumpkin({ position, scale = 0.3 }) {
   );
 }
 
-// Simple grass ground - PERFORMANCE OPTIMIZED
+// Simple grass ground - PERFORMANCE OPTIMIZED - extends well beyond maze
 function GrassGround({ size }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[size/2, -0.01, size/2]}>
-      <planeGeometry args={[size + 8, size + 8]} />
+      <planeGeometry args={[size + 40, size + 40]} />
       <meshBasicMaterial color="#6b8c4a" />
     </mesh>
+  );
+}
+
+// Golden Essence - cube-shaped for rabbit realm
+function GoldenEssence({ position, collected, index = 0 }) {
+  const groupRef = useRef();
+  const cubeRef = useRef();
+  const beaconRef = useRef();
+
+  useFrame(({ clock }) => {
+    if (collected || !groupRef.current) return;
+
+    // Float up and down with offset based on index
+    const offset = index * 0.7; // Stagger the animation
+    const float = Math.sin(clock.elapsedTime * 2.5 + offset) * 0.25;
+    groupRef.current.position.y = position[1] + 1.5 + float;
+
+    // Rotate cube
+    if (cubeRef.current) {
+      cubeRef.current.rotation.y = clock.elapsedTime * 1.5;
+      cubeRef.current.rotation.x = Math.sin(clock.elapsedTime * 0.8) * 0.2;
+    }
+
+    // Pulse beacon
+    if (beaconRef.current) {
+      const pulse = 0.8 + Math.sin(clock.elapsedTime * 3) * 0.2;
+      beaconRef.current.scale.set(1, pulse, 1);
+    }
+  });
+
+  if (collected) return null;
+
+  return (
+    <group>
+      {/* Essence group */}
+      <group ref={groupRef} position={[position[0], position[1] + 1.5, position[2]]}>
+        {/* Outer golden glow */}
+        <mesh>
+          <sphereGeometry args={[0.6, 8, 8]} />
+          <meshBasicMaterial color="#ffd700" transparent opacity={0.3} />
+        </mesh>
+
+        {/* Inner cube - golden */}
+        <mesh ref={cubeRef}>
+          <boxGeometry args={[0.4, 0.4, 0.4]} />
+          <meshBasicMaterial color="#ffaa00" />
+        </mesh>
+
+        {/* Bright core */}
+        <mesh>
+          <sphereGeometry args={[0.15, 6, 6]} />
+          <meshBasicMaterial color="#fff8dc" />
+        </mesh>
+      </group>
+
+      {/* Beacon pillar - visible from far away */}
+      <mesh ref={beaconRef} position={[position[0], 5, position[2]]}>
+        <cylinderGeometry args={[0.15, 0.25, 10, 6]} />
+        <meshBasicMaterial color="#ffd700" transparent opacity={0.25} />
+      </mesh>
+
+      {/* Beacon top */}
+      <mesh position={[position[0], 10, position[2]]}>
+        <sphereGeometry args={[0.5, 6, 6]} />
+        <meshBasicMaterial color="#ffdd44" transparent opacity={0.4} />
+      </mesh>
+
+      {/* Ground ring */}
+      <mesh position={[position[0], 0.1, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.8, 1.1, 12]} />
+        <meshBasicMaterial color="#ffd700" transparent opacity={0.35} />
+      </mesh>
+    </group>
   );
 }
 
@@ -320,61 +493,104 @@ function PowerPellet({ position, collected }) {
   );
 }
 
-// Elf character - OPTIMIZED
+// AEIOU character (Elf) - with visible beacon so players can find them
 function Elf({ position, found }) {
+  const groupRef = useRef();
+  const beaconRef = useRef();
+
+  useFrame(({ clock }) => {
+    if (found || !groupRef.current) return;
+
+    // Gentle floating animation
+    groupRef.current.position.y = Math.sin(clock.elapsedTime * 2) * 0.1;
+
+    // Pulse beacon
+    if (beaconRef.current) {
+      const pulse = 0.8 + Math.sin(clock.elapsedTime * 2.5) * 0.2;
+      beaconRef.current.scale.set(1, pulse, 1);
+    }
+  });
+
   if (found) return null;
 
   return (
     <group position={position}>
-      {/* Body */}
-      <mesh position={[0, 0.35, 0]}>
-        <capsuleGeometry args={[0.12, 0.25, 3, 4]} />
-        <meshBasicMaterial color="#228b22" />
-      </mesh>
-
-      {/* Head */}
-      <mesh position={[0, 0.65, 0]}>
-        <sphereGeometry args={[0.12, 6, 4]} />
-        <meshBasicMaterial color="#ffdab9" />
-      </mesh>
-
-      {/* Pointy hat */}
-      <mesh position={[0, 0.85, 0]}>
-        <coneGeometry args={[0.1, 0.25, 4]} />
-        <meshBasicMaterial color="#ff4500" />
-      </mesh>
-
-      {/* Eyes */}
-      <mesh position={[-0.04, 0.68, 0.1]}>
-        <sphereGeometry args={[0.02, 4, 4]} />
-        <meshBasicMaterial color="#000" />
-      </mesh>
-      <mesh position={[0.04, 0.68, 0.1]}>
-        <sphereGeometry args={[0.02, 4, 4]} />
-        <meshBasicMaterial color="#000" />
-      </mesh>
-
-      {/* Ears */}
-      <mesh position={[-0.12, 0.65, 0]} rotation={[0, 0, -0.5]}>
-        <coneGeometry args={[0.03, 0.08, 3]} />
-        <meshBasicMaterial color="#ffdab9" />
-      </mesh>
-      <mesh position={[0.12, 0.65, 0]} rotation={[0, 0, 0.5]}>
-        <coneGeometry args={[0.03, 0.08, 3]} />
-        <meshBasicMaterial color="#ffdab9" />
-      </mesh>
-
-      {/* Key */}
-      <group position={[0.15, 0.4, 0.1]} rotation={[0, 0, 0.3]}>
-        <mesh>
-          <cylinderGeometry args={[0.015, 0.015, 0.12, 4]} />
-          <meshBasicMaterial color="#ffd700" />
+      {/* Character group with animation */}
+      <group ref={groupRef}>
+        {/* Body */}
+        <mesh position={[0, 0.35, 0]}>
+          <capsuleGeometry args={[0.12, 0.25, 3, 4]} />
+          <meshBasicMaterial color="#228b22" />
         </mesh>
-        <mesh position={[0, 0.08, 0]}>
-          <torusGeometry args={[0.04, 0.015, 4, 6]} />
-          <meshBasicMaterial color="#ffd700" />
+
+        {/* Head */}
+        <mesh position={[0, 0.65, 0]}>
+          <sphereGeometry args={[0.12, 6, 4]} />
+          <meshBasicMaterial color="#ffdab9" />
         </mesh>
+
+        {/* Pointy hat */}
+        <mesh position={[0, 0.85, 0]}>
+          <coneGeometry args={[0.1, 0.25, 4]} />
+          <meshBasicMaterial color="#ff4500" />
+        </mesh>
+
+        {/* Eyes */}
+        <mesh position={[-0.04, 0.68, 0.1]}>
+          <sphereGeometry args={[0.02, 4, 4]} />
+          <meshBasicMaterial color="#000" />
+        </mesh>
+        <mesh position={[0.04, 0.68, 0.1]}>
+          <sphereGeometry args={[0.02, 4, 4]} />
+          <meshBasicMaterial color="#000" />
+        </mesh>
+
+        {/* Ears */}
+        <mesh position={[-0.12, 0.65, 0]} rotation={[0, 0, -0.5]}>
+          <coneGeometry args={[0.03, 0.08, 3]} />
+          <meshBasicMaterial color="#ffdab9" />
+        </mesh>
+        <mesh position={[0.12, 0.65, 0]} rotation={[0, 0, 0.5]}>
+          <coneGeometry args={[0.03, 0.08, 3]} />
+          <meshBasicMaterial color="#ffdab9" />
+        </mesh>
+
+        {/* Key in hand */}
+        <group position={[0.15, 0.4, 0.1]} rotation={[0, 0, 0.3]}>
+          <mesh>
+            <cylinderGeometry args={[0.015, 0.015, 0.12, 4]} />
+            <meshBasicMaterial color="#ffd700" />
+          </mesh>
+          <mesh position={[0, 0.08, 0]}>
+            <torusGeometry args={[0.04, 0.015, 4, 6]} />
+            <meshBasicMaterial color="#ffd700" />
+          </mesh>
+        </group>
       </group>
+
+      {/* Beacon pillar - GREEN to distinguish from golden essences */}
+      <mesh ref={beaconRef} position={[0, 6, 0]}>
+        <cylinderGeometry args={[0.18, 0.28, 12, 6]} />
+        <meshBasicMaterial color="#22cc44" transparent opacity={0.3} />
+      </mesh>
+
+      {/* Beacon top */}
+      <mesh position={[0, 12, 0]}>
+        <sphereGeometry args={[0.6, 6, 6]} />
+        <meshBasicMaterial color="#44ff66" transparent opacity={0.5} />
+      </mesh>
+
+      {/* Ground ring - green */}
+      <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1, 1.4, 16]} />
+        <meshBasicMaterial color="#22cc44" transparent opacity={0.4} />
+      </mesh>
+
+      {/* "AEIOU" label floating above */}
+      <mesh position={[0, 1.3, 0]}>
+        <sphereGeometry args={[0.08, 4, 4]} />
+        <meshBasicMaterial color="#44ff66" />
+      </mesh>
     </group>
   );
 }
@@ -414,8 +630,34 @@ function FollowCamera({ target }) {
   return null;
 }
 
-// No decorations for maximum performance
-const generateDecorationPositions = () => ({ pumpkins: [] });
+// Generate decoration positions around the maze edges
+const generateDecorationPositions = (mazeSize) => {
+  const pumpkins = [];
+  const cornStalks = [];
+
+  // Add pumpkins and corn around the outer edges
+  for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const radius = mazeSize / 2 + 3;
+    const x = mazeSize / 2 + Math.cos(angle) * radius;
+    const z = mazeSize / 2 + Math.sin(angle) * radius;
+
+    pumpkins.push({
+      position: [x + (Math.random() - 0.5), 0, z + (Math.random() - 0.5)],
+      scale: 0.25 + Math.random() * 0.15
+    });
+
+    // Corn stalks near pumpkins
+    cornStalks.push({
+      position: [x + 0.8 + (Math.random() - 0.5) * 0.5, 0, z + (Math.random() - 0.5) * 0.5]
+    });
+    cornStalks.push({
+      position: [x - 0.8 + (Math.random() - 0.5) * 0.5, 0, z + (Math.random() - 0.5) * 0.5]
+    });
+  }
+
+  return { pumpkins, cornStalks };
+};
 
 // Main game scene
 function GameScene({
@@ -435,6 +677,7 @@ function GameScene({
   onParticleComplete,
   elfPos,
   elfFound,
+  essences,
 }) {
   // Generate decoration positions once
   const decorations = useMemo(() => generateDecorationPositions(mazeSize), [mazeSize]);
@@ -451,15 +694,30 @@ function GameScene({
       {/* Grass Ground */}
       <GrassGround size={mazeSize} />
 
-      {/* A few pumpkins for decoration */}
+      {/* Pumpkins for decoration */}
       {decorations.pumpkins.map((p, i) => (
         <Pumpkin key={`pumpkin-${i}`} position={p.position} scale={p.scale} />
+      ))}
+
+      {/* Corn stalks for decoration */}
+      {decorations.cornStalks.map((c, i) => (
+        <CornStalk key={`corn-${i}`} position={c.position} />
       ))}
 
       {/* Hay bale maze walls - INSTANCED for performance */}
       <HayBaleInstances maze={maze} mazeSize={mazeSize} />
 
-      {/* Elf - find him to get the key! */}
+      {/* Golden Essences - 3 collectibles with beacons */}
+      {essences.map((essence, i) => (
+        <GoldenEssence
+          key={`essence-${i}`}
+          position={[essence.x, 0, essence.z]}
+          collected={essence.collected}
+          index={i}
+        />
+      ))}
+
+      {/* AEIOU (Elf) - find them to get the key! */}
       <Elf position={elfPos} found={elfFound} />
 
       {/* Player */}
@@ -536,9 +794,11 @@ export default function RabbitRealm({
   onComplete,
   onDeath,
   onExit,
+  onEssenceCollected,
 }) {
   const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.normal;
-  const mazeSize = 25; // Smaller = much faster performance
+  const mazeSize = settings.mazeSize; // Maze size scales with difficulty
+  const { playSound } = useAudio();
 
   // Game state
   const [maze, setMaze] = useState(() => generateMaze(mazeSize, mazeSize));
@@ -582,6 +842,23 @@ export default function RabbitRealm({
     return [farX, 0, farZ];
   });
   const [elfFound, setElfFound] = useState(false);
+
+  // 3 Golden Essences - spread across the maze
+  const [essences, setEssences] = useState(() => {
+    // Place essences at strategic locations in the maze
+    const positions = [
+      { x: mazeSize * 0.25, z: mazeSize * 0.75 },  // Top-left quadrant
+      { x: mazeSize * 0.75, z: mazeSize * 0.25 },  // Bottom-right quadrant
+      { x: mazeSize * 0.5, z: mazeSize * 0.5 },    // Center
+    ];
+    return positions.map((pos, i) => ({
+      id: i,
+      x: pos.x + (Math.random() - 0.5) * 3,
+      z: pos.z + (Math.random() - 0.5) * 3,
+      collected: false,
+    }));
+  });
+  const [essencesCollected, setEssencesCollected] = useState(0);
 
   // Fox spawning
   const [lastFoxSpawnTime, setLastFoxSpawnTime] = useState(0);
@@ -647,6 +924,20 @@ export default function RabbitRealm({
     setParticles([]);
     setShowIntroModal(true);
     setGameStarted(false);
+
+    // Reset essences with new positions
+    const newEssencePositions = [
+      { x: mazeSize * 0.25, z: mazeSize * 0.75 },
+      { x: mazeSize * 0.75, z: mazeSize * 0.25 },
+      { x: mazeSize * 0.5, z: mazeSize * 0.5 },
+    ];
+    setEssences(newEssencePositions.map((pos, i) => ({
+      id: i,
+      x: pos.x + (Math.random() - 0.5) * 3,
+      z: pos.z + (Math.random() - 0.5) * 3,
+      collected: false,
+    })));
+    setEssencesCollected(0);
 
     // Reset refs
     keysRef.current = {};
@@ -714,10 +1005,10 @@ export default function RabbitRealm({
     return maze[cellZ]?.[cellX] === 1;
   }, [maze, mazeSize]);
 
-  // Check collision - walls 0.7 visual, smaller hitbox for smooth gameplay
+  // Check collision - smaller hitboxes for smooth navigation
   const checkCollision = useCallback((x, z) => {
-    const playerRadius = 0.15;  // Smaller = easier to navigate
-    const wallHalf = 0.32;      // Slightly smaller than visual for forgiving gameplay
+    const playerRadius = 0.12;  // Smaller = easier to navigate
+    const wallHalf = 0.28;      // Much smaller than visual for very forgiving gameplay
 
     const cellX = Math.floor(x);
     const cellZ = Math.floor(z);
@@ -1113,6 +1404,7 @@ export default function RabbitRealm({
         const dz = playerPos[2] - coin.z;
         if (Math.sqrt(dx * dx + dz * dz) < 0.4) {
           spawnParticles(coin.x, 0.35, coin.z, '#ffd700');
+          playSound(SOUNDS.COIN_COLLECT);
           setScore(prev => prev + 5);
           setCoinsCollected(prev => prev + 1);
           return { ...coin, collected: true };
@@ -1128,6 +1420,7 @@ export default function RabbitRealm({
         const dz = playerPos[2] - pellet.z;
         if (Math.sqrt(dx * dx + dz * dz) < 0.5) {
           spawnParticles(pellet.x, 0.5, pellet.z, '#ffd700');
+          playSound(SOUNDS.POWERUP);
           setIsPoweredUp(true);
           setPowerUpTimer(settings.powerUpDuration);
           setScore(prev => prev + 50);
@@ -1136,7 +1429,24 @@ export default function RabbitRealm({
         return pellet;
       }));
 
-      // Check elf collision - win condition!
+      // Check essence collection - 3 golden cubes
+      setEssences(prev => prev.map(essence => {
+        if (essence.collected) return essence;
+
+        const dx = playerPos[0] - essence.x;
+        const dz = playerPos[2] - essence.z;
+        if (Math.sqrt(dx * dx + dz * dz) < 0.8) {
+          spawnParticles(essence.x, 1.5, essence.z, '#ffd700');
+          playSound(SOUNDS.COLLECT_ESSENCE);
+          setScore(prev => prev + 250);
+          setEssencesCollected(prev => prev + 1);
+          onEssenceCollected?.('golden');
+          return { ...essence, collected: true };
+        }
+        return essence;
+      }));
+
+      // Check elf (AEIOU) collision - win condition!
       if (!elfFound && !gameWon) {
         const dx = playerPos[0] - elfPos[0];
         const dz = playerPos[2] - elfPos[2];
@@ -1144,15 +1454,16 @@ export default function RabbitRealm({
           setElfFound(true);
           setGameWon(true);
           spawnParticles(elfPos[0], 0.5, elfPos[2], '#88ff88');
+          playSound(SOUNDS.VICTORY);
           setScore(prev => prev + 500);
-          onComplete?.({ carrotsCollected, coinsCollected, time, score: score + 500 });
+          onComplete?.({ carrotsCollected, coinsCollected, essencesCollected, time, score: score + 500 });
         }
       }
 
     }, 1000 / 30); // 30fps for better performance
 
     return () => clearInterval(gameLoop);
-  }, [gameStarted, gameOver, gameWon, isPaused, isPoweredUp, isInvisible, playerPos, maze, settings, checkCollision, movePlayer, spawnParticles, onDeath, onComplete, time, score, invincibleTimer, isJumping, jumpHeight, jumpVelocity, lastFoxSpawnTime, spawnFox, carrotsCollected, coinsCollected, mazeSize, elfPos, elfFound]);
+  }, [gameStarted, gameOver, gameWon, isPaused, isPoweredUp, isInvisible, playerPos, maze, settings, checkCollision, movePlayer, spawnParticles, onDeath, onComplete, time, score, invincibleTimer, isJumping, jumpHeight, jumpVelocity, lastFoxSpawnTime, spawnFox, carrotsCollected, coinsCollected, mazeSize, elfPos, elfFound, essences, essencesCollected, playSound, onEssenceCollected]);
 
   // Keyboard input for pause only (movement and jump handled by global useGameInput)
   useEffect(() => {
@@ -1205,6 +1516,7 @@ export default function RabbitRealm({
           onParticleComplete={removeParticle}
           elfPos={elfPos}
           elfFound={elfFound}
+          essences={essences}
         />
       </Canvas>
 
@@ -1245,7 +1557,10 @@ export default function RabbitRealm({
         zIndex: 1100,
         border: elfFound ? '1px solid #22c55e' : '1px solid rgba(136, 255, 136, 0.4)',
       }}>
-        {elfFound ? '[OK] AEIOU Found!' : 'Find AEIOU and the Essence!'}
+        {elfFound
+          ? `[OK] AEIOU Found! Essences: ${essencesCollected}/3`
+          : `Find AEIOU (green beacon) + ${3 - essencesCollected} Essences (gold beacons)`
+        }
       </div>
 
       {/* Controls hint - desktop only */}
@@ -1262,7 +1577,7 @@ export default function RabbitRealm({
           fontSize: '12px',
           zIndex: 1100,
         }}>
-          WASD/Arrows: Move | Space: Jump | Find AEIOU and the Essence!
+          WASD/Arrows: Move | Space: Jump | Collect 3 Essences + Find AEIOU!
         </div>
       )}
 

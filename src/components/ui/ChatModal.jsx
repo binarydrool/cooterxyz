@@ -177,8 +177,11 @@ export default function ChatModal({
   // Total GRAINS - for unlocking portals (cat=3, frog=6, rabbit=9)
   const totalGrains = inventory?.grains || 0;
 
-  // Total ESSENCES - for unlocking owl realm (9 total from realms)
-  const totalEssences = inventory ? Object.values(inventory.essences).reduce((sum, count) => sum + count, 0) : 0;
+  // Total ESSENCES needed for owl realm - only count golden, forest, amber (NOT violet)
+  // Need 9 total: 3 golden (rabbit) + 3 forest (frog) + 3 amber (cat)
+  const totalEssences = inventory
+    ? (inventory.essences.golden || 0) + (inventory.essences.forest || 0) + (inventory.essences.amber || 0)
+    : 0;
 
   // Reset state when modal opens
   useEffect(() => {
@@ -889,7 +892,7 @@ export default function ChatModal({
               cursor: realmUnlocked ? 'default' : 'pointer',
             }}
           >
-            {realmUnlocked ? 'Opening...' : 'Close'}
+            {realmUnlocked ? 'Opening...' : isTutorial ? 'Bye AEIOU!' : isHoots ? 'Bye Hoots!' : 'Close'}
           </button>
         </div>
       </div>

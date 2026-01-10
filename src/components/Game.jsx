@@ -1030,19 +1030,20 @@ function GameContent() {
         </ErrorBoundary>
       )}
 
-      {/* Top Navigation Bar - responsive for mobile */}
+      {/* Top Navigation Bar - shows all items on both desktop and mobile */}
       <div style={{
         position: 'fixed',
         top: '8px',
         left: '8px',
-        right: isMobile ? '60px' : '8px', // Leave space for right sidebar on mobile
+        right: isMobile ? '56px' : '8px', // Leave space for right sidebar on mobile
         zIndex: 9999,
         pointerEvents: 'auto',
         display: 'flex',
         alignItems: 'center',
-        gap: isMobile ? '8px' : '20px',
-        padding: isMobile ? '8px 12px' : '10px 16px',
-        background: 'rgba(0, 0, 0, 0.7)',
+        flexWrap: 'wrap',
+        gap: isMobile ? '6px' : '12px',
+        padding: isMobile ? '6px 10px' : '10px 16px',
+        background: 'rgba(0, 0, 0, 0.75)',
         borderRadius: '10px',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
@@ -1053,182 +1054,167 @@ function GameContent() {
           onToggleFreeMode={gameState.toggleFreeMode}
         />
 
-        {/* Time Grains counter - always visible */}
+        {/* Time Grains counter */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
-            padding: '2px 8px',
+            gap: '3px',
+            padding: '2px 6px',
             background: 'rgba(212, 175, 55, 0.2)',
             borderRadius: '4px',
           }}
           title="Time Grains - Stop time to collect, offer to guardians to unlock portals"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <svg width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} viewBox="0 0 24 24" fill="none">
             <path d="M7 4h10v6l-5 8-5-8V4z" fill="#D4AF37" fillOpacity="0.4" stroke="#D4AF37" strokeWidth="1.5"/>
             <path d="M7 20h10v-6l-5-8-5 8v6z" fill="#D4AF37" stroke="#D4AF37" strokeWidth="1.5"/>
             <rect x="6" y="2" width="12" height="2" rx="1" fill="#8B7355"/>
             <rect x="6" y="20" width="12" height="2" rx="1" fill="#8B7355"/>
           </svg>
-          <span style={{
-            color: '#D4AF37',
-            fontSize: '13px',
-            fontWeight: 600,
-          }}>
+          <span style={{ color: '#D4AF37', fontSize: isMobile ? '11px' : '13px', fontWeight: 600 }}>
             {inventory.grains || 0}
           </span>
         </div>
 
-        {/* Desktop only: Essence counters and pyramid */}
+        {/* Essence counters - always visible */}
+        {Object.values(ESSENCE_TYPES).filter(e => e.id !== 'violet').map(essence => (
+          <div
+            key={essence.id}
+            style={{ display: 'flex', alignItems: 'center', gap: '2px' }}
+            title={`${essence.name} (from ${essence.animal} realm) - max 3`}
+          >
+            <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24">
+              {essence.shape === 'tetrahedron' && (
+                <polygon points="12,2 2,22 22,22" fill={essence.color} />
+              )}
+              {essence.shape === 'cube' && (
+                <rect x="4" y="4" width="16" height="16" fill={essence.color} transform="rotate(45 12 12)" />
+              )}
+              {essence.shape === 'octahedron' && (
+                <polygon points="12,1 23,12 12,23 1,12" fill={essence.color} />
+              )}
+            </svg>
+            <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: isMobile ? '10px' : '13px', fontWeight: 500 }}>
+              {Math.min(inventory.essences[essence.id] || 0, 3)}
+            </span>
+          </div>
+        ))}
+
+        {/* Total essence counter for owl unlock */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+            padding: '2px 5px',
+            background: 'rgba(147, 112, 219, 0.3)',
+            borderRadius: '4px',
+          }}
+          title="Total Essences for Owl Realm (9 required)"
+        >
+          <svg width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} viewBox="0 0 24 24" fill="none">
+            <polygon points="12,2 20,8 20,16 12,22 4,16 4,8" fill="#9370DB" stroke="#BA55D3" strokeWidth="1"/>
+          </svg>
+          <span style={{
+            color: Math.min(Object.values(inventory.essences).reduce((a, b) => a + b, 0), 9) >= 9 ? '#90EE90' : '#DDA0DD',
+            fontSize: isMobile ? '10px' : '12px',
+            fontWeight: 600,
+          }}>
+            {Math.min(Object.values(inventory.essences).reduce((a, b) => a + b, 0), 9)}/9
+          </span>
+        </div>
+
+        {/* Spacer */}
+        <div style={{ flex: 1, minWidth: isMobile ? '4px' : '20px' }} />
+
+        {/* Desktop: Pyramid indicator in navbar */}
         {!isMobile && (
-          <>
-            {/* Divider */}
-            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.15)' }} />
-
-            {/* Essence counters - collected from realms (3 per realm, 9 total max) */}
-            {Object.values(ESSENCE_TYPES).filter(e => e.id !== 'violet').map(essence => (
-              <div
-                key={essence.id}
-                style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
-                title={`${essence.name} (from ${essence.animal} realm) - max 3`}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24">
-                  {essence.shape === 'tetrahedron' && (
-                    <polygon points="12,2 2,22 22,22" fill={essence.color} />
-                  )}
-                  {essence.shape === 'cube' && (
-                    <rect x="4" y="4" width="16" height="16" fill={essence.color} transform="rotate(45 12 12)" />
-                  )}
-                  {essence.shape === 'octahedron' && (
-                    <polygon points="12,1 23,12 12,23 1,12" fill={essence.color} />
-                  )}
-                </svg>
-                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '13px', fontWeight: 500 }}>
-                  {Math.min(inventory.essences[essence.id] || 0, 3)}
-                </span>
-              </div>
-            ))}
-
-            {/* Total essence counter for owl unlock - gem icon */}
-            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.15)' }} />
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '2px 6px',
-                background: 'rgba(147, 112, 219, 0.3)',
-                borderRadius: '4px',
-              }}
-              title="Total Essences for Owl Realm (9 required)"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <polygon points="12,2 20,8 20,16 12,22 4,16 4,8" fill="#9370DB" stroke="#BA55D3" strokeWidth="1"/>
-                <polygon points="12,5 16,9 16,15 12,19 8,15 8,9" fill="#DDA0DD" opacity="0.5"/>
-              </svg>
-              <span style={{
-                color: Math.min(Object.values(inventory.essences).reduce((a, b) => a + b, 0), 9) >= 9 ? '#90EE90' : '#DDA0DD',
-                fontSize: '12px',
-                fontWeight: 600,
-              }}>
-                {Math.min(Object.values(inventory.essences).reduce((a, b) => a + b, 0), 9)}/9
-              </span>
-            </div>
-
-            {/* Spacer */}
-            <div style={{ flex: 1 }} />
-
-            {/* Pyramid indicator - desktop */}
-            <div
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px' }}
-              title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/4 shards`}
-            >
-              {[
-                { realm: 'owl', color: '#4B0082' },
-                { realm: 'cat', color: '#FF8C00' },
-                { realm: 'frog', color: '#228B22' },
-                { realm: 'rabbit', color: '#8B4513' },
-              ].map((layer, index) => (
-                <div
-                  key={layer.realm}
-                  style={{
-                    width: `${8 + index * 6}px`,
-                    height: '5px',
-                    background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: index === 0 ? '2px 2px 0 0' : index === 3 ? '0 0 2px 2px' : '0',
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Realm quick-jump buttons - desktop */}
+          <div
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px' }}
+            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/4 Mind Shards`}
+          >
             {[
-              { id: 'hub', color: '#4ade80' },
-              { id: 'rabbit', color: '#ffd700' },
-              { id: 'cat', color: '#ffa500' },
-              { id: 'frog', color: '#22c55e' },
-              { id: 'owl', color: '#8b5cf6' },
-              { id: 'elf', color: '#c4a000', requiresPyramid: true },
-            ].map(realm => {
-              const IconComponent = RealmIcons[realm.id];
-              const isLocked = realm.requiresPyramid && !inventory.isPyramidComplete();
-              return (
-                <button
-                  key={realm.id}
-                  onClick={() => handleRealmSelect(realm.id)}
-                  title={isLocked ? 'Complete all 4 realms to unlock' : realm.id.charAt(0).toUpperCase() + realm.id.slice(1)}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    background: activeRealm === realm.id ? `${realm.color}30` : 'transparent',
-                    border: activeRealm === realm.id ? `2px solid ${realm.color}` : '2px solid transparent',
-                    borderRadius: '6px',
-                    cursor: isLocked ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 0,
-                    opacity: isLocked ? 0.4 : 1,
-                  }}
-                >
-                  <IconComponent size={16} />
-                </button>
-              );
-            })}
-
-            {/* Spacer */}
-            <div style={{ flex: 1 }} />
-
-            {/* Reset button - desktop */}
-            <button
-              onClick={() => setShowResetConfirm(true)}
-              style={{
-                background: 'rgba(255, 100, 100, 0.2)',
-                border: '1px solid rgba(255, 100, 100, 0.4)',
-                borderRadius: '6px',
-                color: '#ff6b6b',
-                fontSize: '11px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                padding: '4px 10px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-              title="Reset all game progress"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                <path d="M3 3v5h5"/>
-              </svg>
-              Reset
-            </button>
-          </>
+              { realm: 'owl', color: '#4B0082' },
+              { realm: 'cat', color: '#FF8C00' },
+              { realm: 'frog', color: '#228B22' },
+              { realm: 'rabbit', color: '#8B4513' },
+            ].map((layer, index) => (
+              <div
+                key={layer.realm}
+                style={{
+                  width: `${8 + index * 6}px`,
+                  height: '5px',
+                  background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
+                  borderRadius: index === 0 ? '2px 2px 0 0' : index === 3 ? '0 0 2px 2px' : '0',
+                }}
+              />
+            ))}
+          </div>
         )}
 
-        {/* Spacer - mobile */}
-        {isMobile && <div style={{ flex: 1 }} />}
+        {/* Desktop: Realm quick-jump buttons */}
+        {!isMobile && [
+          { id: 'hub', color: '#4ade80' },
+          { id: 'rabbit', color: '#ffd700' },
+          { id: 'cat', color: '#ffa500' },
+          { id: 'frog', color: '#22c55e' },
+          { id: 'owl', color: '#8b5cf6' },
+          { id: 'elf', color: '#c4a000', requiresPyramid: true },
+        ].map(realm => {
+          const IconComponent = RealmIcons[realm.id];
+          const isLocked = realm.requiresPyramid && !inventory.isPyramidComplete();
+          return (
+            <button
+              key={realm.id}
+              onClick={() => handleRealmSelect(realm.id)}
+              title={isLocked ? 'Complete all 4 realms to unlock' : realm.id.charAt(0).toUpperCase() + realm.id.slice(1)}
+              style={{
+                width: '28px',
+                height: '28px',
+                background: activeRealm === realm.id ? `${realm.color}30` : 'transparent',
+                border: activeRealm === realm.id ? `2px solid ${realm.color}` : '2px solid transparent',
+                borderRadius: '6px',
+                cursor: isLocked ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                opacity: isLocked ? 0.4 : 1,
+              }}
+            >
+              <IconComponent size={16} />
+            </button>
+          );
+        })}
+
+        {/* Desktop spacer */}
+        {!isMobile && <div style={{ flex: 1 }} />}
+
+        {/* Reset button */}
+        <button
+          onClick={() => setShowResetConfirm(true)}
+          style={{
+            background: 'rgba(255, 100, 100, 0.2)',
+            border: '1px solid rgba(255, 100, 100, 0.4)',
+            borderRadius: '6px',
+            color: '#ff6b6b',
+            fontSize: isMobile ? '9px' : '11px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            padding: isMobile ? '3px 6px' : '4px 10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+          }}
+          title="Reset all game progress"
+        >
+          <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          {!isMobile && 'Reset'}
+        </button>
 
         {/* Testnet ETH link */}
         <a
@@ -1237,15 +1223,15 @@ function GameContent() {
           rel="noopener noreferrer"
           style={{
             color: 'rgba(255,255,255,0.8)',
-            fontSize: isMobile ? '11px' : '13px',
+            fontSize: isMobile ? '10px' : '13px',
             fontWeight: 500,
             textDecoration: 'none',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
+            gap: '3px',
           }}
         >
-          <svg width="12" height="12" viewBox="0 0 256 417" fill="none">
+          <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 256 417" fill="none">
             <path fill="currentColor" fillOpacity="0.6" d="M127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z"/>
             <path fill="currentColor" d="M127.962 0L0 212.32l127.962 75.639V154.158z"/>
             <path fill="currentColor" fillOpacity="0.6" d="M127.961 312.187l-1.575 1.92v98.199l1.575 4.601L256 236.587z"/>
@@ -1262,7 +1248,7 @@ function GameContent() {
             background: 'none',
             border: 'none',
             color: 'rgba(255,255,255,0.8)',
-            fontSize: '15px',
+            fontSize: isMobile ? '14px' : '15px',
             fontWeight: 500,
             cursor: 'pointer',
             padding: 0,
@@ -1273,7 +1259,7 @@ function GameContent() {
         </button>
       </div>
 
-      {/* Mobile Right Sidebar - Realms and Pyramid */}
+      {/* Mobile Right Sidebar - Realms and Pyramid only */}
       {isMobile && (
         <div style={{
           position: 'fixed',
@@ -1284,17 +1270,17 @@ function GameContent() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '6px',
-          padding: '8px',
-          background: 'rgba(0, 0, 0, 0.7)',
+          gap: '4px',
+          padding: '6px',
+          background: 'rgba(0, 0, 0, 0.75)',
           borderRadius: '10px',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
         }}>
           {/* Pyramid indicator */}
           <div
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', marginBottom: '4px' }}
-            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/4 shards`}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', marginBottom: '2px' }}
+            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/4 Mind Shards`}
           >
             {[
               { realm: 'owl', color: '#4B0082' },
@@ -1306,7 +1292,7 @@ function GameContent() {
                 key={layer.realm}
                 style={{
                   width: `${6 + index * 4}px`,
-                  height: '4px',
+                  height: '3px',
                   background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
                   borderRadius: index === 0 ? '2px 2px 0 0' : index === 3 ? '0 0 2px 2px' : '0',
                 }}
@@ -1330,11 +1316,11 @@ function GameContent() {
                 key={realm.id}
                 onClick={() => handleRealmSelect(realm.id)}
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '28px',
+                  height: '28px',
                   background: activeRealm === realm.id ? `${realm.color}30` : 'transparent',
                   border: activeRealm === realm.id ? `2px solid ${realm.color}` : '2px solid rgba(255,255,255,0.2)',
-                  borderRadius: '6px',
+                  borderRadius: '5px',
                   cursor: isLocked ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -1343,7 +1329,7 @@ function GameContent() {
                   opacity: isLocked ? 0.4 : 1,
                 }}
               >
-                <IconComponent size={18} />
+                <IconComponent size={14} />
               </button>
             );
           })}

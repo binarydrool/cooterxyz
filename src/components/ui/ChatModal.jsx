@@ -707,19 +707,27 @@ export default function ChatModal({
                             })}
                           </div>
 
-                          {/* Total counter */}
-                          <div style={{
-                            marginTop: '8px',
-                            padding: '6px',
-                            background: 'rgba(0,0,0,0.3)',
-                            borderRadius: '4px',
-                            textAlign: 'center',
-                          }}>
-                            <span style={{ color: '#888', fontSize: '10px' }}>Total: </span>
-                            <span style={{ color: totalEssences >= 9 ? '#90EE90' : '#ffd700', fontSize: '13px', fontWeight: 600 }}>
-                              {Math.min(totalEssences, 9)}/9
-                            </span>
-                          </div>
+                          {/* Total counter - sum of capped values (max 3 each) */}
+                          {(() => {
+                            const cappedGolden = Math.min(inventory?.essences?.golden || 0, 3);
+                            const cappedForest = Math.min(inventory?.essences?.forest || 0, 3);
+                            const cappedAmber = Math.min(inventory?.essences?.amber || 0, 3);
+                            const cappedTotal = cappedGolden + cappedForest + cappedAmber;
+                            return (
+                              <div style={{
+                                marginTop: '8px',
+                                padding: '6px',
+                                background: 'rgba(0,0,0,0.3)',
+                                borderRadius: '4px',
+                                textAlign: 'center',
+                              }}>
+                                <span style={{ color: '#888', fontSize: '10px' }}>Total: </span>
+                                <span style={{ color: cappedTotal >= 9 ? '#90EE90' : '#ffd700', fontSize: '13px', fontWeight: 600 }}>
+                                  {cappedTotal}/9
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Offer essences button */}

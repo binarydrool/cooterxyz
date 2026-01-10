@@ -833,13 +833,20 @@ function GameContent() {
     audio.playSound(SOUNDS.COLLECT_ESSENCE);
   }, [inventory, audio]);
 
+  // Map essence type to grain color
+  const essenceToGrainColor = (essenceType) => {
+    const mapping = { forest: 'green', golden: 'gold', amber: 'orange', violet: 'purple' };
+    return mapping[essenceType] || 'gold';
+  };
+
   // Grain claimed handler - grains from clock unlock portals (NOT essences)
   const handleGrainClaimed = useCallback((grain) => {
     audio.playSound(SOUNDS.COLLECT_ESSENCE);
+    const grainColor = essenceToGrainColor(grain.essenceType);
     if (gameState.freeMode) {
       // Free mode: collect grain directly to inventory
-      inventory.addGrain();
-      setEssenceNotification('grain'); // Show grain notification
+      inventory.addGrain(grainColor);
+      setEssenceNotification(grainColor); // Show grain color notification
     } else {
       // Paid mode: show mint modal first
       setPendingMintGrain(grain);
@@ -850,8 +857,9 @@ function GameContent() {
   // Handle minting a grain (confirms the mint and adds to inventory)
   const handleMintGrain = useCallback(() => {
     if (!pendingMintGrain) return;
-    inventory.addGrain(); // Add grain, NOT essence
-    setEssenceNotification('grain');
+    const grainColor = essenceToGrainColor(pendingMintGrain.essenceType);
+    inventory.addGrain(grainColor); // Add colored grain
+    setEssenceNotification(grainColor);
     setPendingMintGrain(null);
   }, [pendingMintGrain, inventory]);
 
@@ -1081,29 +1089,37 @@ function GameContent() {
           </div>
         ))}
 
-        {/* Essence total counter - 9 needed for owl realm (no owl icon) */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '3px',
-            padding: '2px 5px',
-            background: 'rgba(212, 175, 55, 0.2)',
-            borderRadius: '4px',
-          }}
-          title="Total Essences collected in realms (9 needed for Owl)"
-        >
-          <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24" fill="none">
-            <polygon points="12,2 2,22 22,22" fill="#D4AF37" />
-          </svg>
-          <span style={{
-            color: ((inventory.essences?.golden || 0) + (inventory.essences?.forest || 0) + (inventory.essences?.amber || 0)) >= 9 ? '#90EE90' : '#D4AF37',
-            fontSize: isMobile ? '10px' : '12px',
-            fontWeight: 600,
-          }}>
-            {Math.min((inventory.essences?.golden || 0) + (inventory.essences?.forest || 0) + (inventory.essences?.amber || 0), 9)}/9
-          </span>
-        </div>
+        {/* Essence total counter - 9 needed for owl realm (capped at 3 per type) */}
+        {(() => {
+          const cappedGolden = Math.min(inventory.essences?.golden || 0, 3);
+          const cappedForest = Math.min(inventory.essences?.forest || 0, 3);
+          const cappedAmber = Math.min(inventory.essences?.amber || 0, 3);
+          const cappedTotal = cappedGolden + cappedForest + cappedAmber;
+          return (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                padding: '2px 5px',
+                background: 'rgba(212, 175, 55, 0.2)',
+                borderRadius: '4px',
+              }}
+              title="Total Essences for Owl (3 from each realm = 9)"
+            >
+              <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24" fill="none">
+                <polygon points="12,2 2,22 22,22" fill="#D4AF37" />
+              </svg>
+              <span style={{
+                color: cappedTotal >= 9 ? '#90EE90' : '#D4AF37',
+                fontSize: isMobile ? '10px' : '12px',
+                fontWeight: 600,
+              }}>
+                {cappedTotal}/9
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Spacer */}
         <div style={{ flex: 1, minWidth: isMobile ? '4px' : '20px' }} />

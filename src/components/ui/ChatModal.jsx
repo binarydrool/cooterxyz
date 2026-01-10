@@ -693,7 +693,7 @@ export default function ChatModal({
                                     {animalName}
                                   </div>
                                   <div style={{ color: hasEnough ? '#90EE90' : count > 0 ? '#ffd700' : '#666', fontSize: '11px', fontWeight: 600 }}>
-                                    {count}/{needed}
+                                    {Math.min(count, needed)}/{needed}
                                   </div>
                                 </div>
                               );
@@ -710,7 +710,7 @@ export default function ChatModal({
                           }}>
                             <span style={{ color: '#888', fontSize: '10px' }}>Total: </span>
                             <span style={{ color: totalEssences >= 9 ? '#90EE90' : '#ffd700', fontSize: '13px', fontWeight: 600 }}>
-                              {totalEssences}/9
+                              {Math.min(totalEssences, 9)}/9
                             </span>
                           </div>
                         </div>

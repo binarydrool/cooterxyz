@@ -290,12 +290,14 @@ export default function ChatModal({
     const result = checkOwlRequirements(inventory);
 
     if (result.correct) {
-      // Remove 3 of each essence type
-      if (result.essenceAmounts) {
-        Object.entries(result.essenceAmounts).forEach(([type, amount]) => {
-          inventory.removeEssence(type, amount);
-        });
-      }
+      // Remove ALL essences from the 3 realm types (golden, forest, amber)
+      // This resets the counter to 0/9
+      const goldenCount = inventory.essences?.golden || 0;
+      const forestCount = inventory.essences?.forest || 0;
+      const amberCount = inventory.essences?.amber || 0;
+      if (goldenCount > 0) inventory.removeEssence('golden', goldenCount);
+      if (forestCount > 0) inventory.removeEssence('forest', forestCount);
+      if (amberCount > 0) inventory.removeEssence('amber', amberCount);
 
       setDialogueHistory(prev => [...prev,
         { role: 'player', content: `*presents nine essences from three realms*` },

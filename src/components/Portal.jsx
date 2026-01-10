@@ -449,6 +449,7 @@ export default function Portal({
   isOpen = false,
   onEnter,
   isNear = false,
+  size = 1.5, // Default portal radius, can be overridden
 }) {
   const groupRef = useRef();
   const style = PORTAL_STYLES[animal] || PORTAL_STYLES.rabbit;
@@ -457,6 +458,8 @@ export default function Portal({
   // Calculate rotation to face the clock center (0, 0, 0)
   const facingAngle = useMemo(() => {
     // Calculate angle from portal position to clock center
+    // For owl at center (0, 0, 0), make it face outward (any direction)
+    if (position[0] === 0 && position[2] === 0) return 0;
     return Math.atan2(position[0], position[2]);
   }, [position]);
 
@@ -471,7 +474,7 @@ export default function Portal({
 
   if (!isOpen) return null;
 
-  const portalRadius = 1.5;
+  const portalRadius = size;
 
   return (
     <group ref={groupRef} position={position}>

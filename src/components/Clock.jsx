@@ -408,7 +408,7 @@ const PORTAL_POSITIONS = {
   cat: [CAT_PORTAL_X, PORTAL_HEIGHT, CAT_PORTAL_Z],
   frog: [FROG_PORTAL_X, PORTAL_HEIGHT, FROG_PORTAL_Z],
   rabbit: [RABBIT_PORTAL_X, PORTAL_HEIGHT, RABBIT_PORTAL_Z],
-  owl: [0, PORTAL_HEIGHT + 0.5, 0],
+  owl: [0, 0.4, 0], // Center of clock, over the main pivot gear
 };
 
 // Wrapper to animate animal jumping into portal
@@ -1584,7 +1584,13 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
       {/* Portals */}
       {Object.entries(unlockedRealms).map(([realm, isUnlocked]) => (
         isUnlocked && PORTAL_POSITIONS[realm] && (
-          <Portal key={realm} position={PORTAL_POSITIONS[realm]} animal={realm} isOpen={true} />
+          <Portal
+            key={realm}
+            position={PORTAL_POSITIONS[realm]}
+            animal={realm}
+            isOpen={true}
+            size={realm === 'owl' ? 0.8 : 1.5} // Owl portal is smaller, in center
+          />
         )
       ))}
 

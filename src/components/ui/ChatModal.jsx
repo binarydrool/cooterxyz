@@ -4,6 +4,18 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { RIDDLES, checkGrainCount, checkOwlRequirements } from '@/utils/riddles';
 import { ESSENCE_TYPES } from '@/hooks/useInventory';
 
+// Hook to detect mobile
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 600);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
+
 // SVG Icons for animals (no emojis)
 const AnimalIcons = {
   cat: ({ size = 32 }) => (
@@ -145,6 +157,7 @@ export default function ChatModal({
 
   const dialogueContainerRef = useRef(null);
   const lastMessageRef = useRef(null);
+  const isMobile = useIsMobile();
 
   const riddle = RIDDLES[animal];
 
@@ -321,10 +334,10 @@ export default function ChatModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'linear-gradient(180deg, #2a2520 0%, #1a1815 100%)',
-          borderRadius: '12px',
-          width: '90%',
-          maxWidth: '700px',
-          maxHeight: '80vh',
+          borderRadius: isMobile ? '8px' : '12px',
+          width: isMobile ? '95%' : '90%',
+          maxWidth: isMobile ? '400px' : '700px',
+          maxHeight: isMobile ? '85vh' : '80vh',
           overflow: 'hidden',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.2)',
         }}>
@@ -382,25 +395,32 @@ export default function ChatModal({
         {/* Main content */}
         <div style={{
           display: 'flex',
-          height: '400px',
+          flexDirection: isMobile ? 'column' : 'row',
+          height: isMobile ? 'auto' : '400px',
+          maxHeight: isMobile ? '60vh' : 'none',
+          overflowY: isMobile ? 'auto' : 'visible',
         }}>
           {/* Left side - Dialogue */}
           <div style={{
-            flex: '1',
-            borderRight: '1px solid rgba(212, 175, 55, 0.2)',
+            flex: isMobile ? 'none' : '1',
+            borderRight: isMobile ? 'none' : '1px solid rgba(212, 175, 55, 0.2)',
+            borderBottom: isMobile ? '1px solid rgba(212, 175, 55, 0.2)' : 'none',
             display: 'flex',
             flexDirection: 'column',
+            minHeight: isMobile ? 'auto' : 'unset',
           }}>
             {/* Dialogue history */}
             <div
               ref={dialogueContainerRef}
               style={{
-                flex: 1,
+                flex: isMobile ? 'none' : 1,
+                minHeight: isMobile ? '100px' : 'auto',
+                maxHeight: isMobile ? '150px' : 'none',
                 overflowY: 'auto',
-                padding: '16px',
+                padding: isMobile ? '12px' : '16px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px',
+                gap: isMobile ? '8px' : '12px',
               }}
             >
               {dialogueHistory.map((msg, i) => (
@@ -409,8 +429,8 @@ export default function ChatModal({
                   ref={i === dialogueHistory.length - 1 ? lastMessageRef : null}
                   style={{
                     alignSelf: msg.role === 'player' ? 'flex-end' : 'flex-start',
-                    maxWidth: '85%',
-                    padding: '10px 14px',
+                    maxWidth: isMobile ? '95%' : '85%',
+                    padding: isMobile ? '8px 10px' : '10px 14px',
                     borderRadius: msg.role === 'player' ? '12px 12px 4px 12px' : '12px 12px 12px 4px',
                     background: msg.role === 'player'
                       ? 'rgba(100, 180, 255, 0.2)'
@@ -418,8 +438,8 @@ export default function ChatModal({
                         ? 'rgba(100, 255, 100, 0.2)'
                         : 'rgba(255, 255, 255, 0.05)',
                     color: msg.isSuccess ? '#90EE90' : '#ccc',
-                    fontSize: '14px',
-                    lineHeight: 1.5,
+                    fontSize: isMobile ? '13px' : '14px',
+                    lineHeight: 1.4,
                     border: msg.isSuccess ? '1px solid rgba(100, 255, 100, 0.3)' : 'none',
                   }}
                 >
@@ -463,12 +483,12 @@ export default function ChatModal({
 
           {/* Right side - Tutorial/Nox questions or Grain input */}
           <div style={{
-            width: '280px',
-            padding: '16px',
+            width: isMobile ? '100%' : '280px',
+            padding: isMobile ? '12px' : '16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
-            overflowY: 'auto',
+            gap: isMobile ? '10px' : '12px',
+            overflowY: isMobile ? 'visible' : 'auto',
           }}>
             {/* Check if portal is already unlocked */}
             {(() => {

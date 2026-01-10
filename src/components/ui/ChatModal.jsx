@@ -129,8 +129,8 @@ const EssenceIcon = ({ type, size = 24 }) => {
   );
 };
 
-// Hourglass icon for grain counter
-const HourglassIcon = ({ size = 48 }) => (
+// Hourglass icon for grain counter (compact)
+const HourglassIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
     <path d="M14 4 H34 V12 L24 24 L14 12 V4 Z" fill="#D4AF37" fillOpacity="0.3" stroke="#D4AF37" strokeWidth="2" />
     <path d="M14 44 H34 V36 L24 24 L14 36 V44 Z" fill="#D4AF37" stroke="#D4AF37" strokeWidth="2" />
@@ -341,32 +341,32 @@ export default function ChatModal({
           overflow: 'hidden',
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.2)',
         }}>
-        {/* Header */}
+        {/* Header - compact */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '16px 20px',
+          padding: isMobile ? '10px 14px' : '12px 16px',
           borderBottom: '1px solid rgba(212, 175, 55, 0.2)',
           background: 'rgba(212, 175, 55, 0.1)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <IconComponent size={32} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <IconComponent size={isMobile ? 24 : 28} />
             <div>
               <div style={{
                 color: '#d4af37',
-                fontSize: '18px',
+                fontSize: isMobile ? '14px' : '16px',
                 fontWeight: 600,
               }}>
                 {riddle.name}
               </div>
               {!isTutorial && !isHoots && (
-                <div style={{ color: '#888', fontSize: '12px' }}>
+                <div style={{ color: '#888', fontSize: '10px' }}>
                   Guardian of the Clock
                 </div>
               )}
               {isHoots && (
-                <div style={{ color: '#d4af37', fontSize: '12px' }}>
+                <div style={{ color: '#d4af37', fontSize: '10px' }}>
                   Rides the Second Hand
                 </div>
               )}
@@ -378,11 +378,11 @@ export default function ChatModal({
               background: 'rgba(255, 255, 255, 0.1)',
               border: 'none',
               borderRadius: '50%',
-              width: '32px',
-              height: '32px',
+              width: '28px',
+              height: '28px',
               cursor: 'pointer',
               color: '#888',
-              fontSize: '18px',
+              fontSize: '16px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -483,11 +483,11 @@ export default function ChatModal({
 
           {/* Right side - Tutorial/Nox questions or Grain input */}
           <div style={{
-            width: isMobile ? '100%' : '280px',
-            padding: isMobile ? '12px' : '16px',
+            width: isMobile ? '100%' : '260px',
+            padding: isMobile ? '10px' : '14px',
             display: 'flex',
             flexDirection: 'column',
-            gap: isMobile ? '10px' : '12px',
+            gap: isMobile ? '8px' : '10px',
             overflowY: isMobile ? 'visible' : 'auto',
           }}>
             {/* Check if portal is already unlocked */}
@@ -643,16 +643,13 @@ export default function ChatModal({
                     {/* Check if owl portal already unlocked */}
                     {isPortalUnlocked ? (
                       <div style={{
-                        padding: '16px',
-                        background: 'linear-gradient(135deg, rgba(100, 255, 100, 0.2) 0%, rgba(0, 255, 100, 0.1) 100%)',
-                        borderRadius: '8px',
+                        padding: '10px',
+                        background: 'rgba(100, 255, 100, 0.15)',
+                        borderRadius: '6px',
                         textAlign: 'center',
                         border: '1px solid rgba(100, 255, 100, 0.3)',
                       }}>
-                        <div style={{ color: '#90EE90', fontWeight: 600 }}>Portal Already Open!</div>
-                        <div style={{ color: '#888', fontSize: '11px', marginTop: '4px' }}>
-                          The Night Sky portal is at 12 o'clock
-                        </div>
+                        <span style={{ color: '#90EE90', fontWeight: 600, fontSize: '12px' }}>Night Sky portal at 12 o'clock!</span>
                       </div>
                     ) : (
                       <>
@@ -738,19 +735,16 @@ export default function ChatModal({
                           </button>
                         )}
 
-                        {/* Portal unlocked */}
+                        {/* Portal unlocked - compact */}
                         {realmUnlocked && (
                           <div style={{
-                            padding: '12px',
-                            background: 'linear-gradient(135deg, rgba(139, 69, 19, 0.3) 0%, rgba(75, 0, 130, 0.2) 100%)',
-                            borderRadius: '8px',
+                            padding: '10px',
+                            background: 'rgba(139, 69, 19, 0.2)',
+                            borderRadius: '6px',
                             textAlign: 'center',
                             border: '1px solid rgba(139, 69, 19, 0.4)',
                           }}>
-                            <div style={{ color: '#FFD700', fontWeight: 600, marginBottom: '4px' }}>Portal Opened!</div>
-                            <div style={{ color: '#888', fontSize: '10px' }}>
-                              The Night Sky awaits at 12 o'clock...
-                            </div>
+                            <span style={{ color: '#FFD700', fontWeight: 600, fontSize: '12px' }}>Portal Opened!</span>
                           </div>
                         )}
                       </>
@@ -765,142 +759,103 @@ export default function ChatModal({
                   {/* Check if portal already unlocked */}
                   {isPortalUnlocked ? (
                     <div style={{
-                      padding: '16px',
-                      background: 'linear-gradient(135deg, rgba(100, 255, 100, 0.2) 0%, rgba(0, 255, 100, 0.1) 100%)',
-                      borderRadius: '8px',
+                      padding: '10px',
+                      background: 'rgba(100, 255, 100, 0.15)',
+                      borderRadius: '6px',
                       textAlign: 'center',
                       border: '1px solid rgba(100, 255, 100, 0.3)',
                     }}>
-                      <div style={{ color: '#90EE90', fontWeight: 600 }}>Portal Already Open!</div>
-                      <div style={{ color: '#888', fontSize: '11px', marginTop: '4px' }}>
-                        Look for {riddle.name}'s portal nearby
-                      </div>
+                      <span style={{ color: '#90EE90', fontWeight: 600, fontSize: '12px' }}>Portal Open - find it nearby!</span>
                     </div>
                   ) : (
                     <>
-                      <div style={{ color: '#888', fontSize: '12px', fontWeight: 600, letterSpacing: '1px' }}>
-                        YOUR TIME GRAINS
-                      </div>
-
-                      {/* Grain counter display */}
-                      <div style={{
-                        padding: '16px',
-                        background: 'rgba(212, 175, 55, 0.1)',
-                        borderRadius: '12px',
-                        textAlign: 'center',
-                        border: '1px solid rgba(212, 175, 55, 0.3)',
-                      }}>
-                        <HourglassIcon size={40} />
-                        <div style={{
-                          fontSize: '28px',
-                          fontWeight: 700,
-                          color: '#d4af37',
-                          marginTop: '8px',
-                        }}>
-                          {totalGrains}
-                        </div>
-                        <div style={{ color: '#888', fontSize: '11px' }}>
-                          Time Grains
-                        </div>
-                        <div style={{ color: '#666', fontSize: '10px', marginTop: '4px' }}>
-                          (Collected from clock by stopping time)
-                        </div>
-                      </div>
-
-                      {/* Hint - clock position */}
+                      {/* Compact grain display with hint */}
                       <div style={{
                         padding: '10px',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '6px',
-                        textAlign: 'center',
+                        background: 'rgba(212, 175, 55, 0.1)',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(212, 175, 55, 0.3)',
                       }}>
-                        <div style={{ color: '#888', fontSize: '11px', fontStyle: 'italic' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                          <HourglassIcon size={20} />
+                          <span style={{ fontSize: '20px', fontWeight: 700, color: '#d4af37' }}>{totalGrains}</span>
+                          <span style={{ color: '#888', fontSize: '11px' }}>Time Grains</span>
+                        </div>
+                        <div style={{ color: '#666', fontSize: '10px', textAlign: 'center', marginTop: '4px', fontStyle: 'italic' }}>
                           "Where I stand on the clock holds the answer..."
                         </div>
                       </div>
 
-                      {/* Grain input - player offers time grains */}
+                      {/* Grain input - compact */}
                       {!realmUnlocked && (
-                        <div style={{
-                          padding: '12px',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '8px',
-                        }}>
-                          <div style={{ color: '#888', fontSize: '11px', marginBottom: '8px', textAlign: 'center' }}>
-                            How many grains will you offer?
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <input
-                              type="number"
-                              min="1"
-                              max={totalGrains}
-                              value={grainInput}
-                              onChange={(e) => setGrainInput(e.target.value)}
-                              placeholder="?"
-                              style={{
-                                flex: 1,
-                                padding: '10px',
-                                background: 'rgba(0, 0, 0, 0.3)',
-                                border: '1px solid rgba(212, 175, 55, 0.3)',
-                                borderRadius: '6px',
-                                color: '#d4af37',
-                                fontSize: '18px',
-                                fontWeight: 600,
-                                textAlign: 'center',
-                                outline: 'none',
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleSubmitGrains();
-                              }}
-                            />
-                            <button
-                              onClick={handleSubmitGrains}
-                              disabled={!grainInput || parseInt(grainInput) > totalGrains}
-                              style={{
-                                padding: '10px 16px',
-                                background: grainInput && parseInt(grainInput) <= totalGrains
-                                  ? 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)'
-                                  : 'rgba(255, 255, 255, 0.1)',
-                                border: 'none',
-                                borderRadius: '6px',
-                                color: grainInput && parseInt(grainInput) <= totalGrains ? '#000' : '#666',
-                                fontSize: '14px',
-                                fontWeight: 600,
-                                cursor: grainInput && parseInt(grainInput) <= totalGrains ? 'pointer' : 'not-allowed',
-                              }}
-                            >
-                              Offer
-                            </button>
-                          </div>
-                          {attemptFeedback && (
-                            <div style={{
-                              marginTop: '8px',
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <span style={{ color: '#888', fontSize: '10px' }}>Offer:</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max={totalGrains}
+                            value={grainInput}
+                            onChange={(e) => setGrainInput(e.target.value)}
+                            placeholder="?"
+                            style={{
+                              flex: 1,
                               padding: '8px',
-                              borderRadius: '4px',
-                              background: attemptFeedback.success ? 'rgba(100, 255, 100, 0.1)' : 'rgba(255, 100, 100, 0.1)',
-                              color: attemptFeedback.success ? '#90EE90' : '#ff6b6b',
-                              fontSize: '11px',
+                              background: 'rgba(0, 0, 0, 0.3)',
+                              border: '1px solid rgba(212, 175, 55, 0.3)',
+                              borderRadius: '6px',
+                              color: '#d4af37',
+                              fontSize: '16px',
+                              fontWeight: 600,
                               textAlign: 'center',
-                            }}>
-                              {attemptFeedback.message}
-                            </div>
-                          )}
+                              outline: 'none',
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSubmitGrains();
+                            }}
+                          />
+                          <button
+                            onClick={handleSubmitGrains}
+                            disabled={!grainInput || parseInt(grainInput) > totalGrains}
+                            style={{
+                              padding: '8px 14px',
+                              background: grainInput && parseInt(grainInput) <= totalGrains
+                                ? 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)'
+                                : 'rgba(255, 255, 255, 0.1)',
+                              border: 'none',
+                              borderRadius: '6px',
+                              color: grainInput && parseInt(grainInput) <= totalGrains ? '#000' : '#666',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: grainInput && parseInt(grainInput) <= totalGrains ? 'pointer' : 'not-allowed',
+                            }}
+                          >
+                            Go
+                          </button>
+                        </div>
+                      )}
+                      {attemptFeedback && (
+                        <div style={{
+                          padding: '6px',
+                          borderRadius: '4px',
+                          background: attemptFeedback.success ? 'rgba(100, 255, 100, 0.1)' : 'rgba(255, 100, 100, 0.1)',
+                          color: attemptFeedback.success ? '#90EE90' : '#ff6b6b',
+                          fontSize: '10px',
+                          textAlign: 'center',
+                        }}>
+                          {attemptFeedback.message}
                         </div>
                       )}
 
-                      {/* Portal unlocked indicator */}
+                      {/* Portal unlocked indicator - compact */}
                       {realmUnlocked && (
                         <div style={{
-                          padding: '16px',
-                          background: 'linear-gradient(135deg, rgba(100, 255, 100, 0.2) 0%, rgba(0, 255, 100, 0.1) 100%)',
-                          borderRadius: '8px',
+                          padding: '10px',
+                          background: 'rgba(100, 255, 100, 0.15)',
+                          borderRadius: '6px',
                           textAlign: 'center',
                           border: '1px solid rgba(100, 255, 100, 0.3)',
                         }}>
-                          <div style={{ color: '#90EE90', fontWeight: 600 }}>Portal Opened!</div>
-                          <div style={{ color: '#888', fontSize: '11px', marginTop: '4px' }}>
-                            Look for the portal near {riddle.name}
-                          </div>
+                          <span style={{ color: '#90EE90', fontWeight: 600, fontSize: '13px' }}>Portal Opened!</span>
                         </div>
                       )}
                     </>
@@ -911,32 +866,30 @@ export default function ChatModal({
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer - compact */}
         <div style={{
           display: 'flex',
           justifyContent: 'flex-end',
           alignItems: 'center',
-          padding: '12px 20px',
+          padding: '10px 16px',
           borderTop: '1px solid rgba(212, 175, 55, 0.2)',
           background: 'rgba(0, 0, 0, 0.2)',
-          gap: '12px',
         }}>
-          {/* Close button - disabled when realm just unlocked (auto-closing) */}
           <button
             onClick={onClose}
             disabled={realmUnlocked}
             style={{
-              padding: '10px 24px',
+              padding: '8px 18px',
               background: realmUnlocked ? 'rgba(100, 255, 100, 0.2)' : 'rgba(255, 255, 255, 0.1)',
               border: realmUnlocked ? '1px solid rgba(100, 255, 100, 0.3)' : '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '6px',
               color: realmUnlocked ? '#90EE90' : '#ccc',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 500,
               cursor: realmUnlocked ? 'default' : 'pointer',
             }}
           >
-            {realmUnlocked ? 'Portal Opening...' : isTutorial ? 'Goodbye, AEIOU!' : isHoots ? 'Farewell, Hoots!' : 'Close'}
+            {realmUnlocked ? 'Opening...' : 'Close'}
           </button>
         </div>
       </div>

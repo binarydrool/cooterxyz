@@ -890,6 +890,10 @@ function GameContent() {
       setChatAnimal('gnome');
     } else if (interactTarget.type === 'hoots') {
       setChatAnimal('hoots');
+    } else if (interactTarget.type === 'nox') {
+      setChatAnimal('nox');
+    } else if (interactTarget.type === 'aeiou' || interactTarget.type === 'dimitrius') {
+      setChatAnimal('aeiou');
     }
   }, [interactTarget, activeRealm]);
 

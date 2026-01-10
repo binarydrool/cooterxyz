@@ -12,7 +12,7 @@ import DifficultySelect from "./ui/DifficultySelect";
 import GlobalMobileControls from "./ui/GlobalMobileControls";
 // MobileRealmSidebar removed - realm navigation consolidated to main navbar
 import { useGameState, GAME_MODES } from "@/hooks/useGameState";
-import { useInventory, ESSENCE_TYPES } from "@/hooks/useInventory";
+import { useInventory, ESSENCE_TYPES, GRAIN_TYPES } from "@/hooks/useInventory";
 import { AudioProvider, useAudio, SOUNDS } from "@/hooks/useAudio";
 import { setTurtlePosition } from "@/hooks/useTurtleMovement";
 import { initKeyboardListeners, useIsMobile } from "@/hooks/useGameInput";
@@ -1058,74 +1058,50 @@ function GameContent() {
           onToggleFreeMode={gameState.toggleFreeMode}
         />
 
-        {/* Time Grains counter */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '3px',
-            padding: '2px 6px',
-            background: 'rgba(212, 175, 55, 0.2)',
-            borderRadius: '4px',
-          }}
-          title="Time Grains - Stop time to collect, offer to guardians to unlock portals"
-        >
-          <svg width={isMobile ? 12 : 14} height={isMobile ? 12 : 14} viewBox="0 0 24 24" fill="none">
-            <path d="M7 4h10v6l-5 8-5-8V4z" fill="#D4AF37" fillOpacity="0.4" stroke="#D4AF37" strokeWidth="1.5"/>
-            <path d="M7 20h10v-6l-5-8-5 8v6z" fill="#D4AF37" stroke="#D4AF37" strokeWidth="1.5"/>
-            <rect x="6" y="2" width="12" height="2" rx="1" fill="#8B7355"/>
-            <rect x="6" y="20" width="12" height="2" rx="1" fill="#8B7355"/>
-          </svg>
-          <span style={{ color: '#D4AF37', fontSize: isMobile ? '11px' : '13px', fontWeight: 600 }}>
-            {inventory.grains || 0}
-          </span>
-        </div>
-
-        {/* Essence counters - always visible */}
-        {Object.values(ESSENCE_TYPES).filter(e => e.id !== 'violet').map(essence => (
+        {/* 4 Colored Time Grain counters - each color goes to a specific animal */}
+        {Object.values(GRAIN_TYPES).map(grain => (
           <div
-            key={essence.id}
-            style={{ display: 'flex', alignItems: 'center', gap: '2px' }}
-            title={`${essence.name} (from ${essence.animal} realm) - max 3`}
+            key={grain.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '2px',
+              padding: '2px 4px',
+              background: `${grain.color}20`,
+              borderRadius: '4px',
+            }}
+            title={`${grain.name} - Give ${grain.needed} to ${grain.animal} to unlock portal`}
           >
-            <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24">
-              {essence.shape === 'tetrahedron' && (
-                <polygon points="12,2 2,22 22,22" fill={essence.color} />
-              )}
-              {essence.shape === 'cube' && (
-                <rect x="4" y="4" width="16" height="16" fill={essence.color} transform="rotate(45 12 12)" />
-              )}
-              {essence.shape === 'octahedron' && (
-                <polygon points="12,1 23,12 12,23 1,12" fill={essence.color} />
-              )}
+            <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="8" fill={grain.color} />
             </svg>
-            <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: isMobile ? '10px' : '13px', fontWeight: 500 }}>
-              {Math.min(inventory.essences[essence.id] || 0, 3)}
+            <span style={{ color: grain.color, fontSize: isMobile ? '10px' : '12px', fontWeight: 600 }}>
+              {inventory.grains?.[grain.id] || 0}
             </span>
           </div>
         ))}
 
-        {/* Total essence counter for owl unlock */}
+        {/* Essence total counter - 9 needed for owl realm (no owl icon) */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '3px',
             padding: '2px 5px',
-            background: 'rgba(147, 112, 219, 0.3)',
+            background: 'rgba(212, 175, 55, 0.2)',
             borderRadius: '4px',
           }}
-          title="Total Essences for Owl Realm (9 required)"
+          title="Total Essences collected in realms (9 needed for Owl)"
         >
-          <svg width={isMobile ? 10 : 14} height={isMobile ? 10 : 14} viewBox="0 0 24 24" fill="none">
-            <polygon points="12,2 20,8 20,16 12,22 4,16 4,8" fill="#9370DB" stroke="#BA55D3" strokeWidth="1"/>
+          <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24" fill="none">
+            <polygon points="12,2 2,22 22,22" fill="#D4AF37" />
           </svg>
           <span style={{
-            color: Math.min(Object.values(inventory.essences).reduce((a, b) => a + b, 0), 9) >= 9 ? '#90EE90' : '#DDA0DD',
+            color: ((inventory.essences?.golden || 0) + (inventory.essences?.forest || 0) + (inventory.essences?.amber || 0)) >= 9 ? '#90EE90' : '#D4AF37',
             fontSize: isMobile ? '10px' : '12px',
             fontWeight: 600,
           }}>
-            {Math.min(Object.values(inventory.essences).reduce((a, b) => a + b, 0), 9)}/9
+            {Math.min((inventory.essences?.golden || 0) + (inventory.essences?.forest || 0) + (inventory.essences?.amber || 0), 9)}/9
           </span>
         </div>
 

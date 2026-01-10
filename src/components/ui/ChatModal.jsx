@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { RIDDLES, checkGrainCount, checkOwlRequirements } from '@/utils/riddles';
-import { ESSENCE_TYPES } from '@/hooks/useInventory';
+import { ESSENCE_TYPES, GRAIN_TYPES } from '@/hooks/useInventory';
 
 // Hook to detect mobile
 function useIsMobile() {
@@ -174,8 +174,13 @@ export default function ChatModal({
   const isOwlRealm = riddle?.isOwlRealm || animal === 'owl';  // Hoots' realm needs victory essences
   const grainsNeeded = riddle?.grainsNeeded || 0;
 
-  // Total GRAINS - for unlocking portals (cat=3, frog=6, rabbit=9)
-  const totalGrains = inventory?.grains || 0;
+  // Find the grain type for this animal (each animal needs a specific color)
+  const grainType = Object.values(GRAIN_TYPES).find(g => g.animal === animal);
+  const grainColor = grainType?.id || 'gold';
+  const grainColorDisplay = grainType?.color || '#FFD700';
+
+  // Total GRAINS of the correct color for this animal
+  const totalGrains = inventory?.grains?.[grainColor] || 0;
 
   // Total ESSENCES needed for owl realm - only count golden, forest, amber (NOT violet)
   // Need 9 total: 3 golden (rabbit) + 3 forest (frog) + 3 amber (cat)
@@ -251,8 +256,8 @@ export default function ChatModal({
 
     // Check if the amount matches what the animal needs
     if (amount === grainsNeeded) {
-      // Correct! Remove grains from inventory
-      inventory.removeGrains(amount);
+      // Correct! Remove grains of the correct color from inventory
+      inventory.removeGrains(grainColor, amount);
 
       setDialogueHistory(prev => [...prev,
         { role: 'player', content: `*offers ${amount} Time Grains*` },
@@ -276,7 +281,7 @@ export default function ChatModal({
       setAttemptFeedback({ success: false, message: "That's not the right amount..." });
     }
     setGrainInput('');
-  }, [realmUnlocked, grainInput, totalGrains, grainsNeeded, inventory, riddle, animal, onUnlockRealm, onClose]);
+  }, [realmUnlocked, grainInput, totalGrains, grainsNeeded, grainColor, inventory, riddle, animal, onUnlockRealm, onClose]);
 
   // Handle owl special unlock (needs 9 essences: 3 from each realm)
   const handleOwlUnlock = useCallback(() => {
@@ -772,20 +777,22 @@ export default function ChatModal({
                     </div>
                   ) : (
                     <>
-                      {/* Compact grain display with hint */}
+                      {/* Compact grain display with color */}
                       <div style={{
                         padding: '10px',
-                        background: 'rgba(212, 175, 55, 0.1)',
+                        background: `${grainColorDisplay}15`,
                         borderRadius: '8px',
-                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                        border: `1px solid ${grainColorDisplay}40`,
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                          <HourglassIcon size={20} />
-                          <span style={{ fontSize: '20px', fontWeight: 700, color: '#d4af37' }}>{totalGrains}</span>
-                          <span style={{ color: '#888', fontSize: '11px' }}>Time Grains</span>
+                          <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="8" fill={grainColorDisplay} />
+                          </svg>
+                          <span style={{ fontSize: '20px', fontWeight: 700, color: grainColorDisplay }}>{totalGrains}</span>
+                          <span style={{ color: '#888', fontSize: '11px' }}>{grainType?.name || 'Grains'}</span>
                         </div>
                         <div style={{ color: '#666', fontSize: '10px', textAlign: 'center', marginTop: '4px', fontStyle: 'italic' }}>
-                          "Where I stand on the clock holds the answer..."
+                          I need {grainsNeeded} {grainType?.name?.toLowerCase() || 'grains'}...
                         </div>
                       </div>
 
@@ -804,9 +811,9 @@ export default function ChatModal({
                               flex: 1,
                               padding: '8px',
                               background: 'rgba(0, 0, 0, 0.3)',
-                              border: '1px solid rgba(212, 175, 55, 0.3)',
+                              border: `1px solid ${grainColorDisplay}50`,
                               borderRadius: '6px',
-                              color: '#d4af37',
+                              color: grainColorDisplay,
                               fontSize: '16px',
                               fontWeight: 600,
                               textAlign: 'center',

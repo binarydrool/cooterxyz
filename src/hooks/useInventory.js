@@ -2,12 +2,20 @@
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
-// Essence types - using platonic solid shapes
+// Time Grain types - 4 colored grains, each given to a specific animal to unlock their portal
+export const GRAIN_TYPES = {
+  GREEN: { id: 'green', name: 'Green Grain', color: '#00FF00', animal: 'frog', needed: 6 },
+  GOLD: { id: 'gold', name: 'Gold Grain', color: '#FFD700', animal: 'rabbit', needed: 9 },
+  ORANGE: { id: 'orange', name: 'Orange Grain', color: '#FFA500', animal: 'cat', needed: 3 },
+  PURPLE: { id: 'purple', name: 'Purple Grain', color: '#9370DB', animal: 'owl', needed: 12 },
+};
+
+// Essence types - collected inside realms, 9 total needed for owl realm
 export const ESSENCE_TYPES = {
-  FOREST: { id: 'forest', name: 'Forest Tetrahedron', color: '#00FF00', emoji: '△', shape: 'tetrahedron', animal: 'frog' },
-  GOLDEN: { id: 'golden', name: 'Golden Cube', color: '#FFD700', emoji: '◇', shape: 'cube', animal: 'rabbit' },
-  AMBER: { id: 'amber', name: 'Amber Octahedron', color: '#FFA500', emoji: '◆', shape: 'octahedron', animal: 'cat' },
-  VIOLET: { id: 'violet', name: 'Violet Icosahedron', color: '#800080', emoji: '⬡', shape: 'icosahedron', animal: 'owl' },
+  FOREST: { id: 'forest', name: 'Forest Essence', color: '#00FF00', emoji: '△', shape: 'tetrahedron', animal: 'frog' },
+  GOLDEN: { id: 'golden', name: 'Golden Essence', color: '#FFD700', emoji: '◇', shape: 'cube', animal: 'rabbit' },
+  AMBER: { id: 'amber', name: 'Amber Essence', color: '#FFA500', emoji: '◆', shape: 'octahedron', animal: 'cat' },
+  VIOLET: { id: 'violet', name: 'Violet Essence', color: '#800080', emoji: '⬡', shape: 'icosahedron', animal: 'owl' },
 };
 
 // Shard types
@@ -32,9 +40,14 @@ export const GRADES = {
 const STORAGE_KEY = 'cooter_inventory';
 
 const initialInventory = {
-  // Time Grains - collected from the clock by stopping time with Y
-  // Used to unlock realm portals: cat=3, frog=6, rabbit=9
-  grains: 0,
+  // Time Grains - 4 colored types, collected from clock by stopping time
+  // Each animal needs a specific color: green→frog(6), gold→rabbit(9), orange→cat(3), purple→owl(12)
+  grains: {
+    green: 0,   // For frog - needs 6
+    gold: 0,    // For rabbit - needs 9
+    orange: 0,  // For cat - needs 3
+    purple: 0,  // For owl - needs 12
+  },
   // Essences - collected INSIDE the realms (3 per realm)
   // Used to unlock owl realm: need 9 total (3 golden + 3 forest + 3 amber)
   essences: {
@@ -82,8 +95,10 @@ function loadInventory() {
       return {
         ...initialInventory,
         ...parsed,
-        // Ensure grains exists (new field)
-        grains: parsed.grains ?? initialInventory.grains,
+        // Ensure grains has all 4 color types (migrate from old single number if needed)
+        grains: typeof parsed.grains === 'object'
+          ? { ...initialInventory.grains, ...parsed.grains }
+          : initialInventory.grains,
         // Ensure essences has all types
         essences: {
           ...initialInventory.essences,
@@ -159,21 +174,45 @@ export function InventoryProvider({ children }) {
     return inventory.essences[type] >= count;
   }, [inventory.essences]);
 
-  // Add time grain (collected from clock by stopping time with Y)
-  const addGrain = useCallback(() => {
+  // Add time grain of a specific color (collected from clock by stopping time with Y)
+  const addGrain = useCallback((color) => {
+    if (!color || !['green', 'gold', 'orange', 'purple'].includes(color)) {
+      console.warn('Invalid grain color:', color);
+      return;
+    }
     setInventory(prev => ({
       ...prev,
-      grains: prev.grains + 1,
+      grains: {
+        ...prev.grains,
+        [color]: (prev.grains[color] || 0) + 1,
+      },
     }));
   }, []);
 
-  // Remove grains (spent to unlock portals)
-  const removeGrains = useCallback((count) => {
+  // Remove grains of a specific color (spent to unlock portals)
+  const removeGrains = useCallback((color, count) => {
+    if (!color || !['green', 'gold', 'orange', 'purple'].includes(color)) {
+      console.warn('Invalid grain color:', color);
+      return;
+    }
     setInventory(prev => ({
       ...prev,
-      grains: Math.max(0, prev.grains - count),
+      grains: {
+        ...prev.grains,
+        [color]: Math.max(0, (prev.grains[color] || 0) - count),
+      },
     }));
   }, []);
+
+  // Check if has enough grains of a specific color
+  const hasGrains = useCallback((color, count = 1) => {
+    return (inventory.grains[color] || 0) >= count;
+  }, [inventory.grains]);
+
+  // Get total grains across all colors
+  const getTotalGrains = useCallback(() => {
+    return Object.values(inventory.grains).reduce((sum, count) => sum + count, 0);
+  }, [inventory.grains]);
 
   // Add random essence (called when collecting essences INSIDE realms only)
   const addRandomEssence = useCallback(() => {
@@ -339,6 +378,8 @@ export function InventoryProvider({ children }) {
     ...inventory,
     addGrain,
     removeGrains,
+    hasGrains,
+    getTotalGrains,
     addEssence,
     removeEssence,
     hasEssence,

@@ -142,39 +142,44 @@ function ActionButton({ nearbyObject, onAction }) {
     }
 
     switch (nearbyObject.type) {
+      // NPCs - all turn blue
       case 'npc':
+      case 'rabbit':
+      case 'cat':
+      case 'frog':
+      case 'gnome':
+      case 'hoots':
+      case 'nox':
+      case 'owl':
         return {
           color: '#3B82F6',
           disabled: false,
-          text: `Talk to ${nearbyObject.name || 'NPC'}`,
+          text: null,
           glowColor: 'rgba(59, 130, 246, 0.5)'
         };
+      // Collectibles - gold/yellow
+      case 'grain':
       case 'essence':
-        return {
-          color: '#F59E0B',
-          disabled: false,
-          text: 'Collect essence',
-          glowColor: 'rgba(245, 158, 11, 0.5)'
-        };
       case 'coin':
         return {
           color: '#EAB308',
           disabled: false,
-          text: 'Collect',
+          text: null,
           glowColor: 'rgba(234, 179, 8, 0.5)'
         };
+      // Portals - purple
       case 'portal':
         return {
           color: '#8B5CF6',
           disabled: false,
-          text: 'Enter portal',
+          text: null,
           glowColor: 'rgba(139, 92, 246, 0.5)'
         };
       case 'powerup':
         return {
           color: nearbyObject.powerupColor || '#00ff88',
           disabled: false,
-          text: 'Collect',
+          text: null,
           glowColor: `${nearbyObject.powerupColor || '#00ff88'}80`
         };
       case 'dimitrius':
@@ -182,15 +187,16 @@ function ActionButton({ nearbyObject, onAction }) {
         return {
           color: '#9933ff',
           disabled: false,
-          text: 'Talk to AEIOU',
+          text: null,
           glowColor: 'rgba(153, 51, 255, 0.5)'
         };
       default:
+        // If there's any nearbyObject, make it active (blue)
         return {
-          color: '#666666',
-          disabled: true,
+          color: '#3B82F6',
+          disabled: false,
           text: null,
-          glowColor: 'transparent'
+          glowColor: 'rgba(59, 130, 246, 0.5)'
         };
     }
   };

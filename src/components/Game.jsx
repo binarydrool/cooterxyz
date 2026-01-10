@@ -1773,6 +1773,8 @@ function GameContent() {
       <GlobalMobileControls
         showJump={true}
         showSprint={activeRealm === 'cat' || activeRealm === 'rabbit' || activeRealm === 'owl'}
+        nearbyObject={interactTarget}
+        onAction={handleInteract}
         disabled={!!chatAnimal || showDifficultySelect}
       />
 

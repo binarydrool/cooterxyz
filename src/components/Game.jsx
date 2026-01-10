@@ -1035,7 +1035,7 @@ function GameContent() {
         position: 'fixed',
         top: '8px',
         left: '8px',
-        right: isMobile ? '56px' : '8px', // Leave space for right sidebar on mobile
+        right: '8px',
         zIndex: 9999,
         pointerEvents: 'auto',
         display: 'flex',
@@ -1259,13 +1259,13 @@ function GameContent() {
         </button>
       </div>
 
-      {/* Mobile Right Sidebar - Realms and Pyramid only */}
+      {/* Mobile Right Sidebar - Realms and Pyramid, positioned below navbar */}
       {isMobile && (
         <div style={{
           position: 'fixed',
-          top: '8px',
+          top: '52px',
           right: '8px',
-          zIndex: 9999,
+          zIndex: 9998,
           pointerEvents: 'auto',
           display: 'flex',
           flexDirection: 'column',

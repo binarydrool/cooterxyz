@@ -1771,7 +1771,7 @@ function GameContent() {
 
       {/* Global Mobile Controls - works across all realms including hub */}
       <GlobalMobileControls
-        showJump={activeRealm !== 'hub'}
+        showJump={true}
         showSprint={activeRealm === 'cat' || activeRealm === 'rabbit' || activeRealm === 'owl'}
         disabled={!!chatAnimal || showDifficultySelect}
       />

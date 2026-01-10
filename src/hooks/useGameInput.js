@@ -191,8 +191,10 @@ export function initKeyboardListeners() {
         setKeyState('right', true);
         break;
       case 'Shift':
-      case ' ':
         setActionState('sprint', true);
+        break;
+      case ' ':
+        setActionState('jump', true);
         break;
       case 'e':
       case 'E':
@@ -224,8 +226,10 @@ export function initKeyboardListeners() {
         setKeyState('right', false);
         break;
       case 'Shift':
-      case ' ':
         setActionState('sprint', false);
+        break;
+      case ' ':
+        setActionState('jump', false);
         break;
       case 'e':
       case 'E':

@@ -74,9 +74,9 @@ function ControlRow({ keys, description }) {
       display: "flex",
       alignItems: "center",
       marginBottom: "6px",
-      gap: "12px",
+      gap: "16px",
     }}>
-      <div style={{ display: "flex", alignItems: "center", minWidth: "100px" }}>
+      <div style={{ display: "flex", alignItems: "center", minWidth: "160px", flexShrink: 0 }}>
         {keys}
       </div>
       <span style={{ color: "rgba(255,255,255,0.85)", fontSize: "13px" }}>
@@ -369,9 +369,9 @@ export default function HelpModal({ isOpen, onClose }) {
           <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "12px" }}>
             <strong>Essence Types (found in realms):</strong>
             <ul style={{ paddingLeft: "20px", margin: "6px 0" }}>
-              <li><span style={{ color: "#FFA500" }}>Amber Essences</span> - hidden in The Rooftops (Cat realm)</li>
+              <li><span style={{ color: "#FFA500" }}>Amber Essences</span> - hidden in The Void (Cat realm)</li>
               <li><span style={{ color: "#00FF00" }}>Forest Essences</span> - hidden in The Lily Marsh (Frog realm)</li>
-              <li><span style={{ color: "#FFD700" }}>Golden Essences</span> - hidden in The Warren (Rabbit realm)</li>
+              <li><span style={{ color: "#FFD700" }}>Golden Essences</span> - hidden in The Hay Maze (Rabbit realm)</li>
             </ul>
           </div>
 
@@ -387,7 +387,7 @@ export default function HelpModal({ isOpen, onClose }) {
 
           <CharacterRow
             name="AEIOU"
-            position="Near center"
+            position="12 o'clock"
             color="#888"
             description="The shattered gnome jester. Can only say '...' until his mind is restored. The floating amber pyramid near him shows which Mind Shards you've collected."
           />
@@ -403,7 +403,7 @@ export default function HelpModal({ isOpen, onClose }) {
             name="Kittle"
             position="3 o'clock"
             color="#FFA500"
-            description="Orange cat guarding The Rooftops portal. Offer Time Grains to unlock. Realm contains Amber Essences and a Mind Shard."
+            description="Orange cat guarding The Void portal. Offer Time Grains to unlock. Realm contains Amber Essences and a Mind Shard."
           />
 
           <CharacterRow
@@ -417,19 +417,19 @@ export default function HelpModal({ isOpen, onClose }) {
             name="Bunzy"
             position="9 o'clock"
             color="#DEB887"
-            description="Cream rabbit guarding The Warren portal. Offer Time Grains to unlock. Realm contains Golden Essences and a Mind Shard."
+            description="Cream rabbit guarding The Hay Maze portal. Offer Time Grains to unlock. Realm contains Golden Essences and a Mind Shard."
           />
 
           {/* ============== THE REALMS ============== */}
           <SectionHeader color="#4B0082">The Four Realms</SectionHeader>
 
           <RealmRow
-            name="The Rooftops"
+            name="The Void"
             guardian="Kittle (Cat)"
             unlockCost="Time Grains"
             essence="Amber"
             color="#FFA500"
-            description="Platform across moonlit rooftops collecting fish. Find all the hidden Amber Essences and the Mind Shard to complete."
+            description="Navigate through a dark void avoiding anglerfish. Find all the hidden Amber Essences and the Mind Shard to complete."
           />
 
           <RealmRow
@@ -442,7 +442,7 @@ export default function HelpModal({ isOpen, onClose }) {
           />
 
           <RealmRow
-            name="The Warren"
+            name="The Hay Maze"
             guardian="Bunzy (Rabbit)"
             unlockCost="Time Grains"
             essence="Golden"
@@ -483,6 +483,7 @@ export default function HelpModal({ isOpen, onClose }) {
             Play without blockchain. All progress is saved locally in your browser.
             Click the <strong style={{ color: "#4ade80" }}>Cooter logo</strong> in the top-left to toggle between modes.
             When the turtle icon has a <span style={{ color: "#4ade80" }}>green glow</span>, Free Mode is active.
+            When blockchain is turned off, the logo turns <span style={{ color: "#60a5fa" }}>blue</span>.
           </div>
 
           <SubHeader>Blockchain Mode</SubHeader>

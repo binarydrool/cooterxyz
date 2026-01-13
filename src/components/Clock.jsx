@@ -614,27 +614,33 @@ function Nox({ dejaVuState }) {
 
     const { isActive, progress } = dejaVuState;
 
-    let currentAngle = NOX_REST_ANGLE;
+    // Nox jumps FORWARD (toward center) when stopping time, not sideways
+    let jumpForwardAmount = 0;
+    let jumpHeight = 0;
 
     if (isActive) {
       let jumpProgress = 0;
-      if (progress < 0.05) {
-        jumpProgress = progress / 0.05;
-      } else if (progress > 0.95) {
-        jumpProgress = (1 - progress) / 0.05;
+      if (progress < 0.1) {
+        jumpProgress = progress / 0.1; // Quick jump forward
+      } else if (progress > 0.9) {
+        jumpProgress = (1 - progress) / 0.1; // Return back
       } else {
-        jumpProgress = 1;
+        jumpProgress = 1; // Hold position
       }
 
-      const blockAngleNormalized = -(Math.PI * 2 - NOX_BLOCK_ANGLE);
-      currentAngle = NOX_REST_ANGLE + blockAngleNormalized * jumpProgress;
+      // Jump forward toward center and up
+      jumpForwardAmount = jumpProgress * (CLOCK_RADIUS * 0.3); // Move toward center
+      jumpHeight = Math.sin(jumpProgress * Math.PI) * 0.8; // Arc up and down
     }
 
-    const x = Math.sin(currentAngle) * NOX_BASE_DISTANCE;
-    const z = Math.cos(currentAngle) * NOX_BASE_DISTANCE;
+    // Position: start at rest, jump forward (reduce distance from center)
+    const currentDistance = NOX_BASE_DISTANCE - jumpForwardAmount;
+    const x = Math.sin(NOX_REST_ANGLE) * currentDistance;
+    const z = Math.cos(NOX_REST_ANGLE) * currentDistance;
     groupRef.current.position.x = x;
     groupRef.current.position.z = z;
-    groupRef.current.rotation.y = -currentAngle + Math.PI;
+    groupRef.current.position.y = CLOCK_THICKNESS / 2 + jumpHeight;
+    groupRef.current.rotation.y = -NOX_REST_ANGLE + Math.PI;
 
     // Glow effect when active
     const glowScale = isActive ? 1.05 : 1;
@@ -1358,16 +1364,19 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
 
         // Check if déjà vu is complete
         if (dv.progress >= 1) {
-          // Spawn time grain!
+          // Spawn 3 time grains with random colors!
           const essenceTypes = ['forest', 'golden', 'amber', 'violet'];
-          const randomEssence = essenceTypes[Math.floor(Math.random() * essenceTypes.length)];
-          const newGrain = {
-            id: Date.now(),
-            position: getRandomClockPosition(),
-            spawnTime: Date.now() / 1000,
-            essenceType: randomEssence,
-          };
-          setSandGrains(prev => [...prev, newGrain]);
+          const newGrains = [];
+          for (let i = 0; i < 3; i++) {
+            const randomEssence = essenceTypes[Math.floor(Math.random() * essenceTypes.length)];
+            newGrains.push({
+              id: Date.now() + i, // Unique IDs
+              position: getRandomClockPosition(),
+              spawnTime: Date.now() / 1000,
+              essenceType: randomEssence,
+            });
+          }
+          setSandGrains(prev => [...prev, ...newGrains]);
 
           // End déjà vu
           dv.isActive = false;

@@ -174,13 +174,21 @@ export default function ChatModal({
   const isOwlRealm = riddle?.isOwlRealm || animal === 'owl';  // Hoots' realm needs victory essences
   const grainsNeeded = riddle?.grainsNeeded || 0;
 
-  // Find the grain type for this animal (each animal needs a specific color)
+  // Find the grain type for this animal (each animal needs a specific color) - but don't reveal it!
   const grainType = Object.values(GRAIN_TYPES).find(g => g.animal === animal);
-  const grainColor = grainType?.id || 'gold';
-  const grainColorDisplay = grainType?.color || '#FFD700';
+  const correctGrainColor = grainType?.id || 'gold';
+  const grainsNeededCount = grainType?.needed || 3;
 
-  // Total GRAINS of the correct color for this animal
-  const totalGrains = inventory?.grains?.[grainColor] || 0;
+  // All grain colors available to offer
+  const allGrainColors = ['green', 'gold', 'orange', 'purple'];
+
+  // Get total of each grain color the player has
+  const getGrainCount = (color) => inventory?.grains?.[color] || 0;
+  const totalAllGrains = allGrainColors.reduce((sum, c) => sum + getGrainCount(c), 0);
+
+  // Track how many correct grains have been offered to this animal
+  const [correctGrainsOffered, setCorrectGrainsOffered] = useState(0);
+  const [selectedGrainColor, setSelectedGrainColor] = useState(null);
 
   // Total ESSENCES needed for owl realm - only count golden, forest, amber (NOT violet)
   // Need 9 total: 3 golden (rabbit) + 3 forest (frog) + 3 amber (cat)
@@ -240,48 +248,64 @@ export default function ChatModal({
   }, []);
 
   // Handle grain submission (player offers time grains to unlock portals)
-  const handleSubmitGrains = useCallback(() => {
-    if (realmUnlocked || !grainInput) return;
+  // Now allows ANY color - wrong colors get burned, right colors count toward unlock
+  const handleOfferGrain = useCallback((color) => {
+    if (realmUnlocked) return;
 
-    const amount = parseInt(grainInput, 10);
-    if (isNaN(amount) || amount <= 0) {
-      setAttemptFeedback({ success: false, message: "Enter a valid number." });
+    const grainCount = getGrainCount(color);
+    if (grainCount <= 0) {
+      setAttemptFeedback({ success: false, message: "You don't have any of those!" });
       return;
     }
 
-    if (amount > totalGrains) {
-      setAttemptFeedback({ success: false, message: "You don't have that many grains!" });
-      return;
-    }
+    // Remove 1 grain of offered color
+    inventory.removeGrains(color, 1);
 
-    // Check if the amount matches what the animal needs
-    if (amount === grainsNeeded) {
-      // Correct! Remove grains of the correct color from inventory
-      inventory.removeGrains(grainColor, amount);
+    const colorNames = { green: 'Green', gold: 'Gold', orange: 'Orange', purple: 'Purple' };
+    const colorName = colorNames[color] || color;
 
-      setDialogueHistory(prev => [...prev,
-        { role: 'player', content: `*offers ${amount} Time Grains*` },
-        { role: 'animal', content: riddle.unlockMessage, isSuccess: true },
-      ]);
-      setRealmUnlocked(true);
-      setAttemptFeedback({ success: true, message: "Correct!" });
+    if (color === correctGrainColor) {
+      // Correct color! Add to count
+      const newCount = correctGrainsOffered + 1;
+      setCorrectGrainsOffered(newCount);
 
-      // Close modal after a brief moment, then trigger portal
-      setTimeout(() => {
-        if (onUnlockRealm) {
-          onUnlockRealm(animal);
-        }
-        onClose();
-      }, 1200);
+      if (newCount >= grainsNeededCount) {
+        // Unlock!
+        setDialogueHistory(prev => [...prev,
+          { role: 'player', content: `*offers a ${colorName} Grain*` },
+          { role: 'animal', content: riddle.unlockMessage, isSuccess: true },
+        ]);
+        setRealmUnlocked(true);
+        setAttemptFeedback({ success: true, message: "Portal Unlocked!" });
+
+        setTimeout(() => {
+          if (onUnlockRealm) onUnlockRealm(animal);
+          onClose();
+        }, 1200);
+      } else {
+        // Accepted but need more
+        setDialogueHistory(prev => [...prev,
+          { role: 'player', content: `*offers a ${colorName} Grain*` },
+          { role: 'animal', content: `*accepts the grain* Yes... this is what I seek. Bring me more.` },
+        ]);
+        setAttemptFeedback({ success: true, message: `Accepted! (${newCount}/${grainsNeededCount})` });
+      }
     } else {
+      // Wrong color - grain is burned/rejected
       setDialogueHistory(prev => [...prev,
-        { role: 'player', content: `*offers ${amount} Time Grains*` },
-        { role: 'animal', content: riddle.wrongMessage },
+        { role: 'player', content: `*offers a ${colorName} Grain*` },
+        { role: 'animal', content: `*the grain crumbles to dust* No... this is not what I need. The essence is wrong.` },
       ]);
-      setAttemptFeedback({ success: false, message: "That's not the right amount..." });
+      setAttemptFeedback({ success: false, message: "Wrong type! Grain burned." });
     }
-    setGrainInput('');
-  }, [realmUnlocked, grainInput, totalGrains, grainsNeeded, grainColor, inventory, riddle, animal, onUnlockRealm, onClose]);
+  }, [realmUnlocked, correctGrainColor, correctGrainsOffered, grainsNeededCount, inventory, riddle, animal, onUnlockRealm, onClose, getGrainCount]);
+
+  // Keep old function for backwards compatibility but redirect
+  const handleSubmitGrains = useCallback(() => {
+    if (selectedGrainColor) {
+      handleOfferGrain(selectedGrainColor);
+    }
+  }, [selectedGrainColor, handleOfferGrain]);
 
   // Handle owl special unlock (needs 9 essences: 3 from each realm)
   const handleOwlUnlock = useCallback(() => {
@@ -771,7 +795,14 @@ export default function ChatModal({
                 );
               }
 
-              // Regular animal - grain input (cat=3, frog=6, rabbit=9)
+              // Regular animal - offer grains (any color, wrong ones burn)
+              const grainColors = [
+                { id: 'green', name: 'Green', color: '#00FF00' },
+                { id: 'gold', name: 'Gold', color: '#FFD700' },
+                { id: 'orange', name: 'Orange', color: '#FFA500' },
+                { id: 'purple', name: 'Purple', color: '#9370DB' },
+              ];
+
               return (
                 <>
                   {/* Check if portal already unlocked */}
@@ -787,86 +818,82 @@ export default function ChatModal({
                     </div>
                   ) : (
                     <>
-                      {/* Compact grain display with color */}
+                      {/* Progress tracker - doesn't reveal which color */}
                       <div style={{
                         padding: '10px',
-                        background: `${grainColorDisplay}15`,
+                        background: 'rgba(212, 175, 55, 0.1)',
                         borderRadius: '8px',
-                        border: `1px solid ${grainColorDisplay}40`,
+                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                        textAlign: 'center',
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                          <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="8" fill={grainColorDisplay} />
-                          </svg>
-                          <span style={{ fontSize: '20px', fontWeight: 700, color: grainColorDisplay }}>{totalGrains}</span>
-                          <span style={{ color: '#888', fontSize: '11px' }}>{grainType?.name || 'Grains'}</span>
+                        <div style={{ color: '#888', fontSize: '10px', marginBottom: '4px' }}>Accepted Offerings</div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, color: '#d4af37' }}>
+                          {correctGrainsOffered} / ?
                         </div>
-                        <div style={{ color: '#666', fontSize: '10px', textAlign: 'center', marginTop: '4px', fontStyle: 'italic' }}>
-                          I need {grainsNeeded} {grainType?.name?.toLowerCase() || 'grains'}...
+                        <div style={{ color: '#666', fontSize: '9px', fontStyle: 'italic', marginTop: '4px' }}>
+                          Offer grains to discover what I seek...
                         </div>
                       </div>
 
-                      {/* Grain input - compact */}
+                      {/* Grain offering buttons - all colors */}
                       {!realmUnlocked && (
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                          <span style={{ color: '#888', fontSize: '10px' }}>Offer:</span>
-                          <input
-                            type="number"
-                            min="1"
-                            max={totalGrains}
-                            value={grainInput}
-                            onChange={(e) => setGrainInput(e.target.value)}
-                            placeholder="?"
-                            style={{
-                              flex: 1,
-                              padding: '8px',
-                              background: 'rgba(0, 0, 0, 0.3)',
-                              border: `1px solid ${grainColorDisplay}50`,
-                              borderRadius: '6px',
-                              color: grainColorDisplay,
-                              fontSize: '16px',
-                              fontWeight: 600,
-                              textAlign: 'center',
-                              outline: 'none',
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSubmitGrains();
-                            }}
-                          />
-                          <button
-                            onClick={handleSubmitGrains}
-                            disabled={!grainInput || parseInt(grainInput) > totalGrains}
-                            style={{
-                              padding: '8px 14px',
-                              background: grainInput && parseInt(grainInput) <= totalGrains
-                                ? 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)'
-                                : 'rgba(255, 255, 255, 0.1)',
-                              border: 'none',
-                              borderRadius: '6px',
-                              color: grainInput && parseInt(grainInput) <= totalGrains ? '#000' : '#666',
-                              fontSize: '12px',
-                              fontWeight: 600,
-                              cursor: grainInput && parseInt(grainInput) <= totalGrains ? 'pointer' : 'not-allowed',
-                            }}
-                          >
-                            Go
-                          </button>
-                        </div>
+                        <>
+                          <div style={{ color: '#888', fontSize: '10px', fontWeight: 600, letterSpacing: '1px' }}>
+                            OFFER A GRAIN
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                            {grainColors.map(grain => {
+                              const count = getGrainCount(grain.id);
+                              const hasGrain = count > 0;
+                              return (
+                                <button
+                                  key={grain.id}
+                                  onClick={() => handleOfferGrain(grain.id)}
+                                  disabled={!hasGrain}
+                                  style={{
+                                    padding: '10px 8px',
+                                    background: hasGrain ? `${grain.color}20` : 'rgba(255,255,255,0.05)',
+                                    border: `2px solid ${hasGrain ? grain.color : 'rgba(255,255,255,0.1)'}`,
+                                    borderRadius: '8px',
+                                    cursor: hasGrain ? 'pointer' : 'not-allowed',
+                                    opacity: hasGrain ? 1 : 0.4,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                  }}
+                                >
+                                  <svg width={20} height={20} viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="8" fill={grain.color} />
+                                  </svg>
+                                  <span style={{ color: grain.color, fontSize: '11px', fontWeight: 600 }}>
+                                    {grain.name}
+                                  </span>
+                                  <span style={{ color: '#888', fontSize: '9px' }}>
+                                    x{count}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
                       )}
+
                       {attemptFeedback && (
                         <div style={{
-                          padding: '6px',
-                          borderRadius: '4px',
-                          background: attemptFeedback.success ? 'rgba(100, 255, 100, 0.1)' : 'rgba(255, 100, 100, 0.1)',
+                          padding: '8px',
+                          borderRadius: '6px',
+                          background: attemptFeedback.success ? 'rgba(100, 255, 100, 0.15)' : 'rgba(255, 100, 100, 0.15)',
                           color: attemptFeedback.success ? '#90EE90' : '#ff6b6b',
-                          fontSize: '10px',
+                          fontSize: '11px',
                           textAlign: 'center',
+                          border: attemptFeedback.success ? '1px solid rgba(100, 255, 100, 0.3)' : '1px solid rgba(255, 100, 100, 0.3)',
                         }}>
                           {attemptFeedback.message}
                         </div>
                       )}
 
-                      {/* Portal unlocked indicator - compact */}
+                      {/* Portal unlocked indicator */}
                       {realmUnlocked && (
                         <div style={{
                           padding: '10px',

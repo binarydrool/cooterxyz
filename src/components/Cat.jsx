@@ -27,8 +27,8 @@ const EYE_PUPIL = "#003300"; // Dark green pupils
 const EYE_GLOW = true; // Enable glow effect
 
 // Jump settings - cats jump gracefully with extended hang time
-const JUMP_HEIGHT = 1.9;       // Higher jump than rabbit
-const JUMP_DURATION = 1.4;     // Longer duration for more hang time
+const JUMP_HEIGHT = 2.4;       // Higher jump to clear second hand
+const JUMP_DURATION = 1.8;     // Extended hang time
 const JUMP_COOLDOWN = 2000;    // ms cooldown between jumps
 const HANG_TIME_FACTOR = 0.6;  // Extended hang time at peak
 

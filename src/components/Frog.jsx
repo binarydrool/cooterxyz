@@ -25,8 +25,8 @@ const EYE_COLOR = "#FFD700"; // Gold
 const EYE_PUPIL = "#000000";
 
 // Jump settings - frogs have powerful legs and extended hang time
-const JUMP_HEIGHT = 1.7;
-const JUMP_DURATION = 1.3;
+const JUMP_HEIGHT = 2.2;       // Higher to clear second hand
+const JUMP_DURATION = 1.7;     // Extended hang time
 const JUMP_COOLDOWN = 2000;
 const HANG_TIME_FACTOR = 0.55; // Extended hang time at peak
 

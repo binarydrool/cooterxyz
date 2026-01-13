@@ -20,8 +20,8 @@ const NOSE_COLOR = "#d4a5a5"; // Pink nose
 const EYE_COLOR = "#2a1810"; // Dark brown eyes
 
 // Jump settings - slower, more fluid hop with extended hang time
-const JUMP_HEIGHT = 1.8;       // High enough to clear second hand with margin
-const JUMP_DURATION = 1.4;     // Longer duration for more hang time
+const JUMP_HEIGHT = 2.3;       // High enough to clear second hand with margin
+const JUMP_DURATION = 1.8;     // Extended hang time
 const JUMP_COOLDOWN = 2000;    // ms cooldown between jumps
 const HANG_TIME_FACTOR = 0.6;  // Extended hang time at peak (0-1)
 

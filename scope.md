@@ -12,9 +12,9 @@
 
 The main hub is a massive interactive 3D golden analog clock. The clock drives the core "Deja Vu" mechanic:
 
-- **Every 59 seconds:** Amadeus the Wizard blocks the second hand
+- **Every 59 seconds:** Amadeus (Y/Nox) the Wizard jumps forward toward the center and blocks the second hand
 - **3-second time freeze:** Gears stop, second hand glows cyan
-- **Essence spawns:** One collectible sand grain appears on the clock face
+- **Essence spawns:** Three collectible sand grains appear on the clock face with random colors (Forest, Golden, Amber, or Violet)
 - **Resume:** Second hand catches up rapidly to real time
 
 ### Hub Layout
@@ -41,10 +41,10 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
 |-----------|------|----------|------|
 | **Cooter** | Turtle | Player-controlled | Protagonist - the player |
 | **Dimitrius** | Gnome Jester | 12 o'clock rim | Guardian, realm gatekeeper, final boss |
-| **Amadeus** | Wizard | 12 o'clock | Time blocker, triggers Deja Vu |
+| **Amadeus (Y/Nox)** | Wizard | 12 o'clock | Time blocker, triggers Deja Vu, jumps forward to stop time |
 | **Hoots** | Barn Owl | Second hand tip | Hint giver, rides the clock |
 
-### Portal Guardians (Jump over second hand when it approaches)
+### Portal Guardians (Jump over second hand when it approaches - with extended hang time)
 
 | Character | Location | Realm |
 |-----------|----------|-------|
@@ -67,28 +67,29 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
 - Tall pointed hat with bells
 - Curly-toed jester shoes
 
-**Amadeus the Wizard**
+**Amadeus (Y/Nox) the Wizard**
 - Tall wizard with black gown
 - White hair and long beard
 - Large brimmed hat
 - Floating magical orbs
-- Blocks the second hand at 59 sec
+- Jumps forward toward center and blocks the second hand at 59 sec
+- Extended hang time during jump animation
 
 **Rabbit**
 - Cream/beige fur with pink inner ears
 - Brown eyes, energetic personality
-- Jumps gracefully over the second hand
+- Jumps gracefully over the second hand with extended hang time
 
 **Cat**
 - Orange tabby with cream belly
 - Green eyes, pink nose
 - Constantly swishing tail
-- Graceful, arched jump animation
+- Graceful, arched jump animation with extended hang time
 
 **Frog**
 - Bright green with bulging eyes
 - Relaxed, contemplative personality
-- Hops periodically
+- Hops over second hand with extended hang time
 
 **Hoots**
 - Barn owl (tiny, 0.25 scale)
@@ -245,6 +246,18 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
 
 Essences also spawn on the clock during Deja Vu events.
 
+### Grain Offering System
+
+Each portal guardian (Cat, Frog, Rabbit) requires a specific type of essence grain to unlock their portal. However, they don't reveal which color they need - players must discover this through trial and error:
+
+- **Mystery Mechanic:** Animals keep their required grain color secret
+- **Offering Grains:** Players can offer any collected grain to an animal
+- **Correct Grain:** Accepted! Counts toward portal unlocking
+- **Wrong Grain:** Burned/rejected! The grain crumbles to dust and is lost
+- **Risk/Reward:** Players must strategically decide which grains to offer
+
+This adds a layer of mystery and resource management to the hub gameplay.
+
 ### Pyramid Shards
 
 Complete each realm to earn a pyramid shard:
@@ -392,5 +405,12 @@ The four guardian animals (Rabbit, Frog, Cat, Owl) each protect a portal to thei
 
 ## Version
 
-**Current:** v1.0.0
+**Current:** v1.1.0
 **Last Updated:** January 2026
+
+### Changelog v1.1.0
+- Amadeus (Y/Nox) now jumps forward toward center instead of sideways when stopping time
+- Deja Vu events now spawn 3 grains with random colors (was 1)
+- Added Grain Offering System - animals keep required grain color secret, wrong offerings burn
+- Enhanced animal jump animations with extended hang time to clear the second hand
+- Performance optimizations (Date caching, reduced geometry, callback optimization)

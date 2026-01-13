@@ -397,6 +397,25 @@ function MindFusionSpell({ onComplete }) {
         }}>
           {phaseTexts[phase].subtitle}
         </p>
+
+        {/* Skip/Continue button */}
+        <button
+          onClick={onComplete}
+          style={{
+            marginTop: '30px',
+            padding: '12px 32px',
+            background: phase >= 3 ? 'linear-gradient(135deg, #ffd700, #ff8c00)' : 'rgba(139, 92, 246, 0.3)',
+            border: phase >= 3 ? 'none' : '1px solid #8b5cf6',
+            borderRadius: '8px',
+            color: '#fff',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+          }}
+        >
+          {phase >= 3 ? 'Continue' : 'Skip'}
+        </button>
       </div>
 
       <style jsx global>{`
@@ -1023,7 +1042,7 @@ function GameContent() {
               }}
               dpr={1}
               shadows={false}
-              frameloop="demand"
+              frameloop="always"
             >
               <Scene
                 onCameraModeChange={handleCameraModeChange}
@@ -1352,6 +1371,7 @@ function GameContent() {
           onQuit={handleRealmExit}
           onNavigateRealm={handleNavigateRealm}
           onEssenceCollected={handleEssenceCollected}
+          hasPyramidShard={inventory.pyramidShards?.rabbit}
         />
       )}
       {activeRealm === 'cat' && (
@@ -1363,6 +1383,7 @@ function GameContent() {
           onDeath={handleRealmDeath}
           onQuit={handleRealmExit}
           onNavigateRealm={handleNavigateRealm}
+          hasPyramidShard={inventory.pyramidShards?.cat}
         />
       )}
       {activeRealm === 'frog' && (
@@ -1375,6 +1396,7 @@ function GameContent() {
           onExit={handleRealmExit}
           onQuit={handleRealmExit}
           onNavigateRealm={handleNavigateRealm}
+          hasPyramidShard={inventory.pyramidShards?.frog}
         />
       )}
       {activeRealm === 'owl' && (
@@ -1387,6 +1409,7 @@ function GameContent() {
           onExit={handleRealmExit}
           onQuit={handleRealmExit}
           onNavigateRealm={handleNavigateRealm}
+          hasPyramidShard={inventory.pyramidShards?.owl}
         />
       )}
       {activeRealm === 'elf' && (

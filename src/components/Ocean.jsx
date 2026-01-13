@@ -152,25 +152,30 @@ export default function Ocean() {
   // Create water shader material
   const material = useMemo(() => createWaterMaterial(), []);
 
+  // Cache hour to avoid creating Date objects every frame
+  const lastHourRef = useRef(-1);
+  const cachedColorRef = useRef(new THREE.Color(0x0077be));
+  const cachedFogRef = useRef(new THREE.Color(0x87ceeb));
+
   useFrame((state) => {
     if (!materialRef.current) return;
 
-    const time = state.clock.elapsedTime;
-
     // Update shader time uniform
-    materialRef.current.uniforms.time.value = time;
+    materialRef.current.uniforms.time.value = state.clock.elapsedTime;
 
-    // Update color based on time of day
-    const hour = new Date().getHours();
-    const targetColor = getOceanColor(hour);
-    materialRef.current.uniforms.waterColor.value.lerp(targetColor, 0.01);
+    // Only check hour once per second (not every frame)
+    const frameCount = Math.floor(state.clock.elapsedTime);
+    if (frameCount !== lastHourRef.current) {
+      lastHourRef.current = frameCount;
+      const hour = new Date().getHours();
+      cachedColorRef.current = getOceanColor(hour);
+      const isNight = hour >= 20 || hour < 5;
+      cachedFogRef.current = isNight ? new THREE.Color(0x0a0a1a) : new THREE.Color(0x87ceeb);
+    }
 
-    // Update fog color based on sky
-    const isNight = hour >= 20 || hour < 5;
-    const fogTarget = isNight
-      ? new THREE.Color(0x0a0a1a)
-      : new THREE.Color(0x87ceeb);
-    materialRef.current.uniforms.fogColor.value.lerp(fogTarget, 0.01);
+    // Smooth lerp to cached colors
+    materialRef.current.uniforms.waterColor.value.lerp(cachedColorRef.current, 0.01);
+    materialRef.current.uniforms.fogColor.value.lerp(cachedFogRef.current, 0.01);
   });
 
   return (
@@ -179,7 +184,7 @@ export default function Ocean() {
       position={[0, OCEAN_DEPTH, 0]}
       rotation={[-Math.PI / 2, 0, 0]}
     >
-      <planeGeometry args={[OCEAN_SIZE, OCEAN_SIZE, 128, 128]} />
+      <planeGeometry args={[OCEAN_SIZE, OCEAN_SIZE, 32, 32]} />
       <primitive ref={materialRef} object={material} attach="material" />
     </mesh>
   );

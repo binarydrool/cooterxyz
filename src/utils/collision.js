@@ -4,7 +4,7 @@ import { CLOCK_RADIUS } from "./clockMath";
  * Check if a point is inside the clock circle
  * @param {number} x - X coordinate
  * @param {number} z - Z coordinate
- * @param {number} margin - Safety margin from edge (default 0.3)
+ * @param {number} margin - Safety margin from edge (default 0.1)
  * @returns {boolean} True if inside
  */
 export function isInsideCircle(x, z, margin = 0.1) {

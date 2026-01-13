@@ -31,7 +31,8 @@ describe('collision', () => {
   });
 
   describe('isInsideCircle', () => {
-    const effectiveRadius = CLOCK_RADIUS - 0.3; // 4.7
+    // Default margin is 0.1, so effective radius = 5 - 0.1 = 4.9
+    const effectiveRadius = CLOCK_RADIUS - 0.1; // 4.9
 
     it('returns true for origin', () => {
       expect(isInsideCircle(0, 0)).toBe(true);
@@ -46,7 +47,8 @@ describe('collision', () => {
     });
 
     it('returns false for point outside effective boundary', () => {
-      expect(isInsideCircle(4.8, 0)).toBe(false);
+      // 4.95 is outside effective radius of 4.9
+      expect(isInsideCircle(4.95, 0)).toBe(false);
     });
 
     it('returns false for point at clock radius', () => {
@@ -60,14 +62,17 @@ describe('collision', () => {
     });
 
     it('handles diagonal positions', () => {
-      // Distance = sqrt(3^2 + 3^2) = sqrt(18) ≈ 4.24, inside 4.7
+      // Distance = sqrt(3^2 + 3^2) = sqrt(18) ≈ 4.24, inside 4.9
       expect(isInsideCircle(3, 3)).toBe(true);
-      // Distance = sqrt(4^2 + 4^2) = sqrt(32) ≈ 5.66, outside 4.7
+      // Distance = sqrt(4^2 + 4^2) = sqrt(32) ≈ 5.66, outside 4.9
       expect(isInsideCircle(4, 4)).toBe(false);
     });
   });
 
   describe('clampToCircle', () => {
+    // Default margin is 0.1, so effective radius = 5 - 0.1 = 4.9
+    const effectiveRadius = CLOCK_RADIUS - 0.1; // 4.9
+
     it('returns new position when inside boundary', () => {
       const result = clampToCircle(0, 0, 1, 1);
       expect(result.x).toBe(1);
@@ -76,8 +81,8 @@ describe('collision', () => {
 
     it('clamps position when outside boundary', () => {
       const result = clampToCircle(0, 0, 10, 0);
-      // Should be clamped to effective radius (4.7)
-      expect(result.x).toBeCloseTo(4.7);
+      // Should be clamped to effective radius (4.9)
+      expect(result.x).toBeCloseTo(effectiveRadius);
       expect(result.z).toBeCloseTo(0);
     });
 
@@ -91,7 +96,7 @@ describe('collision', () => {
     it('handles movement from inside to outside', () => {
       // Starting at (4, 0), trying to move to (6, 0)
       const result = clampToCircle(4, 0, 6, 0);
-      expect(result.x).toBeCloseTo(4.7);
+      expect(result.x).toBeCloseTo(effectiveRadius);
       expect(result.z).toBe(0);
     });
 
@@ -100,13 +105,14 @@ describe('collision', () => {
       const result = clampToCircle(4.5, 0, 4.5, 2);
       // Should be clamped to the boundary
       const distance = Math.sqrt(result.x * result.x + result.z * result.z);
-      expect(distance).toBeLessThanOrEqual(4.7 + 0.001);
+      expect(distance).toBeLessThanOrEqual(effectiveRadius + 0.001);
     });
   });
 
   describe('getBoundaryRadius', () => {
     it('returns correct radius with default margin', () => {
-      expect(getBoundaryRadius()).toBe(CLOCK_RADIUS - 0.3);
+      // Default margin is 0.1
+      expect(getBoundaryRadius()).toBe(CLOCK_RADIUS - 0.1);
     });
 
     it('returns correct radius with custom margin', () => {

@@ -1174,6 +1174,17 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
   const [sandGrains, setSandGrains] = useState([]);
   const [nearGrainId, setNearGrainId] = useState(null);
 
+  // Track previous "near" values to avoid calling callbacks every frame
+  const prevNearValues = useRef({
+    rabbit: false,
+    cat: false,
+    frog: false,
+    gnome: false,
+    owl: false,
+    hoots: false,
+    portal: null,
+  });
+
   // Report nearby grain to parent
   useEffect(() => {
     if (onNearGrain) {
@@ -1238,35 +1249,55 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
       minuteHandRef.current.rotation.y = -angles.minute;
     }
 
-    // Check turtle distance to NPCs
+    // Check turtle distance to NPCs - only call callbacks when values CHANGE
     const turtleX = turtlePosition[0];
     const turtleZ = turtlePosition[2];
 
     const rabbitDx = turtleX - RABBIT_POS_X;
     const rabbitDz = turtleZ - RABBIT_POS_Z;
     const rabbitDist = Math.sqrt(rabbitDx * rabbitDx + rabbitDz * rabbitDz);
-    if (onNearRabbit) onNearRabbit(rabbitDist < RABBIT_INTERACT_DISTANCE);
+    const nearRabbit = rabbitDist < RABBIT_INTERACT_DISTANCE;
+    if (nearRabbit !== prevNearValues.current.rabbit) {
+      prevNearValues.current.rabbit = nearRabbit;
+      if (onNearRabbit) onNearRabbit(nearRabbit);
+    }
 
     const catDx = turtleX - CAT_POS_X;
     const catDz = turtleZ - CAT_POS_Z;
     const catDist = Math.sqrt(catDx * catDx + catDz * catDz);
-    if (onNearCat) onNearCat(catDist < CAT_INTERACT_DISTANCE);
+    const nearCat = catDist < CAT_INTERACT_DISTANCE;
+    if (nearCat !== prevNearValues.current.cat) {
+      prevNearValues.current.cat = nearCat;
+      if (onNearCat) onNearCat(nearCat);
+    }
 
     const frogDx = turtleX - FROG_POS_X;
     const frogDz = turtleZ - FROG_POS_Z;
     const frogDist = Math.sqrt(frogDx * frogDx + frogDz * frogDz);
-    if (onNearFrog) onNearFrog(frogDist < FROG_INTERACT_DISTANCE);
+    const nearFrog = frogDist < FROG_INTERACT_DISTANCE;
+    if (nearFrog !== prevNearValues.current.frog) {
+      prevNearValues.current.frog = nearFrog;
+      if (onNearFrog) onNearFrog(nearFrog);
+    }
 
     const gnomeDx = turtleX - GNOME_POS_X;
     const gnomeDz = turtleZ - GNOME_POS_Z;
     const gnomeDist = Math.sqrt(gnomeDx * gnomeDx + gnomeDz * gnomeDz);
-    if (onNearGnome) onNearGnome(gnomeDist < GNOME_INTERACT_DISTANCE);
+    const nearGnome = gnomeDist < GNOME_INTERACT_DISTANCE;
+    if (nearGnome !== prevNearValues.current.gnome) {
+      prevNearValues.current.gnome = nearGnome;
+      if (onNearGnome) onNearGnome(nearGnome);
+    }
 
     // Nox proximity check
     const noxDx = turtleX - NOX_REST_X;
     const noxDz = turtleZ - NOX_REST_Z;
     const noxDist = Math.sqrt(noxDx * noxDx + noxDz * noxDz);
-    if (onNearOwl) onNearOwl(noxDist < NOX_INTERACT_DISTANCE);
+    const nearOwl = noxDist < NOX_INTERACT_DISTANCE;
+    if (nearOwl !== prevNearValues.current.owl) {
+      prevNearValues.current.owl = nearOwl;
+      if (onNearOwl) onNearOwl(nearOwl);
+    }
 
     // Hoots proximity check (rides on tail of second hand)
     // Hoots is at tail position: local z = -CLOCK_RADIUS * 0.25
@@ -1277,7 +1308,11 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
     const hootsDx = turtleX - hootsX;
     const hootsDz = turtleZ - hootsZ;
     const hootsDist = Math.sqrt(hootsDx * hootsDx + hootsDz * hootsDz);
-    if (onNearHoots) onNearHoots(hootsDist < HOOTS_INTERACT_DISTANCE);
+    const nearHoots = hootsDist < HOOTS_INTERACT_DISTANCE;
+    if (nearHoots !== prevNearValues.current.hoots) {
+      prevNearValues.current.hoots = nearHoots;
+      if (onNearHoots) onNearHoots(nearHoots);
+    }
 
     // Check portal proximity
     let nearestPortal = null;
@@ -1294,7 +1329,10 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
         }
       }
     }
-    if (onNearPortal) onNearPortal(nearestPortal);
+    if (nearestPortal !== prevNearValues.current.portal) {
+      prevNearValues.current.portal = nearestPortal;
+      if (onNearPortal) onNearPortal(nearestPortal);
+    }
 
     const realSecondAngle = angles.second;
     const dv = dejaVuState.current;

@@ -14,11 +14,13 @@ const SUNSET_HOUR = 18;          // Sun sets at 6 PM
  * Calculate sun position based on time
  * Sun rises in EAST (3 o'clock = +X), sets in WEST (9 o'clock = -X)
  * Arc goes over SOUTH (6 o'clock = -Z)
- * @returns {{ position: [number, number, number], visible: boolean, intensity: number }}
+ * @param {number} hour - Current hour as decimal (e.g. 14.5 for 2:30 PM)
+ * @returns {{ position: [number, number, number], visible: boolean, intensity: number, dayProgress: number }}
  */
-function getSunPosition() {
-  const now = new Date();
-  const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+function getSunPosition(hour) {
+
+  // Calculate progress through the day (0 = sunrise, 1 = sunset)
+  const dayProgress = (hour - SUNRISE_HOUR) / (SUNSET_HOUR - SUNRISE_HOUR);
 
   // Sun is only visible between sunrise and sunset
   if (hour < SUNRISE_HOUR || hour > SUNSET_HOUR) {
@@ -26,20 +28,13 @@ function getSunPosition() {
       position: [0, -SUN_DISTANCE, 0], // Below horizon
       visible: false,
       intensity: 0,
+      dayProgress: Math.max(0, Math.min(1, dayProgress)),
     };
   }
-
-  // Calculate progress through the day (0 = sunrise, 1 = sunset)
-  const dayProgress = (hour - SUNRISE_HOUR) / (SUNSET_HOUR - SUNRISE_HOUR);
 
   // Sun arc: starts at EAST (+X), goes over SOUTH (-Z), ends at WEST (-X)
   // Use a semicircle path
   const arcAngle = dayProgress * Math.PI; // 0 to PI radians
-
-  // Position calculation:
-  // At sunrise (arcAngle = 0): x = +distance, y = 0, z = 0 (EAST horizon)
-  // At noon (arcAngle = PI/2): x = 0, y = +distance, z = -distance * something (overhead, slightly south)
-  // At sunset (arcAngle = PI): x = -distance, y = 0, z = 0 (WEST horizon)
 
   // X goes from +distance to -distance (East to West)
   const x = Math.cos(arcAngle) * SUN_DISTANCE;
@@ -51,7 +46,6 @@ function getSunPosition() {
   const z = -Math.sin(arcAngle) * SUN_DISTANCE * 0.3;
 
   // Calculate light intensity based on sun height
-  // Dimmer near horizon, brightest at noon
   const heightFactor = Math.sin(arcAngle);
   const intensity = 0.3 + heightFactor * 0.7;
 
@@ -59,6 +53,7 @@ function getSunPosition() {
     position: [x, y, z],
     visible: true,
     intensity,
+    dayProgress,
   };
 }
 
@@ -118,50 +113,62 @@ export default function Sun() {
     });
   }, []);
 
-  useFrame(() => {
+  // Cache time calculations - only update once per second
+  const lastSecondRef = useRef(-1);
+  const cachedHourRef = useRef(12);
+  const cachedColorRef = useRef(new THREE.Color(0xffffcc));
+
+  useFrame((state) => {
     if (!groupRef.current || !lightRef.current) return;
 
-    const { position, visible, intensity } = getSunPosition();
+    // Only recalculate time once per second
+    const currentSecond = Math.floor(state.clock.elapsedTime);
+    if (currentSecond !== lastSecondRef.current) {
+      lastSecondRef.current = currentSecond;
+      const now = new Date();
+      cachedHourRef.current = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+    }
+
+    const { position, visible, intensity, dayProgress } = getSunPosition(cachedHourRef.current);
 
     // Update sun position
     groupRef.current.position.set(...position);
 
-    // Update visibility and light
-    if (meshRef.current) {
-      meshRef.current.visible = visible;
-    }
-    if (glowRef.current) {
-      glowRef.current.visible = visible;
-    }
+    // Update visibility
+    if (meshRef.current) meshRef.current.visible = visible;
+    if (glowRef.current) glowRef.current.visible = visible;
 
     // Update directional light
     lightRef.current.intensity = intensity;
     lightRef.current.position.set(...position);
 
-    // Update sun color based on time
-    const now = new Date();
-    const hour = now.getHours() + now.getMinutes() / 60;
-    const dayProgress = Math.max(0, Math.min(1, (hour - SUNRISE_HOUR) / (SUNSET_HOUR - SUNRISE_HOUR)));
+    // Update sun color (reuse cached color object)
+    if (dayProgress < 0.15 || dayProgress > 0.85) {
+      cachedColorRef.current.setHex(0xffa500); // Sunrise/sunset orange
+    } else if (dayProgress < 0.3 || dayProgress > 0.7) {
+      cachedColorRef.current.setHex(0xffdd44); // Morning/afternoon yellow
+    } else {
+      cachedColorRef.current.setHex(0xffffcc); // Noon white
+    }
 
-    const sunColor = getSunColor(dayProgress);
     if (meshRef.current) {
-      meshRef.current.material.color.lerp(sunColor, 0.05);
-      meshRef.current.material.emissive.lerp(sunColor, 0.05);
+      meshRef.current.material.color.lerp(cachedColorRef.current, 0.05);
+      meshRef.current.material.emissive.lerp(cachedColorRef.current, 0.05);
     }
     if (glowMaterial.uniforms) {
-      glowMaterial.uniforms.color.value.lerp(sunColor, 0.05);
+      glowMaterial.uniforms.color.value.lerp(cachedColorRef.current, 0.05);
       glowMaterial.uniforms.intensity.value = intensity;
     }
-    lightRef.current.color.lerp(sunColor, 0.05);
+    lightRef.current.color.lerp(cachedColorRef.current, 0.05);
   });
 
   return (
     <group>
       {/* Sun visual */}
       <group ref={groupRef}>
-        {/* Sun core */}
+        {/* Sun core - reduced geometry */}
         <mesh ref={meshRef}>
-          <sphereGeometry args={[SUN_SIZE, 32, 32]} />
+          <sphereGeometry args={[SUN_SIZE, 16, 16]} />
           <meshStandardMaterial
             color={0xffff44}
             emissive={0xffff00}
@@ -170,28 +177,17 @@ export default function Sun() {
           />
         </mesh>
 
-        {/* Sun glow */}
+        {/* Sun glow - reduced geometry */}
         <mesh ref={glowRef} scale={[1.5, 1.5, 1.5]}>
-          <sphereGeometry args={[SUN_SIZE, 32, 32]} />
+          <sphereGeometry args={[SUN_SIZE, 16, 16]} />
           <primitive object={glowMaterial} attach="material" />
         </mesh>
       </group>
 
-      {/* Directional light from sun */}
+      {/* Directional light from sun - no shadows for performance */}
       <directionalLight
         ref={lightRef}
         intensity={1}
-        castShadow
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
-        shadow-camera-far={300}
-        shadow-camera-left={-15}
-        shadow-camera-right={15}
-        shadow-camera-top={15}
-        shadow-camera-bottom={-15}
-        shadow-bias={-0.0001}
-        shadow-radius={4}
-        shadow-blurSamples={16}
       />
     </group>
   );

@@ -14,11 +14,10 @@ const MOONSET_HOUR = 6;          // Moon sets at 6 AM
  * Calculate moon position based on time
  * Moon rises in EAST (3 o'clock = +X), sets in WEST (9 o'clock = -X)
  * Arc goes over SOUTH (opposite side from sun during day)
+ * @param {number} hour - Current hour as decimal
  * @returns {{ position: [number, number, number], visible: boolean, intensity: number }}
  */
-function getMoonPosition() {
-  const now = new Date();
-  const hour = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+function getMoonPosition(hour) {
 
   // Moon is visible from 6 PM to 6 AM (nighttime)
   let nightProgress;
@@ -100,42 +99,49 @@ export default function Moon() {
     });
   }, []);
 
-  useFrame(() => {
+  // Cache time calculation - only update once per second
+  const lastSecondRef = useRef(-1);
+  const cachedHourRef = useRef(0);
+
+  useFrame((state) => {
     if (!groupRef.current) return;
 
-    const { position, visible, intensity } = getMoonPosition();
+    // Only recalculate time once per second
+    const currentSecond = Math.floor(state.clock.elapsedTime);
+    if (currentSecond !== lastSecondRef.current) {
+      lastSecondRef.current = currentSecond;
+      const now = new Date();
+      cachedHourRef.current = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+    }
+
+    const { position, visible, intensity } = getMoonPosition(cachedHourRef.current);
 
     // Update moon position
     groupRef.current.position.set(...position);
 
     // Update visibility
-    if (meshRef.current) {
-      meshRef.current.visible = visible;
-    }
-    if (glowRef.current) {
-      glowRef.current.visible = visible;
-    }
+    if (meshRef.current) meshRef.current.visible = visible;
+    if (glowRef.current) glowRef.current.visible = visible;
 
     // Update ambient light from moon
     if (ambientLightRef.current) {
       ambientLightRef.current.intensity = visible ? 0.15 + intensity * 0.1 : 0;
     }
 
-    // Update directional light from moon (follows moon position)
+    // Update directional light from moon
     if (directionalLightRef.current) {
       directionalLightRef.current.position.set(...position);
-      // Bright moonlight - scales from 0.3 to 0.6 based on height
       directionalLightRef.current.intensity = visible ? 0.3 + intensity * 0.3 : 0;
     }
   });
 
   return (
     <group>
-      {/* Moon visual */}
+      {/* Moon visual - reduced geometry */}
       <group ref={groupRef}>
-        {/* Moon surface - bright white */}
+        {/* Moon surface */}
         <mesh ref={meshRef}>
-          <sphereGeometry args={[MOON_SIZE, 32, 32]} />
+          <sphereGeometry args={[MOON_SIZE, 16, 16]} />
           <meshStandardMaterial
             color={0xffffff}
             emissive={0xffffff}
@@ -148,34 +154,23 @@ export default function Moon() {
 
         {/* Moon glow */}
         <mesh ref={glowRef} scale={[1.3, 1.3, 1.3]}>
-          <sphereGeometry args={[MOON_SIZE, 32, 32]} />
+          <sphereGeometry args={[MOON_SIZE, 16, 16]} />
           <primitive object={glowMaterial} attach="material" />
         </mesh>
       </group>
 
-      {/* Ambient light from moon (soft white) */}
+      {/* Ambient light from moon */}
       <ambientLight
         ref={ambientLightRef}
         color={0xeeeeff}
         intensity={0.15}
       />
 
-      {/* Directional light from moon (bright white, casts shadows) */}
+      {/* Directional light from moon - no shadows for performance */}
       <directionalLight
         ref={directionalLightRef}
         color={0xffffff}
         intensity={0.5}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-far={250}
-        shadow-camera-left={-15}
-        shadow-camera-right={15}
-        shadow-camera-top={15}
-        shadow-camera-bottom={-15}
-        shadow-bias={-0.0001}
-        shadow-radius={4}
-        shadow-blurSamples={8}
       />
     </group>
   );

@@ -678,6 +678,7 @@ function GameScene({
   elfPos,
   elfFound,
   essences,
+  hasPyramidShard,
 }) {
   // Generate decoration positions once
   const decorations = useMemo(() => generateDecorationPositions(mazeSize), [mazeSize]);
@@ -717,8 +718,8 @@ function GameScene({
         />
       ))}
 
-      {/* AEIOU (Elf) - find them to get the key! */}
-      <Elf position={elfPos} found={elfFound} />
+      {/* AEIOU (Elf) - find them to get the key! Only render if shard not collected */}
+      {!hasPyramidShard && <Elf position={elfPos} found={elfFound} />}
 
       {/* Player */}
       <Rabbit
@@ -795,6 +796,7 @@ export default function RabbitRealm({
   onDeath,
   onExit,
   onEssenceCollected,
+  hasPyramidShard = false,
 }) {
   const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.normal;
   const mazeSize = settings.mazeSize; // Maze size scales with difficulty
@@ -1517,6 +1519,7 @@ export default function RabbitRealm({
           elfPos={elfPos}
           elfFound={elfFound}
           essences={essences}
+          hasPyramidShard={hasPyramidShard}
         />
       </Canvas>
 
@@ -1555,11 +1558,13 @@ export default function RabbitRealm({
         color: elfFound ? '#22c55e' : '#88ff88',
         fontSize: '12px',
         zIndex: 1100,
-        border: elfFound ? '1px solid #22c55e' : '1px solid rgba(136, 255, 136, 0.4)',
+        border: (hasPyramidShard || elfFound) ? '1px solid #22c55e' : '1px solid rgba(136, 255, 136, 0.4)',
       }}>
-        {elfFound
-          ? `[OK] AEIOU Found! Essences: ${essencesCollected}/3`
-          : `Find AEIOU (green beacon) + ${3 - essencesCollected} Essences (gold beacons)`
+        {hasPyramidShard
+          ? `[OK] Shard Collected! Essences: ${essencesCollected}/3`
+          : elfFound
+            ? `[OK] AEIOU Found! Essences: ${essencesCollected}/3`
+            : `Find AEIOU (green beacon) + ${3 - essencesCollected} Essences (gold beacons)`
         }
       </div>
 

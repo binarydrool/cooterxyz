@@ -81,6 +81,188 @@ const ESSENCE_COLORS = {
   violet: { color: '#9932CC', emissive: '#660099' },
 };
 
+// Inchworm settings - walks around clock face in 24 hours
+const INCHWORM_RADIUS = CLOCK_RADIUS * 0.92; // Near edge but not on outer rim
+const INCHWORM_SCALE = 0.08; // Small but visible
+
+// Inchworm - cute little guy that walks around the clock face every 24 hours
+function Inchworm({ dejaVuState }) {
+  const groupRef = useRef();
+  const segmentsRef = useRef([]);
+  const displayedAngle = useRef(0);
+
+  // Animation phase for the inching motion
+  const inchPhase = useRef(0);
+
+  // Get current 24-hour angle based on time
+  const get24HourAngle = () => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    const ms = now.getMilliseconds();
+
+    // Total seconds in 24 hours = 86400
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds + ms / 1000;
+    // Convert to radians (full circle = 2π)
+    return (totalSeconds / 86400) * Math.PI * 2;
+  };
+
+  useFrame((_, delta) => {
+    if (!groupRef.current) return;
+
+    // Freeze during déjà vu
+    if (dejaVuState?.isActive) {
+      // Keep current position, just animate the body wiggle slightly
+      inchPhase.current += delta * 0.5;
+    } else {
+      // Normal movement - follow 24 hour time
+      const targetAngle = get24HourAngle();
+      displayedAngle.current = targetAngle;
+
+      // Animate inching motion
+      inchPhase.current += delta * 4; // Inch cycle speed
+    }
+
+    // Position the inchworm around the clock
+    const angle = displayedAngle.current;
+    const x = Math.sin(angle) * INCHWORM_RADIUS;
+    const z = Math.cos(angle) * INCHWORM_RADIUS;
+    const y = CLOCK_THICKNESS / 2 + 0.02;
+
+    groupRef.current.position.set(x, y, z);
+    // Face the direction of travel (tangent to circle, clockwise)
+    groupRef.current.rotation.y = -angle + Math.PI / 2;
+
+    // Animate the segments for inching motion
+    const phase = inchPhase.current;
+    const inchCycle = Math.sin(phase) * 0.5 + 0.5; // 0 to 1
+
+    segmentsRef.current.forEach((seg, i) => {
+      if (!seg) return;
+
+      // Each segment has a phase offset for wave-like motion
+      const segPhase = phase - i * 0.4;
+      const segCycle = Math.sin(segPhase);
+
+      // Vertical bobbing - creates the "arch" of the inchworm
+      const archHeight = Math.max(0, Math.sin(segPhase * 2)) * 0.15;
+      seg.position.y = archHeight;
+
+      // Horizontal compression/extension for inching
+      const stretch = 1 + segCycle * 0.15;
+      seg.scale.z = stretch;
+
+      // Slight side-to-side wiggle
+      seg.position.x = Math.sin(segPhase * 1.5) * 0.02;
+    });
+  });
+
+  // Segment colors - gradient from bright green to darker
+  const segmentColors = [
+    '#7CFC00', // Head - bright lawn green
+    '#76EE00',
+    '#66CD00',
+    '#458B00',
+    '#228B22', // Middle - forest green
+    '#2E8B57',
+    '#3CB371',
+    '#32CD32', // Tail - lime green
+  ];
+
+  return (
+    <group ref={groupRef}>
+      {/* Body segments - 8 spheres that create the inchworm body */}
+      {segmentColors.map((color, i) => {
+        const isHead = i === 0;
+        const isTail = i === segmentColors.length - 1;
+        const segmentSize = isHead ? 0.12 : isTail ? 0.08 : 0.1;
+        const zPos = (i - segmentColors.length / 2) * 0.08;
+
+        return (
+          <group key={i} ref={el => segmentsRef.current[i] = el} position={[0, 0, zPos]}>
+            {/* Main segment body */}
+            <mesh scale={[segmentSize, segmentSize * 0.8, segmentSize]}>
+              <sphereGeometry args={[1, 12, 8]} />
+              <meshStandardMaterial
+                color={color}
+                roughness={0.6}
+                metalness={0.1}
+                emissive={color}
+                emissiveIntensity={0.1}
+              />
+            </mesh>
+
+            {/* Head details */}
+            {isHead && (
+              <>
+                {/* Eyes */}
+                <mesh position={[0.04, 0.05, 0.06]} scale={0.03}>
+                  <sphereGeometry args={[1, 8, 6]} />
+                  <meshStandardMaterial color="#111111" roughness={0.3} />
+                </mesh>
+                <mesh position={[-0.04, 0.05, 0.06]} scale={0.03}>
+                  <sphereGeometry args={[1, 8, 6]} />
+                  <meshStandardMaterial color="#111111" roughness={0.3} />
+                </mesh>
+                {/* Eye highlights */}
+                <mesh position={[0.045, 0.055, 0.075]} scale={0.012}>
+                  <sphereGeometry args={[1, 6, 4]} />
+                  <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={0.5} />
+                </mesh>
+                <mesh position={[-0.035, 0.055, 0.075]} scale={0.012}>
+                  <sphereGeometry args={[1, 6, 4]} />
+                  <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={0.5} />
+                </mesh>
+                {/* Antennae */}
+                <mesh position={[0.03, 0.1, 0.04]} rotation={[0.3, 0, 0.2]}>
+                  <cylinderGeometry args={[0.005, 0.008, 0.08, 6]} />
+                  <meshStandardMaterial color="#228B22" roughness={0.5} />
+                </mesh>
+                <mesh position={[-0.03, 0.1, 0.04]} rotation={[0.3, 0, -0.2]}>
+                  <cylinderGeometry args={[0.005, 0.008, 0.08, 6]} />
+                  <meshStandardMaterial color="#228B22" roughness={0.5} />
+                </mesh>
+                {/* Antenna tips - little balls */}
+                <mesh position={[0.045, 0.16, 0.06]} scale={0.015}>
+                  <sphereGeometry args={[1, 6, 4]} />
+                  <meshStandardMaterial color="#7CFC00" emissive="#7CFC00" emissiveIntensity={0.3} />
+                </mesh>
+                <mesh position={[-0.045, 0.16, 0.06]} scale={0.015}>
+                  <sphereGeometry args={[1, 6, 4]} />
+                  <meshStandardMaterial color="#7CFC00" emissive="#7CFC00" emissiveIntensity={0.3} />
+                </mesh>
+                {/* Cute little smile */}
+                <mesh position={[0, 0.01, 0.1]} rotation={[0.1, 0, 0]} scale={[0.04, 0.01, 0.01]}>
+                  <torusGeometry args={[1, 0.4, 6, 8, Math.PI]} />
+                  <meshStandardMaterial color="#2E5E1A" roughness={0.5} />
+                </mesh>
+              </>
+            )}
+
+            {/* Tiny legs on each segment (except head and tail) */}
+            {!isHead && !isTail && (
+              <>
+                <mesh position={[0.06, -0.04, 0]} rotation={[0, 0, -0.5]}>
+                  <cylinderGeometry args={[0.008, 0.004, 0.04, 4]} />
+                  <meshStandardMaterial color="#2E5E1A" roughness={0.6} />
+                </mesh>
+                <mesh position={[-0.06, -0.04, 0]} rotation={[0, 0, 0.5]}>
+                  <cylinderGeometry args={[0.008, 0.004, 0.04, 4]} />
+                  <meshStandardMaterial color="#2E5E1A" roughness={0.6} />
+                </mesh>
+              </>
+            )}
+          </group>
+        );
+      })}
+
+      {/* Subtle glow under the inchworm */}
+      <pointLight position={[0, 0.05, 0]} intensity={0.3} color="#7CFC00" distance={0.5} decay={2} />
+    </group>
+  );
+}
+
 // Fireflies floating around the clock
 const FIREFLY_COUNT = 15;
 
@@ -1701,6 +1883,9 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
 
       {/* Y (Nox) - the elephant gnome who stops time at 59 seconds */}
       <Nox dejaVuState={dejaVuStateForRender} />
+
+      {/* Inchworm - walks around the clock face edge every 24 hours */}
+      <Inchworm dejaVuState={dejaVuStateForRender} />
 
       {/* Portals */}
       {Object.entries(unlockedRealms).map(([realm, isUnlocked]) => (

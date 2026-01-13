@@ -1034,6 +1034,7 @@ function GameScene({
   powerUps,
   activePowerUps,
   gamePaused, // CRITICAL: pause enemies until game starts!
+  hasPyramidShard,
 }) {
   const aeiouPad = lilyPads.find(p => p.hasAEIOU);
 
@@ -1086,12 +1087,14 @@ function GameScene({
         />
       ))}
 
-      {/* AEIOU - visible from start for testing! */}
-      <AEIOUOnPad
-        pad={aeiouPad}
-        found={gameWon}
-        allEssencesCollected={true}
-      />
+      {/* AEIOU - visible from start for testing! Only render if shard not collected */}
+      {!hasPyramidShard && aeiouPad && (
+        <AEIOUOnPad
+          pad={aeiouPad}
+          found={gameWon}
+          allEssencesCollected={true}
+        />
+      )}
 
       {/* Monster Fish */}
       <MonsterFish
@@ -1143,6 +1146,7 @@ export default function FrogRealm3D({
   onQuit,
   onToggleFreeMode,
   onNavigateRealm,
+  hasPyramidShard = false,
 }) {
   const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.normal;
   const { addEssence } = useInventory();
@@ -1940,6 +1944,7 @@ export default function FrogRealm3D({
           powerUps={powerUps}
           activePowerUps={activePowerUps}
           gamePaused={!gameStarted || isPaused || gameOver || gameWon || showIntroModal}
+          hasPyramidShard={hasPyramidShard}
         />
       </Canvas>
 

@@ -12,7 +12,7 @@ import AEIOU from '../characters/AEIOU';
 const ARENA_SIZE = 200;
 const CAT_SPEED = 35; // Base cat speed - much faster than fish (fish are 3-6)
 const SPRINT_SPEED = 55; // Sprint speed - extremely fast for escaping
-const TURN_SPEED = 4; // Rotation speed (radians per second) - smoother turning
+const TURN_SPEED = 2; // Rotation speed (radians per second) - reduced for mobile
 const STAMINA_MAX = 10;
 const STAMINA_RECHARGE_RATE = 4;
 const SAFE_SPAWN_RADIUS = 50;
@@ -141,7 +141,7 @@ function generateFish(settings) {
 }
 
 // Generate collectibles including power-up fish
-function generateCollectibles(settings) {
+function generateCollectibles(settings, hasPyramidShard = false) {
   const positions = [];
 
   // 3 Essences
@@ -158,14 +158,17 @@ function generateCollectibles(settings) {
     });
   }
 
-  // Dimitrius
-  const dimPos = getRandomSpawnPosition(positions);
-  positions.push(dimPos);
-  const dimitrius = {
-    x: dimPos.x,
-    z: dimPos.z,
-    y: 0,
-  };
+  // Dimitrius (AEIOU) - only spawn if pyramid shard NOT already collected
+  let dimitrius = null;
+  if (!hasPyramidShard) {
+    const dimPos = getRandomSpawnPosition(positions);
+    positions.push(dimPos);
+    dimitrius = {
+      x: dimPos.x,
+      z: dimPos.z,
+      y: 0,
+    };
+  }
 
   // 30 coins
   const coins = [];
@@ -1047,8 +1050,8 @@ function MiniMap({ catPos, fishList, essences, dimitrius, foundDimitrius, collec
         );
       })}
 
-      {/* Dimitrius */}
-      {!foundDimitrius && (
+      {/* Dimitrius - only show if spawned and not found */}
+      {dimitrius && !foundDimitrius && (
         <div style={{
           position: 'absolute',
           left: (dimitrius.x - catPos[0]) * mapScale + mapSize / 2 - 4,
@@ -1168,12 +1171,15 @@ function GameScene({
       ))}
 
       {/* AEIOU (Dimitrius) - hidden in shadows, auto-triggers on contact */}
-      <Dimitrius
-        position={[collectibles.dimitrius.x, 0, collectibles.dimitrius.z]}
-        found={playerState.foundDimitrius}
-        playerPos={playerState.position}
-        onInteract={onFindDimitrius}
-      />
+      {/* Only render if pyramid shard hasn't been collected yet */}
+      {collectibles.dimitrius && (
+        <Dimitrius
+          position={[collectibles.dimitrius.x, 0, collectibles.dimitrius.z]}
+          found={playerState.foundDimitrius}
+          playerPos={playerState.position}
+          onInteract={onFindDimitrius}
+        />
+      )}
 
       {/* Shadow Cat - solid black with glowing green eyes */}
       <Cat
@@ -1207,6 +1213,7 @@ export default function CatRealm3D({
   onQuit,
   onToggleFreeMode,
   onNavigateRealm,
+  hasPyramidShard = false,
 }) {
   const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
   const isMobile = useIsMobile();
@@ -1255,7 +1262,7 @@ export default function CatRealm3D({
   // Initialize game
   useEffect(() => {
     fishListRef.current = generateFish(settings);
-    collectiblesRef.current = generateCollectibles(settings);
+    collectiblesRef.current = generateCollectibles(settings, hasPyramidShard);
     obstaclesRef.current = generateObstacles();
     playerStateRef.current = {
       position: [0, 0, 0],
@@ -1616,7 +1623,7 @@ export default function CatRealm3D({
 
   const handleRestart = useCallback(() => {
     fishListRef.current = generateFish(settings);
-    collectiblesRef.current = generateCollectibles(settings);
+    collectiblesRef.current = generateCollectibles(settings, hasPyramidShard);
     obstaclesRef.current = generateObstacles();
     playerStateRef.current = {
       position: [0, 0, 0],
@@ -1840,11 +1847,11 @@ export default function CatRealm3D({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: playerState.foundDimitrius ? '#4ade80' : '#9966ff', fontSize: '14px' }}>
-            {playerState.foundDimitrius ? '[x]' : '[ ]'}
+          <span style={{ color: (hasPyramidShard || playerState.foundDimitrius) ? '#4ade80' : '#9966ff', fontSize: '14px' }}>
+            {(hasPyramidShard || playerState.foundDimitrius) ? '[x]' : '[ ]'}
           </span>
-          <span style={{ color: playerState.foundDimitrius ? '#4ade80' : '#9966ff', fontSize: '13px' }}>
-            {playerState.foundDimitrius ? 'AEIOU Found' : 'Find AEIOU'}
+          <span style={{ color: (hasPyramidShard || playerState.foundDimitrius) ? '#4ade80' : '#9966ff', fontSize: '13px' }}>
+            {hasPyramidShard ? 'Shard Collected' : (playerState.foundDimitrius ? 'AEIOU Found' : 'Find AEIOU')}
           </span>
         </div>
 

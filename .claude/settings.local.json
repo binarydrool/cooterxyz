@@ -23,7 +23,16 @@
       "Bash(unzip:*)",
       "Bash(/tmp/gh_2.40.1_macOS_amd64/bin/gh auth login --web -h github.com)",
       "Bash(/tmp/gh_2.40.1_macOS_amd64/bin/gh auth:*)",
-      "Bash(/tmp/gh_2.40.1_macOS_amd64/bin/gh repo view:*)"
+      "Bash(/tmp/gh_2.40.1_macOS_amd64/bin/gh repo view:*)",
+      "Bash(tree:*)",
+      "Bash(wc:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm test:*)",
+      "Bash(timeout 8s npm run dev:*)",
+      "Bash(vercel --version:*)",
+      "Bash(npx vercel:*)",
+      "Bash(npm install:*)",
+      "Bash(ssh-keygen:*)"
     ]
   }
 }

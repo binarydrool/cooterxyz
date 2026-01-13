@@ -1149,7 +1149,13 @@ function Nox({ dejaVuState }) {
   );
 }
 
-const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStoppedChange, onStopDataChange, onNearGrain, onNearRabbit, onNearCat, onNearFrog, onNearOwl, onNearGnome, onNearHoots, onNearPortal, onGrainClaimed, victoryCeremony, unlockedRealms = {}, animalEnteringPortal = null, activeRealm = 'hub', pyramidShards = {} }, ref) {
+// Second hand collision settings for Cooter blocking
+const SECOND_HAND_LENGTH = CLOCK_RADIUS * 0.67; // Tip of second hand
+const SECOND_HAND_COLLISION_WIDTH = 0.35; // Width for collision detection
+const COOTER_BLOCKING_GRACE_PERIOD = 1.0; // 1 second free
+const COOTER_GRAIN_REMOVAL_INTERVAL = 1.0; // Remove 1 grain per second after grace
+
+const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStoppedChange, onStopDataChange, onNearGrain, onNearRabbit, onNearCat, onNearFrog, onNearOwl, onNearGnome, onNearHoots, onNearPortal, onGrainClaimed, onCooterBlockingGrain, victoryCeremony, unlockedRealms = {}, animalEnteringPortal = null, activeRealm = 'hub', pyramidShards = {} }, ref) {
   const hourHandRef = useRef();
   const minuteHandRef = useRef();
   const secondHandRef = useRef();
@@ -1189,6 +1195,13 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
     owl: false,
     hoots: false,
     portal: null,
+  });
+
+  // Track Cooter blocking the second hand
+  const cooterBlockingState = useRef({
+    isBlocking: false,
+    blockingTime: 0,
+    lastGrainRemovalTime: 0,
   });
 
   // Report nearby grain to parent
@@ -1340,8 +1353,69 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
       if (onNearPortal) onNearPortal(nearestPortal);
     }
 
-    const realSecondAngle = angles.second;
+    // === COOTER BLOCKING SECOND HAND DETECTION ===
+    // Only check when in hub and NOT during déjà vu (time is flowing)
     const dv = dejaVuState.current;
+    const cbs = cooterBlockingState.current;
+
+    if (activeRealm === 'hub' && !dv.isActive) {
+      // Calculate second hand direction from the current displayed angle
+      const handAngle = displayedSecondAngle.current;
+      const handDirX = Math.sin(handAngle);
+      const handDirZ = Math.cos(handAngle);
+
+      // Project turtle position onto second hand direction
+      // Dot product gives distance along the hand
+      const dotProduct = turtleX * handDirX + turtleZ * handDirZ;
+
+      // Perpendicular distance from turtle to the hand line
+      const perpDistance = Math.abs(turtleX * handDirZ - turtleZ * handDirX);
+
+      // Check if turtle is blocking the second hand:
+      // - Must be in front of center (dotProduct > 0)
+      // - Must be within the hand's length
+      // - Must be close enough (perpendicular distance within collision width)
+      const isBlockingSecondHand =
+        dotProduct > 0.3 && // Not too close to center
+        dotProduct < SECOND_HAND_LENGTH &&
+        perpDistance < SECOND_HAND_COLLISION_WIDTH;
+
+      if (isBlockingSecondHand) {
+        if (!cbs.isBlocking) {
+          // Just started blocking
+          cbs.isBlocking = true;
+          cbs.blockingTime = 0;
+          cbs.lastGrainRemovalTime = 0;
+        } else {
+          // Continue blocking - accumulate time
+          cbs.blockingTime += delta;
+
+          // After grace period, start removing grains
+          if (cbs.blockingTime > COOTER_BLOCKING_GRACE_PERIOD) {
+            const timeSinceGrace = cbs.blockingTime - COOTER_BLOCKING_GRACE_PERIOD;
+            const grainsToRemove = Math.floor(timeSinceGrace / COOTER_GRAIN_REMOVAL_INTERVAL);
+
+            // Remove grains if we've passed the threshold
+            if (grainsToRemove > cbs.lastGrainRemovalTime && onCooterBlockingGrain) {
+              onCooterBlockingGrain();
+              cbs.lastGrainRemovalTime = grainsToRemove;
+            }
+          }
+        }
+      } else {
+        // Not blocking - reset state
+        cbs.isBlocking = false;
+        cbs.blockingTime = 0;
+        cbs.lastGrainRemovalTime = 0;
+      }
+    } else {
+      // Reset when not in hub or during déjà vu
+      cbs.isBlocking = false;
+      cbs.blockingTime = 0;
+      cbs.lastGrainRemovalTime = 0;
+    }
+
+    const realSecondAngle = angles.second;
 
     // DÉJÀ VU LOGIC - Nox stops time at 59 seconds every minute
     if (activeRealm === 'hub') {

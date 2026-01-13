@@ -258,6 +258,18 @@ Each portal guardian (Cat, Frog, Rabbit) requires a specific type of essence gra
 
 This adds a layer of mystery and resource management to the hub gameplay.
 
+### Second Hand Collision (Grain Penalty)
+
+If Cooter blocks the second hand while time is flowing (NOT during Deja Vu), grains will be lost:
+
+- **Grace Period:** First 1 second of blocking is free - no penalty
+- **Penalty Phase:** After 1 second, 1 random grain is removed from inventory per second
+- **Strategic Tension:** Amadeus stopping time at :59 is GOOD (spawns grains), but Cooter blocking the second hand is BAD (destroys grains)
+- **Safe Zones:** Near the center (inside 0.3 radius) and outside the second hand's reach (beyond 0.67 radius) are safe
+- **Resets:** Timer resets when Cooter moves away from the second hand
+
+This mechanic encourages players to collect grains quickly while staying aware of the second hand's position.
+
 ### Pyramid Shards
 
 Complete each realm to earn a pyramid shard:
@@ -362,33 +374,246 @@ Completing on Impossible earns a **Black Shard** (special achievement).
 
 ---
 
-## File Structure
+## Complete File Structure & Documentation
+
+### Core Application Files
 
 ```
-/src
-  /components
-    /realms/
-      - RabbitRealm.jsx      (Pac-Man maze)
-      - FrogRealm3D.jsx      (Frogger platformer)
-      - CatRealm3D.jsx       (Rooftop Runner)
-      - OwlRealm3D.jsx       (Flight survival)
-      - ElfRealm3D.jsx       (Boss fight)
-    /ui/
-      - GameHUD.jsx          (In-game HUD)
-      - MainMenu.jsx         (Start screen)
-      - ChatModal.jsx        (NPC dialogue)
-      - DifficultySelect.jsx (Realm entry)
-    - Game.jsx               (Main game controller)
-    - Clock.jsx              (Hub clock)
-    - Scene.jsx              (3D scene setup)
-    - Turtle.jsx             (Player character)
-    - Owl.jsx, Rabbit.jsx... (NPC characters)
-  /hooks/
-    - useGameState.js        (Global state)
-    - useInventory.js        (Collectibles)
-    - useAudio.js            (Sound)
-  /data/
-    - riddles.js             (NPC dialogue)
+/src/app/
+├── layout.js          # Next.js root layout, HTML structure, metadata
+└── page.js            # Main page component, renders Game
+```
+
+### Components - Main Hub
+
+```
+/src/components/
+├── Game.jsx           # MAIN CONTROLLER - Orchestrates entire game
+│                      # - Manages activeRealm state (hub vs realm gameplay)
+│                      # - Handles inventory, audio, game state
+│                      # - Renders UI navbar, realm components, modals
+│                      # - Contains victory ceremony, mint modal logic
+│                      # - Handles Cooter blocking second hand grain removal
+│
+├── Scene.jsx          # 3D SCENE SETUP
+│                      # - Wraps Three.js canvas environment
+│                      # - Manages TurtleWithCamera context
+│                      # - Renders Ocean, Sky, Sun, Moon, Clock
+│                      # - Passes callbacks between Game and Clock
+│
+├── Clock.jsx          # HUB CLOCK - Core gameplay component (~1900 lines)
+│                      # - 3D golden clock with hour/minute/second hands
+│                      # - Deja Vu mechanic (Nox stops time at :59)
+│                      # - Sand grain spawning (3 random colors)
+│                      # - Animal proximity detection (triggers chat)
+│                      # - Portal proximity detection
+│                      # - Second hand collision detection with Cooter
+│                      # - Renders all hub NPCs (Rabbit, Cat, Frog, Owl, Gnome)
+│
+├── Turtle.jsx         # PLAYER CHARACTER
+│                      # - 3D turtle model with shell, legs, head
+│                      # - Walking animation (diagonal gait)
+│                      # - Idle breathing animation
+│                      # - Exposed via forwardRef for position updates
+│
+├── CameraController.jsx # CAMERA SYSTEM
+│                      # - Third-person follow camera
+│                      # - Camera modes (THIRD_PERSON, BIRD_EYE)
+│                      # - Smooth position interpolation
+│
+├── ClockHand.jsx      # Individual clock hand component (hour/min/sec)
+│
+├── Ocean.jsx          # Infinite ocean beneath the clock
+│                      # - Wave animation shader
+│                      # - Time-based color shifts (day/night)
+│
+├── DynamicSky.jsx     # Sky dome with gradient based on time of day
+│
+├── Sun.jsx            # Animated sun that moves based on real time
+├── Moon.jsx           # Animated moon visible at night
+├── Seagulls.jsx       # Decorative flying seagulls (disabled for perf)
+│
+├── HelpModal.jsx      # How to Play modal with controls/gameplay info
+├── UI.jsx             # In-game UI overlay (interact prompts, etc)
+```
+
+### Character Components
+
+```
+/src/components/
+├── Rabbit.jsx         # Portal guardian at 9 o'clock (45 sec)
+│                      # - Jumps over second hand with hang time
+│                      # - Cream/beige fur, pink ears
+│
+├── Cat.jsx            # Portal guardian at 3 o'clock (15 sec)
+│                      # - Orange tabby with swishing tail
+│                      # - Graceful arched jump
+│
+├── Frog.jsx           # Portal guardian at 6 o'clock (30 sec)
+│                      # - Green tree frog with gold eyes
+│                      # - Hops with extended hang time
+│
+├── Owl.jsx            # Amadeus/Nox - Time wizard at 12 o'clock
+│                      # - Triggers Deja Vu at 59 seconds
+│                      # - Jumps FORWARD toward center to block time
+│
+├── Gnome.jsx          # Dimitrius - Guardian at 12 o'clock rim
+│                      # - Dark jester with harlequin pattern
+│                      # - Final boss (in Elf Realm)
+│
+└── characters/
+    └── AEIOU.jsx      # Alternate Dimitrius character model
+```
+
+### Realm Components
+
+```
+/src/components/realms/
+├── RabbitRealm.jsx    # THE WARREN - Pac-Man style maze
+│                      # - 45x45 cell maze navigation
+│                      # - Fox enemies (turn blue when powered up)
+│                      # - Carrots, power pellets, coins
+│                      # - Find the Elf to complete
+│
+├── CatRealm3D.jsx     # THE ROOFTOPS - Side-scrolling platformer
+│                      # - Jump between buildings at sunset
+│                      # - Collect fish, yarn, golden mice
+│                      # - Wall-jump mechanics
+│                      # - Patrol dogs as obstacles
+│
+├── FrogRealm3D.jsx    # THE LILY MARSH - Frogger-style platformer
+│                      # - Hop across logs, lilypads, turtle shells
+│                      # - Avoid snakes, herons, piranhas
+│                      # - Reach golden finish platform
+│
+├── OwlRealm3D.jsx     # THE NIGHT SKY - Aerial flight survival
+│                      # - Fly through dense forest as owl
+│                      # - Avoid wolf packs
+│                      # - Navigate trees and rocks
+│
+├── ElfRealm3D.jsx     # THE ETERNAL CLOCKTOWER - Final boss
+│                      # - Spiral tower climb (12 platforms)
+│                      # - Rotating gear obstacles
+│                      # - Boss fight with Dimitrius
+│                      # - Requires all 4 pyramid shards
+│
+├── CatRealm.jsx       # Legacy 2D cat realm (unused)
+├── OwlRealm.jsx       # Legacy owl realm (unused)
+├── ElfRealm.jsx       # Legacy elf realm (unused)
+│
+└── frog/              # Frog realm sub-components
+    ├── CoolFrog.jsx   # Player frog model
+    ├── Essence.jsx    # Collectible essence particles
+    └── Flower.jsx     # Decorative flower props
+```
+
+### UI Components
+
+```
+/src/components/ui/
+├── ChatModal.jsx      # NPC DIALOGUE SYSTEM
+│                      # - Animal conversation interface
+│                      # - Grain offering system (mystery mechanic)
+│                      # - Wrong grain = burned, correct = accepted
+│                      # - Riddles from NPCs
+│
+├── DifficultySelect.jsx # Realm difficulty picker (7 levels)
+├── GameHUD.jsx        # In-realm HUD (lives, score, timer)
+├── GameStatusBar.jsx  # Status bar during gameplay
+├── GlobalMobileControls.jsx # Touch joystick + buttons (mobile)
+├── MobileGameControls.jsx # Mobile controls (alternate)
+├── MobileRealmSidebar.jsx # Mobile realm navigation (removed)
+│
+├── Logo.jsx           # Game logo with free mode toggle
+├── WalletButton.jsx   # Web3 wallet connect button
+├── AudioControls.jsx  # Sound/music controls
+│
+├── IntroModal.jsx     # Game intro/tutorial
+├── Leaderboard.jsx    # High scores display
+├── Marketplace.jsx    # NFT marketplace UI
+├── NFTGallery.jsx     # Player's NFT collection
+├── MintModal.jsx      # NFT minting interface
+│
+├── ParticleEffects.jsx # Visual particle systems
+└── Transitions.jsx    # Scene transition animations
+```
+
+### Custom Hooks
+
+```
+/src/hooks/
+├── useInventory.js    # INVENTORY MANAGEMENT
+│                      # - Grains: green, gold, orange, purple
+│                      # - Essences: forest, golden, amber, violet
+│                      # - Pyramid shards per realm
+│                      # - addGrain(), removeGrains(), hasGrains()
+│                      # - LocalStorage persistence
+│
+├── useGameState.js    # GAME STATE
+│                      # - Current mode, difficulty
+│                      # - Realm unlocked states
+│                      # - Free mode toggle
+│                      # - Strike tracking, riddle progress
+│
+├── useTurtleMovement.js # PLAYER MOVEMENT
+│                      # - WASD/arrow key handling
+│                      # - Position/rotation state
+│                      # - Boundary collision (clock edges)
+│                      # - Walking/idle state
+│
+├── useGameInput.js    # INPUT HANDLING
+│                      # - Keyboard listener initialization
+│                      # - Mobile detection
+│                      # - Key state management
+│
+├── useAudio.js        # AUDIO SYSTEM
+│                      # - Sound effects (collect, unlock, etc)
+│                      # - Ambient music
+│                      # - Gear ticking during hub
+│                      # - Time stop/resume sounds
+│
+├── useKeyboard.js     # Low-level keyboard state
+├── useGameLoop.js     # Game loop management
+├── useLeaderboard.js  # Leaderboard data fetching
+├── useMarketplace.js  # NFT marketplace integration
+└── useWallet.js       # Web3 wallet connection
+```
+
+### Utility Functions
+
+```
+/src/utils/
+├── clockMath.js       # CLOCK CALCULATIONS
+│                      # - CLOCK_RADIUS, CLOCK_THICKNESS constants
+│                      # - getHandAngles(date) - hour/min/sec angles
+│                      # - Position calculations for characters
+│
+├── collision.js       # COLLISION DETECTION
+│                      # - Boundary checking for turtle
+│                      # - BOUNDARY_MARGIN constant
+│                      # - isWithinBounds() function
+│
+├── movement.js        # MOVEMENT UTILITIES
+│                      # - Direction calculations
+│                      # - Speed constants
+│
+├── riddles.js         # NPC DIALOGUE DATA
+│                      # - Riddles for each animal
+│                      # - Hint text
+│                      # - Conversation scripts
+│
+└── nft.js             # NFT UTILITIES
+                       # - Minting helpers
+                       # - Contract interactions
+```
+
+### Tests
+
+```
+/src/__tests__/
+├── clockMath.test.js  # Tests for clock angle calculations
+├── collision.test.js  # Tests for boundary collision (margin=0.1)
+└── movement.test.js   # Tests for movement utilities
 ```
 
 ---
@@ -405,8 +630,14 @@ The four guardian animals (Rabbit, Frog, Cat, Owl) each protect a portal to thei
 
 ## Version
 
-**Current:** v1.1.0
+**Current:** v1.2.0
 **Last Updated:** January 2026
+
+### Changelog v1.2.0
+- **Second Hand Collision Mechanic:** Cooter blocking the second hand now causes grain loss
+  - 1 second grace period, then 1 grain/second removed randomly from inventory
+  - Creates strategic tension: collect grains quickly, avoid blocking the hand
+- Complete file structure documentation added to scope.md
 
 ### Changelog v1.1.0
 - Amadeus (Y/Nox) now jumps forward toward center instead of sideways when stopping time

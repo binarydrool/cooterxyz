@@ -887,6 +887,22 @@ function GameContent() {
     setPendingMintGrain(null);
   }, []);
 
+  // Handle Cooter blocking the second hand - removes a random grain from inventory
+  const handleCooterBlockingGrain = useCallback(() => {
+    // Get all grain colors that have at least 1 grain
+    const grainColors = ['green', 'gold', 'orange', 'purple'];
+    const availableColors = grainColors.filter(color => (inventory.grains?.[color] || 0) > 0);
+
+    // If player has any grains, remove one at random
+    if (availableColors.length > 0) {
+      const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+      inventory.removeGrains(randomColor, 1);
+      // Play a sound effect for grain loss
+      audio.playSound(SOUNDS.COLLECT_ESSENCE); // Reuse essence sound for now
+      console.log(`Cooter blocked second hand! Lost 1 ${randomColor} grain.`);
+    }
+  }, [inventory, audio]);
+
   // Reset game - clears all progress
   const handleResetGame = useCallback(() => {
     inventory.resetInventory();
@@ -1050,6 +1066,7 @@ function GameContent() {
                 onStopDataChange={handleStopDataChange}
                 onInteractTargetChange={handleInteractTargetChange}
                 onGrainClaimed={handleGrainClaimed}
+                onCooterBlockingGrain={handleCooterBlockingGrain}
                 victoryCeremony={victoryCeremony}
                 unlockedRealms={unlockedRealms}
                 animalEnteringPortal={animalEnteringPortal}

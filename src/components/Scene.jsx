@@ -34,7 +34,7 @@ export function triggerInteract() {
   }
 }
 
-function TurtleWithCamera({ children, onTimeStoppedChange, onStopDataChange, onInteractTargetChange, onGrainClaimed, victoryCeremony, unlockedRealms, animalEnteringPortal, activeRealm = 'hub', pyramidShards = {} }) {
+function TurtleWithCamera({ children, onTimeStoppedChange, onStopDataChange, onInteractTargetChange, onGrainClaimed, onCooterBlockingGrain, victoryCeremony, unlockedRealms, animalEnteringPortal, activeRealm = 'hub', pyramidShards = {} }) {
   const { position, rotation, isMoving, isWalking, jumpHeight, isInAir } = useTurtleMovement();
   const [cameraMode, setCameraMode] = useState(CAMERA_MODES.THIRD_PERSON);
   const clockRef = useRef();
@@ -104,6 +104,7 @@ function TurtleWithCamera({ children, onTimeStoppedChange, onStopDataChange, onI
         onNearHoots={setNearHoots}
         onNearPortal={setNearPortal}
         onGrainClaimed={onGrainClaimed}
+        onCooterBlockingGrain={onCooterBlockingGrain}
         victoryCeremony={victoryCeremony}
         unlockedRealms={unlockedRealms}
         animalEnteringPortal={animalEnteringPortal}
@@ -143,7 +144,7 @@ function TurtleRenderer({ position, rotation, isWalking, jumpHeight = 0 }) {
   );
 }
 
-export default function Scene({ onCameraModeChange, onTimeStoppedChange, onStopDataChange, onInteractTargetChange, onGrainClaimed, victoryCeremony, unlockedRealms, animalEnteringPortal, activeRealm = 'hub', pyramidShards = {} }) {
+export default function Scene({ onCameraModeChange, onTimeStoppedChange, onStopDataChange, onInteractTargetChange, onGrainClaimed, onCooterBlockingGrain, victoryCeremony, unlockedRealms, animalEnteringPortal, activeRealm = 'hub', pyramidShards = {} }) {
   const { scene, gl } = useThree();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -186,6 +187,7 @@ export default function Scene({ onCameraModeChange, onTimeStoppedChange, onStopD
         onStopDataChange={onStopDataChange}
         onInteractTargetChange={onInteractTargetChange}
         onGrainClaimed={onGrainClaimed}
+        onCooterBlockingGrain={onCooterBlockingGrain}
         victoryCeremony={victoryCeremony}
         unlockedRealms={unlockedRealms}
         animalEnteringPortal={animalEnteringPortal}

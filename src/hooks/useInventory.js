@@ -65,13 +65,13 @@ const initialInventory = {
     emerald: null,
     amethyst: null,
   },
-  // Pyramid shards - 5 layers (rabbit=1, frog=2, cat=3, owl=4, inchworm=5) - pieces of AEIOU
+  // Pyramid shards - 5 layers (rabbit=1, frog=2, cat=3, inchworm=4, owl=5) - pieces of AEIOU
   pyramidShards: {
     rabbit: false,    // Layer 1 (base) - from The Warren
     frog: false,      // Layer 2 - from The Lily Marsh
     cat: false,       // Layer 3 - from The Rooftops
-    owl: false,       // Layer 4 - from The Night Sky
-    inchworm: false,  // Layer 5 (capstone) - from The Long Road
+    inchworm: false,  // Layer 4 - from The Metamorphosis (Miles)
+    owl: false,       // Layer 5 (capstone) - from The Night Sky
   },
   // Black shards - earned by completing realms on IMPOSSIBLE difficulty
   blackShards: {

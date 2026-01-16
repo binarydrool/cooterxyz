@@ -32,12 +32,13 @@ function formatTime(seconds) {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Pyramid layer colors and info
+// Pyramid layer colors and info (displayed top to bottom)
 const PYRAMID_LAYERS = [
-  { realm: 'owl', color: '#4B0082', label: 'Owl' },      // Layer 4 (top)
-  { realm: 'cat', color: '#FF8C00', label: 'Cat' },      // Layer 3
-  { realm: 'frog', color: '#228B22', label: 'Frog' },    // Layer 2
-  { realm: 'rabbit', color: '#8B4513', label: 'Rabbit' }, // Layer 1 (base)
+  { realm: 'owl', color: '#4B0082', label: 'Owl' },          // Layer 5 - capstone (From Above)
+  { realm: 'inchworm', color: '#00CED1', label: 'Miles' },   // Layer 4 (From the Chrysalis)
+  { realm: 'cat', color: '#FF8C00', label: 'Cat' },          // Layer 3 (From the Rooftops)
+  { realm: 'frog', color: '#228B22', label: 'Frog' },        // Layer 2 (From the Marsh)
+  { realm: 'rabbit', color: '#FFD700', label: 'Rabbit' },    // Layer 1 - base (From the Warren)
 ];
 
 // Pyramid progress indicator - minimal version
@@ -46,6 +47,7 @@ function PyramidIndicator({ pyramidShards, isMobile }) {
     pyramidShards.rabbit &&
     pyramidShards.frog &&
     pyramidShards.cat &&
+    pyramidShards.inchworm &&
     pyramidShards.owl;
 
   const scale = isMobile ? 0.8 : 1;
@@ -58,7 +60,7 @@ function PyramidIndicator({ pyramidShards, isMobile }) {
         alignItems: 'center',
         gap: '1px',
       }}
-      title={isComplete ? 'Pyramid Complete!' : `${Object.values(pyramidShards || {}).filter(Boolean).length}/4 shards`}
+      title={isComplete ? 'Pyramid Complete!' : `${Object.values(pyramidShards || {}).filter(Boolean).length}/5 shards`}
     >
       {PYRAMID_LAYERS.map((layer, index) => {
         const hasShard = pyramidShards?.[layer.realm] || false;
@@ -71,7 +73,7 @@ function PyramidIndicator({ pyramidShards, isMobile }) {
               width: `${width * scale}px`,
               height: `${5 * scale}px`,
               background: hasShard ? layer.color : 'rgba(255, 255, 255, 0.2)',
-              borderRadius: index === 0 ? '2px 2px 0 0' : index === 3 ? '0 0 2px 2px' : '0',
+              borderRadius: index === 0 ? '2px 2px 0 0' : index === 4 ? '0 0 2px 2px' : '0',
             }}
           />
         );

@@ -9,64 +9,161 @@ import IntroModal from '../ui/IntroModal';
 import { getInput, useIsMobile, setActionState } from '@/hooks/useGameInput';
 import { useAudio, SOUNDS } from '@/hooks/useAudio';
 
-// Difficulty settings - path length and obstacle speed scale with difficulty
+// Difficulty settings - nectar goals and hazard density scale with difficulty
 const DIFFICULTY_SETTINGS = {
-  beginner: { pathLength: 50, obstacleSpeed: 0.5, leaves: 15, birdCount: 1, timeLimit: 120 },
-  easy: { pathLength: 60, obstacleSpeed: 0.7, leaves: 18, birdCount: 1, timeLimit: 110 },
-  normal: { pathLength: 70, obstacleSpeed: 0.9, leaves: 22, birdCount: 2, timeLimit: 100 },
-  hard: { pathLength: 80, obstacleSpeed: 1.1, leaves: 26, birdCount: 2, timeLimit: 90 },
-  expert: { pathLength: 90, obstacleSpeed: 1.3, leaves: 30, birdCount: 3, timeLimit: 80 },
-  master: { pathLength: 100, obstacleSpeed: 1.5, leaves: 35, birdCount: 3, timeLimit: 70 },
-  impossible: { pathLength: 120, obstacleSpeed: 2.0, leaves: 40, birdCount: 4, timeLimit: 60 },
+  beginner: { nectarGoal: 500, hazardDensity: 0.3, windStrength: 0, timeLimit: 180, healingFlowers: 5 },
+  easy: { nectarGoal: 1000, hazardDensity: 0.4, windStrength: 0.3, timeLimit: 160, healingFlowers: 4 },
+  normal: { nectarGoal: 2000, hazardDensity: 0.5, windStrength: 0.5, timeLimit: 140, healingFlowers: 3 },
+  hard: { nectarGoal: 3500, hazardDensity: 0.6, windStrength: 0.7, timeLimit: 120, healingFlowers: 2 },
+  expert: { nectarGoal: 5000, hazardDensity: 0.7, windStrength: 0.8, timeLimit: 100, healingFlowers: 2 },
+  master: { nectarGoal: 7500, hazardDensity: 0.8, windStrength: 0.9, timeLimit: 90, healingFlowers: 1 },
+  impossible: { nectarGoal: 10000, hazardDensity: 1.0, windStrength: 1.0, timeLimit: 80, healingFlowers: 0 },
 };
 
-const TURTLE_SPEED = 3;
-const TURTLE_SIZE = 0.4;
-const PATH_WIDTH = 3;
-const LEAF_SIZE = 0.3;
+// Flight constants
+const BUTTERFLY_SPEED = 8;
+const BUTTERFLY_VERTICAL_SPEED = 5;
+const BUTTERFLY_SIZE = 0.3;
+const WORLD_SIZE = 100;
+const WORLD_HEIGHT = 30;
 
-// Generate a winding path
-function generatePath(length) {
-  const path = [];
-  let x = 0;
-  let z = 0;
-  let direction = 0; // 0 = forward, 1 = right, 2 = left
+// Collectible values
+const NECTAR_VALUE = 100;
+const POLLEN_VALUE = 250;
+const DEWDROP_VALUE = 500;
 
-  for (let i = 0; i < length; i++) {
-    path.push({ x, z, segment: i });
+// Garden zones
+const ZONES = {
+  meadow: { start: 0, end: 35, name: 'Meadow' },
+  forest: { start: 35, end: 70, name: 'Flower Forest' },
+  heart: { start: 70, end: 100, name: 'Heart Garden' },
+};
 
-    // Move forward
-    z += 2;
+// Butterfly player with iridescent wings
+function Butterfly({ position, rotation, isFlying }) {
+  const groupRef = useRef();
+  const wingPhase = useRef(0);
 
-    // Occasionally turn
-    if (i > 5 && i < length - 5 && Math.random() < 0.3) {
-      const turn = Math.random() < 0.5 ? -1 : 1;
-      x += turn * 2;
+  useFrame((_, delta) => {
+    if (groupRef.current) {
+      wingPhase.current += delta * (isFlying ? 15 : 8);
+      const wingAngle = Math.sin(wingPhase.current) * 0.6;
+
+      // Animate wings on children
+      const leftWing = groupRef.current.children[1];
+      const rightWing = groupRef.current.children[2];
+      if (leftWing) leftWing.rotation.y = wingAngle;
+      if (rightWing) rightWing.rotation.y = -wingAngle;
     }
-  }
+  });
 
-  return path;
-}
-
-// Path segment mesh
-function PathSegment({ position }) {
   return (
-    <mesh position={position} receiveShadow>
-      <boxGeometry args={[PATH_WIDTH, 0.1, 2]} />
-      <meshStandardMaterial color="#8B4513" roughness={0.9} />
-    </mesh>
+    <group ref={groupRef} position={position} rotation={[0, rotation, 0]}>
+      {/* Body - cyan/teal color matching Miles */}
+      <mesh castShadow>
+        <capsuleGeometry args={[0.08, 0.4, 4, 8]} />
+        <meshStandardMaterial color="#00CED1" emissive="#00CED1" emissiveIntensity={0.3} />
+      </mesh>
+
+      {/* Left wing - iridescent */}
+      <group position={[0.15, 0.05, 0]}>
+        <mesh rotation={[0, 0.3, 0.2]}>
+          <planeGeometry args={[0.5, 0.35]} />
+          <meshStandardMaterial
+            color="#00CED1"
+            emissive="#7FFFD4"
+            emissiveIntensity={0.4}
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.9}
+          />
+        </mesh>
+      </group>
+
+      {/* Right wing - iridescent */}
+      <group position={[-0.15, 0.05, 0]}>
+        <mesh rotation={[0, -0.3, 0.2]}>
+          <planeGeometry args={[0.5, 0.35]} />
+          <meshStandardMaterial
+            color="#00CED1"
+            emissive="#7FFFD4"
+            emissiveIntensity={0.4}
+            side={THREE.DoubleSide}
+            transparent
+            opacity={0.9}
+          />
+        </mesh>
+      </group>
+
+      {/* Antennae */}
+      <mesh position={[0.03, 0.22, 0.08]} rotation={[0.3, 0, 0.2]}>
+        <cylinderGeometry args={[0.005, 0.005, 0.15]} />
+        <meshStandardMaterial color="#004040" />
+      </mesh>
+      <mesh position={[-0.03, 0.22, 0.08]} rotation={[0.3, 0, -0.2]}>
+        <cylinderGeometry args={[0.005, 0.005, 0.15]} />
+        <meshStandardMaterial color="#004040" />
+      </mesh>
+
+      {/* Sparkle trail effect */}
+      {isFlying && (
+        <pointLight color="#00CED1" intensity={1} distance={2} decay={2} />
+      )}
+    </group>
   );
 }
 
-// Leaf collectible
-function Leaf({ position, onCollect, collected }) {
+// Giant flower - decorative environment
+const FlowerMemo = ({ position, color, petalCount = 6, size = 1 }) => {
+  const petals = useMemo(() => {
+    const pts = [];
+    for (let i = 0; i < petalCount; i++) {
+      const angle = (i / petalCount) * Math.PI * 2;
+      pts.push({ angle, key: i });
+    }
+    return pts;
+  }, [petalCount]);
+
+  return (
+    <group position={position}>
+      {/* Stem */}
+      <mesh position={[0, size * 2, 0]}>
+        <cylinderGeometry args={[0.1 * size, 0.15 * size, size * 4]} />
+        <meshStandardMaterial color="#228B22" />
+      </mesh>
+
+      {/* Flower head */}
+      <group position={[0, size * 4, 0]}>
+        {/* Petals */}
+        {petals.map(({ angle, key }) => (
+          <mesh
+            key={key}
+            position={[Math.cos(angle) * size * 0.8, 0, Math.sin(angle) * size * 0.8]}
+            rotation={[Math.PI / 6, angle, 0]}
+          >
+            <sphereGeometry args={[size * 0.6, 8, 6]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.2} />
+          </mesh>
+        ))}
+        {/* Center */}
+        <mesh>
+          <sphereGeometry args={[size * 0.4, 12, 8]} />
+          <meshStandardMaterial color="#FFD700" emissive="#FFD700" emissiveIntensity={0.3} />
+        </mesh>
+      </group>
+    </group>
+  );
+};
+
+// Nectar droplet collectible
+function NectarDroplet({ position, onCollect, collected }) {
   const meshRef = useRef();
-  const [bobOffset] = useState(Math.random() * Math.PI * 2);
+  const bobOffset = useMemo(() => Math.random() * Math.PI * 2, []);
 
   useFrame((state) => {
     if (meshRef.current && !collected) {
       meshRef.current.rotation.y += 0.02;
-      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2 + bobOffset) * 0.1;
+      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2 + bobOffset) * 0.15;
     }
   });
 
@@ -75,97 +172,178 @@ function Leaf({ position, onCollect, collected }) {
   return (
     <group position={position}>
       <mesh ref={meshRef} castShadow>
-        <coneGeometry args={[LEAF_SIZE, LEAF_SIZE * 0.5, 4]} />
-        <meshStandardMaterial color="#228B22" emissive="#228B22" emissiveIntensity={0.3} />
+        <sphereGeometry args={[0.2, 12, 8]} />
+        <meshStandardMaterial
+          color="#FFD700"
+          emissive="#FFD700"
+          emissiveIntensity={0.6}
+          transparent
+          opacity={0.8}
+        />
       </mesh>
-      <pointLight color="#228B22" intensity={0.5} distance={2} />
+      <pointLight color="#FFD700" intensity={0.8} distance={3} />
     </group>
   );
 }
 
-// Bird obstacle
-function Bird({ startZ, speed, onHitTurtle, turtlePos }) {
+// Cyan essence collectible (required - 3 per realm)
+function CyanEssence({ position, onCollect, collected }) {
   const meshRef = useRef();
-  const [x] = useState((Math.random() - 0.5) * PATH_WIDTH);
-  const z = useRef(startZ);
-  const wingPhase = useRef(Math.random() * Math.PI * 2);
+
+  useFrame((state) => {
+    if (meshRef.current && !collected) {
+      meshRef.current.rotation.y += 0.03;
+      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime) * 0.1;
+    }
+  });
+
+  if (collected) return null;
+
+  return (
+    <group position={position}>
+      <mesh ref={meshRef} castShadow>
+        <octahedronGeometry args={[0.4]} />
+        <meshStandardMaterial
+          color="#00CED1"
+          emissive="#00CED1"
+          emissiveIntensity={0.8}
+          transparent
+          opacity={0.9}
+        />
+      </mesh>
+      <pointLight color="#00CED1" intensity={2} distance={5} />
+    </group>
+  );
+}
+
+// Dragonfly hazard - patrols and pushes player back
+function Dragonfly({ position, patrolRadius, speed, onHit, playerPos }) {
+  const groupRef = useRef();
+  const angle = useRef(Math.random() * Math.PI * 2);
+  const wingPhase = useRef(0);
+  const baseY = position[1];
 
   useFrame((_, delta) => {
-    if (!meshRef.current) return;
+    if (!groupRef.current) return;
 
-    // Move toward player
-    z.current -= speed * delta * 10;
-    wingPhase.current += delta * 15;
+    angle.current += speed * delta;
+    wingPhase.current += delta * 30;
 
-    meshRef.current.position.z = z.current;
-    meshRef.current.position.x = x;
-    meshRef.current.position.y = 1 + Math.sin(wingPhase.current) * 0.3;
+    const x = position[0] + Math.cos(angle.current) * patrolRadius;
+    const z = position[2] + Math.sin(angle.current) * patrolRadius;
+    const y = baseY + Math.sin(angle.current * 2) * 0.5;
 
-    // Check collision with turtle
-    if (turtlePos) {
-      const dx = meshRef.current.position.x - turtlePos[0];
-      const dz = meshRef.current.position.z - turtlePos[2];
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < 0.8) {
-        onHitTurtle();
-        z.current = startZ + 20; // Reset bird position
+    groupRef.current.position.set(x, y, z);
+    groupRef.current.rotation.y = angle.current + Math.PI / 2;
+
+    // Check collision with player
+    if (playerPos) {
+      const dx = x - playerPos[0];
+      const dy = y - playerPos[1];
+      const dz = z - playerPos[2];
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (dist < 1.0) {
+        onHit({ x: -Math.cos(angle.current), z: -Math.sin(angle.current) });
       }
-    }
-
-    // Reset if past player
-    if (z.current < -5) {
-      z.current = startZ + Math.random() * 20;
     }
   });
 
   return (
-    <group ref={meshRef}>
-      {/* Bird body */}
-      <mesh castShadow>
-        <sphereGeometry args={[0.3, 8, 6]} />
-        <meshStandardMaterial color="#4A4A4A" />
+    <group ref={groupRef}>
+      {/* Body */}
+      <mesh>
+        <capsuleGeometry args={[0.1, 0.6, 4, 8]} />
+        <meshStandardMaterial color="#4169E1" />
       </mesh>
       {/* Wings */}
-      <mesh position={[0.3, 0, 0]} rotation={[0, 0, Math.sin(wingPhase.current) * 0.5]}>
-        <boxGeometry args={[0.4, 0.05, 0.2]} />
-        <meshStandardMaterial color="#333" />
+      <mesh position={[0.2, 0.05, 0]} rotation={[0, 0, Math.sin(wingPhase.current) * 0.3]}>
+        <planeGeometry args={[0.4, 0.1]} />
+        <meshStandardMaterial color="#ADD8E6" transparent opacity={0.5} side={THREE.DoubleSide} />
       </mesh>
-      <mesh position={[-0.3, 0, 0]} rotation={[0, 0, -Math.sin(wingPhase.current) * 0.5]}>
-        <boxGeometry args={[0.4, 0.05, 0.2]} />
-        <meshStandardMaterial color="#333" />
-      </mesh>
-      {/* Beak */}
-      <mesh position={[0, 0, 0.25]} rotation={[Math.PI/2, 0, 0]}>
-        <coneGeometry args={[0.1, 0.2, 4]} />
-        <meshStandardMaterial color="#FFA500" />
+      <mesh position={[-0.2, 0.05, 0]} rotation={[0, 0, -Math.sin(wingPhase.current) * 0.3]}>
+        <planeGeometry args={[0.4, 0.1]} />
+        <meshStandardMaterial color="#ADD8E6" transparent opacity={0.5} side={THREE.DoubleSide} />
       </mesh>
     </group>
   );
 }
 
-// Turtle player
-function Turtle({ position, rotation }) {
+// Spider web hazard - slows player
+function SpiderWeb({ position, size = 2 }) {
   return (
-    <group position={position} rotation={[0, rotation, 0]}>
-      {/* Shell */}
-      <mesh position={[0, 0.15, 0]} castShadow>
-        <sphereGeometry args={[0.35, 16, 12]} />
-        <meshStandardMaterial color="#5D4037" roughness={0.8} />
+    <group position={position}>
+      <mesh rotation={[0, Math.random() * Math.PI, 0]}>
+        <ringGeometry args={[0, size, 8, 1]} />
+        <meshStandardMaterial
+          color="#FFFFFF"
+          transparent
+          opacity={0.3}
+          side={THREE.DoubleSide}
+        />
       </mesh>
-      {/* Head */}
-      <mesh position={[0, 0.1, 0.35]} castShadow>
-        <sphereGeometry args={[0.12, 8, 6]} />
-        <meshStandardMaterial color="#8BC34A" roughness={0.7} />
+      {/* Web strands */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <mesh key={i} rotation={[0, (i / 8) * Math.PI * 2, 0]}>
+          <boxGeometry args={[0.02, 0.02, size]} />
+          <meshStandardMaterial color="#FFFFFF" transparent opacity={0.4} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// Healing flower - restores health
+function HealingFlower({ position, onHeal, used }) {
+  const meshRef = useRef();
+
+  useFrame((state) => {
+    if (meshRef.current && !used) {
+      meshRef.current.rotation.y += 0.01;
+      const pulse = Math.sin(state.clock.elapsedTime * 3) * 0.1 + 1;
+      meshRef.current.scale.setScalar(pulse);
+    }
+  });
+
+  if (used) return null;
+
+  return (
+    <group position={position}>
+      <mesh ref={meshRef}>
+        <dodecahedronGeometry args={[0.4]} />
+        <meshStandardMaterial
+          color="#FF69B4"
+          emissive="#FF69B4"
+          emissiveIntensity={0.6}
+        />
       </mesh>
-      {/* Eyes */}
-      <mesh position={[0.05, 0.15, 0.42]}>
-        <sphereGeometry args={[0.03, 6, 4]} />
-        <meshStandardMaterial color="#111" />
+      <pointLight color="#FF69B4" intensity={1.5} distance={4} />
+    </group>
+  );
+}
+
+// AEIOU/Dimitrius at the end of the realm
+function Dimitrius({ position }) {
+  const meshRef = useRef();
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime) * 0.2;
+    }
+  });
+
+  return (
+    <group position={position}>
+      {/* Simple gnome representation */}
+      <mesh ref={meshRef}>
+        <coneGeometry args={[0.5, 1.2, 8]} />
+        <meshStandardMaterial color="#8B4513" />
       </mesh>
-      <mesh position={[-0.05, 0.15, 0.42]}>
-        <sphereGeometry args={[0.03, 6, 4]} />
-        <meshStandardMaterial color="#111" />
+      <mesh position={[0, 0.8, 0]}>
+        <sphereGeometry args={[0.3, 12, 8]} />
+        <meshStandardMaterial color="#FFE4B5" />
       </mesh>
+      {/* Glow */}
+      <pointLight color="#FFD700" intensity={2} distance={8} />
     </group>
   );
 }
@@ -178,46 +356,115 @@ function GameScene({ difficulty, onGameOver, onEssenceCollected, onScoreChange }
   const [lives, setLives] = useState(3);
   const [time, setTime] = useState(settings.timeLimit);
   const [essencesCollected, setEssencesCollected] = useState(0);
+  const [isFlying, setIsFlying] = useState(true);
+  const [inWeb, setInWeb] = useState(false);
 
-  const turtlePos = useRef([0, 0.2, 0]);
-  const turtleRot = useRef(0);
-  const cameraZ = useRef(-5);
+  const butterflyPos = useRef([0, 10, 5]);
+  const butterflyRot = useRef(0);
+  const velocity = useRef([0, 0, 0]);
+  const pushback = useRef({ x: 0, z: 0, time: 0 });
 
-  const path = useMemo(() => generatePath(settings.pathLength), [settings.pathLength]);
+  // Generate flowers for environment
+  const flowers = useMemo(() => {
+    const flowerList = [];
+    const flowerColors = ['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#FF69B4', '#DDA0DD'];
 
-  // Generate leaves along the path
-  const [leaves, setLeaves] = useState(() => {
-    const leafPositions = [];
-    for (let i = 0; i < settings.leaves; i++) {
-      const pathIndex = Math.floor(Math.random() * (path.length - 10)) + 5;
-      const pathPoint = path[pathIndex];
-      leafPositions.push({
+    for (let i = 0; i < 50; i++) {
+      const zone = i < 20 ? 'meadow' : i < 40 ? 'forest' : 'heart';
+      const zRange = ZONES[zone];
+      flowerList.push({
         id: i,
         position: [
-          pathPoint.x + (Math.random() - 0.5) * (PATH_WIDTH - 1),
-          0.5,
-          pathPoint.z + (Math.random() - 0.5) * 1.5
+          (Math.random() - 0.5) * WORLD_SIZE * 0.8,
+          0,
+          zRange.start + Math.random() * (zRange.end - zRange.start),
+        ],
+        color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
+        size: 1 + Math.random() * 2,
+        petalCount: 5 + Math.floor(Math.random() * 4),
+      });
+    }
+    return flowerList;
+  }, []);
+
+  // Generate nectar droplets
+  const [nectarDroplets, setNectarDroplets] = useState(() => {
+    const droplets = [];
+    for (let i = 0; i < 60; i++) {
+      droplets.push({
+        id: i,
+        position: [
+          (Math.random() - 0.5) * WORLD_SIZE * 0.7,
+          5 + Math.random() * 15,
+          Math.random() * WORLD_SIZE,
         ],
         collected: false,
       });
     }
-    return leafPositions;
+    return droplets;
   });
 
-  // Essence spawns (3 per realm)
+  // Generate cyan essences (3 required)
   const [essences, setEssences] = useState(() => {
-    const essencePositions = [];
-    const spacing = Math.floor(path.length / 4);
-    for (let i = 0; i < 3; i++) {
-      const pathIndex = spacing * (i + 1);
-      const pathPoint = path[pathIndex];
-      essencePositions.push({
+    return [
+      { id: 0, position: [15, 12, 25], collected: false },  // Meadow
+      { id: 1, position: [-20, 15, 55], collected: false }, // Flower Forest
+      { id: 2, position: [0, 18, 85], collected: false },   // Heart Garden
+    ];
+  });
+
+  // Generate dragonflies based on difficulty
+  const dragonflies = useMemo(() => {
+    const count = Math.floor(5 * settings.hazardDensity);
+    const list = [];
+    for (let i = 0; i < count; i++) {
+      list.push({
         id: i,
-        position: [pathPoint.x, 0.8, pathPoint.z],
-        collected: false,
+        position: [
+          (Math.random() - 0.5) * WORLD_SIZE * 0.6,
+          8 + Math.random() * 10,
+          20 + Math.random() * 60,
+        ],
+        patrolRadius: 5 + Math.random() * 10,
+        speed: 0.5 + Math.random() * 0.5,
       });
     }
-    return essencePositions;
+    return list;
+  }, [settings.hazardDensity]);
+
+  // Generate spider webs
+  const webs = useMemo(() => {
+    const count = Math.floor(8 * settings.hazardDensity);
+    const list = [];
+    for (let i = 0; i < count; i++) {
+      list.push({
+        id: i,
+        position: [
+          (Math.random() - 0.5) * WORLD_SIZE * 0.6,
+          5 + Math.random() * 12,
+          10 + Math.random() * 70,
+        ],
+        size: 2 + Math.random() * 2,
+      });
+    }
+    return list;
+  }, [settings.hazardDensity]);
+
+  // Generate healing flowers
+  const [healingFlowers, setHealingFlowers] = useState(() => {
+    const list = [];
+    for (let i = 0; i < settings.healingFlowers; i++) {
+      list.push({
+        id: i,
+        position: [
+          (Math.random() - 0.5) * WORLD_SIZE * 0.5,
+          6 + Math.random() * 8,
+          15 + i * 20,
+        ],
+        used: false,
+      });
+    }
+    return list;
   });
 
   // Timer
@@ -238,48 +485,74 @@ function GameScene({ difficulty, onGameOver, onEssenceCollected, onScoreChange }
     return () => clearInterval(timer);
   }, [gameState, score, lives, essencesCollected, onGameOver]);
 
-  // Input handling
+  // Main game loop
   useFrame((state, delta) => {
     if (gameState !== 'playing') return;
 
     const input = getInput();
-    let moved = false;
+    const speedMult = inWeb ? 0.3 : 1.0; // Slow down in web
+    const actualSpeed = BUTTERFLY_SPEED * speedMult;
 
-    // Move turtle
-    if (input.up) {
-      turtlePos.current[2] += TURTLE_SPEED * delta;
-      turtleRot.current = 0;
-      moved = true;
-    }
-    if (input.down) {
-      turtlePos.current[2] -= TURTLE_SPEED * delta;
-      turtleRot.current = Math.PI;
-      moved = true;
-    }
-    if (input.left) {
-      turtlePos.current[0] -= TURTLE_SPEED * delta;
-      turtleRot.current = Math.PI / 2;
-      moved = true;
-    }
-    if (input.right) {
-      turtlePos.current[0] += TURTLE_SPEED * delta;
-      turtleRot.current = -Math.PI / 2;
-      moved = true;
+    // Handle pushback from dragonfly
+    if (pushback.current.time > 0) {
+      butterflyPos.current[0] += pushback.current.x * 10 * delta;
+      butterflyPos.current[2] += pushback.current.z * 10 * delta;
+      pushback.current.time -= delta;
     }
 
-    // Clamp to path width
-    turtlePos.current[0] = Math.max(-PATH_WIDTH/2 + 0.3, Math.min(PATH_WIDTH/2 - 0.3, turtlePos.current[0]));
+    // Horizontal movement
+    let moveX = 0;
+    let moveZ = 0;
 
-    // Check leaf collection
-    leaves.forEach((leaf, i) => {
-      if (!leaf.collected) {
-        const dx = leaf.position[0] - turtlePos.current[0];
-        const dz = leaf.position[2] - turtlePos.current[2];
-        const dist = Math.sqrt(dx * dx + dz * dz);
-        if (dist < 0.6) {
-          setLeaves(prev => prev.map((l, idx) => idx === i ? { ...l, collected: true } : l));
+    if (input.up) moveZ = actualSpeed * delta;
+    if (input.down) moveZ = -actualSpeed * delta;
+    if (input.left) moveX = -actualSpeed * delta;
+    if (input.right) moveX = actualSpeed * delta;
+
+    // Vertical movement
+    if (input.jump) {
+      butterflyPos.current[1] += BUTTERFLY_VERTICAL_SPEED * delta;
+    }
+    if (input.sprint) {
+      butterflyPos.current[1] -= BUTTERFLY_VERTICAL_SPEED * delta;
+    }
+
+    // Apply wind (based on difficulty)
+    if (settings.windStrength > 0) {
+      const windX = Math.sin(state.clock.elapsedTime * 0.5) * settings.windStrength * delta;
+      const windZ = Math.cos(state.clock.elapsedTime * 0.3) * settings.windStrength * 0.5 * delta;
+      moveX += windX;
+      moveZ += windZ;
+    }
+
+    // Update position
+    butterflyPos.current[0] += moveX;
+    butterflyPos.current[2] += moveZ;
+
+    // Update rotation to face movement direction
+    if (moveX !== 0 || moveZ !== 0) {
+      butterflyRot.current = Math.atan2(moveX, moveZ);
+      setIsFlying(true);
+    } else {
+      setIsFlying(false);
+    }
+
+    // Clamp to world bounds
+    butterflyPos.current[0] = Math.max(-WORLD_SIZE/2, Math.min(WORLD_SIZE/2, butterflyPos.current[0]));
+    butterflyPos.current[1] = Math.max(2, Math.min(WORLD_HEIGHT, butterflyPos.current[1]));
+    butterflyPos.current[2] = Math.max(0, Math.min(WORLD_SIZE, butterflyPos.current[2]));
+
+    // Check nectar collection
+    nectarDroplets.forEach((droplet, i) => {
+      if (!droplet.collected) {
+        const dx = droplet.position[0] - butterflyPos.current[0];
+        const dy = droplet.position[1] - butterflyPos.current[1];
+        const dz = droplet.position[2] - butterflyPos.current[2];
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist < 1.0) {
+          setNectarDroplets(prev => prev.map((d, idx) => idx === i ? { ...d, collected: true } : d));
           setScore(prev => {
-            const newScore = prev + 10;
+            const newScore = prev + NECTAR_VALUE;
             onScoreChange(newScore);
             return newScore;
           });
@@ -290,15 +563,16 @@ function GameScene({ difficulty, onGameOver, onEssenceCollected, onScoreChange }
     // Check essence collection
     essences.forEach((essence, i) => {
       if (!essence.collected) {
-        const dx = essence.position[0] - turtlePos.current[0];
-        const dz = essence.position[2] - turtlePos.current[2];
-        const dist = Math.sqrt(dx * dx + dz * dz);
-        if (dist < 0.8) {
+        const dx = essence.position[0] - butterflyPos.current[0];
+        const dy = essence.position[1] - butterflyPos.current[1];
+        const dz = essence.position[2] - butterflyPos.current[2];
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist < 1.5) {
           setEssences(prev => prev.map((e, idx) => idx === i ? { ...e, collected: true } : e));
           setEssencesCollected(prev => prev + 1);
-          onEssenceCollected('forest'); // Miles gives forest essences
+          onEssenceCollected('cyan');
           setScore(prev => {
-            const newScore = prev + 50;
+            const newScore = prev + 500;
             onScoreChange(newScore);
             return newScore;
           });
@@ -306,18 +580,43 @@ function GameScene({ difficulty, onGameOver, onEssenceCollected, onScoreChange }
       }
     });
 
-    // Check if reached end
-    const lastPath = path[path.length - 1];
-    if (turtlePos.current[2] > lastPath.z - 2) {
-      setGameState('won');
-      onGameOver({ won: true, score, lives, essencesCollected });
-    }
+    // Check healing flowers
+    healingFlowers.forEach((flower, i) => {
+      if (!flower.used && lives < 3) {
+        const dx = flower.position[0] - butterflyPos.current[0];
+        const dy = flower.position[1] - butterflyPos.current[1];
+        const dz = flower.position[2] - butterflyPos.current[2];
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist < 1.2) {
+          setHealingFlowers(prev => prev.map((f, idx) => idx === i ? { ...f, used: true } : f));
+          setLives(prev => Math.min(3, prev + 1));
+        }
+      }
+    });
 
-    // Camera follow
-    cameraZ.current = THREE.MathUtils.lerp(cameraZ.current, turtlePos.current[2] - 8, 0.05);
+    // Check spider web collision
+    let inAnyWeb = false;
+    webs.forEach(web => {
+      const dx = web.position[0] - butterflyPos.current[0];
+      const dy = web.position[1] - butterflyPos.current[1];
+      const dz = web.position[2] - butterflyPos.current[2];
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      if (dist < web.size) {
+        inAnyWeb = true;
+      }
+    });
+    setInWeb(inAnyWeb);
+
+    // Check win condition - reached Heart Garden end with all essences and enough score
+    const allEssencesCollected = essences.every(e => e.collected);
+    if (butterflyPos.current[2] > 90 && allEssencesCollected && score >= settings.nectarGoal) {
+      setGameState('won');
+      onGameOver({ won: true, score, lives, essencesCollected: 3 });
+    }
   });
 
-  const handleBirdHit = useCallback(() => {
+  const handleDragonflyHit = useCallback((direction) => {
+    pushback.current = { x: direction.x, z: direction.z, time: 0.5 };
     setLives(prev => {
       if (prev <= 1) {
         setGameState('gameover');
@@ -330,72 +629,114 @@ function GameScene({ difficulty, onGameOver, onEssenceCollected, onScoreChange }
 
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[10, 20, 10]} intensity={1} castShadow />
+      {/* Lighting - soft morning light */}
+      <ambientLight intensity={0.5} color="#FFF8E7" />
+      <directionalLight position={[50, 80, 30]} intensity={1.2} color="#FFFAF0" castShadow />
+      <hemisphereLight args={['#87CEEB', '#228B22', 0.4]} />
 
-      {/* Sky/Background */}
-      <mesh position={[0, 0, 50]}>
-        <planeGeometry args={[200, 100]} />
-        <meshBasicMaterial color="#87CEEB" />
+      {/* Sky gradient */}
+      <mesh position={[0, 50, 50]}>
+        <sphereGeometry args={[150, 32, 16]} />
+        <meshBasicMaterial color="#87CEEB" side={THREE.BackSide} />
       </mesh>
 
-      {/* Ground */}
-      <mesh position={[0, -0.1, 50]} rotation={[-Math.PI/2, 0, 0]} receiveShadow>
-        <planeGeometry args={[50, 200]} />
+      {/* Ground - lush garden floor */}
+      <mesh position={[0, 0, 50]} rotation={[-Math.PI/2, 0, 0]} receiveShadow>
+        <planeGeometry args={[WORLD_SIZE * 1.5, WORLD_SIZE * 1.5]} />
         <meshStandardMaterial color="#228B22" />
       </mesh>
 
-      {/* Path segments */}
-      {path.map((p, i) => (
-        <PathSegment key={i} position={[p.x, 0, p.z]} />
-      ))}
-
-      {/* Leaves */}
-      {leaves.map(leaf => (
-        <Leaf key={leaf.id} position={leaf.position} collected={leaf.collected} />
-      ))}
-
-      {/* Essences */}
-      {essences.map(essence => !essence.collected && (
-        <group key={essence.id} position={essence.position}>
-          <mesh castShadow>
-            <octahedronGeometry args={[0.3]} />
-            <meshStandardMaterial
-              color="#7CFC00"
-              emissive="#7CFC00"
-              emissiveIntensity={0.5}
-              transparent
-              opacity={0.8}
-            />
-          </mesh>
-          <pointLight color="#7CFC00" intensity={2} distance={3} />
-        </group>
-      ))}
-
-      {/* Birds */}
-      {Array.from({ length: settings.birdCount }).map((_, i) => (
-        <Bird
-          key={i}
-          startZ={turtlePos.current[2] + 30 + i * 15}
-          speed={settings.obstacleSpeed}
-          onHitTurtle={handleBirdHit}
-          turtlePos={turtlePos.current}
+      {/* Flowers (environment decoration) */}
+      {flowers.map(flower => (
+        <FlowerMemo
+          key={flower.id}
+          position={flower.position}
+          color={flower.color}
+          size={flower.size}
+          petalCount={flower.petalCount}
         />
       ))}
 
-      {/* Turtle */}
-      <Turtle position={turtlePos.current} rotation={turtleRot.current} />
+      {/* Nectar droplets */}
+      {nectarDroplets.map(droplet => (
+        <NectarDroplet
+          key={droplet.id}
+          position={droplet.position}
+          collected={droplet.collected}
+        />
+      ))}
 
-      {/* Camera */}
+      {/* Cyan essences */}
+      {essences.map(essence => (
+        <CyanEssence
+          key={essence.id}
+          position={essence.position}
+          collected={essence.collected}
+        />
+      ))}
+
+      {/* Dragonflies */}
+      {dragonflies.map(df => (
+        <Dragonfly
+          key={df.id}
+          position={df.position}
+          patrolRadius={df.patrolRadius}
+          speed={df.speed}
+          onHit={handleDragonflyHit}
+          playerPos={butterflyPos.current}
+        />
+      ))}
+
+      {/* Spider webs */}
+      {webs.map(web => (
+        <SpiderWeb key={web.id} position={web.position} size={web.size} />
+      ))}
+
+      {/* Healing flowers */}
+      {healingFlowers.map(flower => (
+        <HealingFlower
+          key={flower.id}
+          position={flower.position}
+          used={flower.used}
+        />
+      ))}
+
+      {/* Dimitrius at the Heart Garden */}
+      <Dimitrius position={[0, 2, 95]} />
+
+      {/* Butterfly player */}
+      <Butterfly
+        position={butterflyPos.current}
+        rotation={butterflyRot.current}
+        isFlying={isFlying}
+      />
+
+      {/* Camera follows butterfly */}
       <PerspectiveCamera
         makeDefault
-        position={[0, 8, cameraZ.current]}
-        rotation={[-0.6, 0, 0]}
+        position={[
+          butterflyPos.current[0],
+          butterflyPos.current[1] + 5,
+          butterflyPos.current[2] - 10,
+        ]}
+        rotation={[-0.3, 0, 0]}
         fov={60}
       />
 
-      {/* HUD overlay info passed via callbacks */}
+      {/* Floating pollen particles (limited for performance) */}
+      {Array.from({ length: 20 }).map((_, i) => (
+        <mesh
+          key={i}
+          position={[
+            butterflyPos.current[0] + (Math.random() - 0.5) * 20,
+            butterflyPos.current[1] + (Math.random() - 0.5) * 10,
+            butterflyPos.current[2] + Math.random() * 15,
+          ]}
+        >
+          <sphereGeometry args={[0.03, 4, 4]} />
+          <meshBasicMaterial color="#FFD700" transparent opacity={0.5} />
+        </mesh>
+      ))}
     </>
   );
 }
@@ -442,18 +783,21 @@ export default function InchwormRealm({ onExit, onEssenceCollected, onShardColle
       {/* Intro Modal */}
       {showIntro && (
         <IntroModal
-          realmName="The Long Road"
-          realmDescription="Navigate the winding path! Collect leaves and avoid the birds. Reach the end to claim the Mind Shard!"
+          realmName="The Metamorphosis"
+          realmDescription="Transform into a beautiful butterfly! Fly through the magical garden, collect nectar droplets, and find all 3 cyan essences. Reach AEIOU in the Heart Garden to claim the Mind Shard!"
           difficulty={difficulty}
           onStart={handleStartGame}
           onBack={handleExit}
           animal="miles"
           tips={[
-            "Use arrow keys or WASD to move",
-            "Collect green leaves for points",
-            "Avoid the swooping birds!",
-            "Reach the end of the path to win",
-            "Green gems are essences - collect all 3!"
+            "WASD to fly in any direction",
+            "SPACE to fly higher, SHIFT to descend",
+            "Collect golden nectar droplets for points",
+            "Find all 3 glowing cyan essences!",
+            "Avoid dragonflies - they push you back!",
+            "Spider webs slow you down",
+            "Pink healing flowers restore health",
+            `Score ${settings.nectarGoal} points to win`,
           ]}
         />
       )}
@@ -477,7 +821,8 @@ export default function InchwormRealm({ onExit, onEssenceCollected, onShardColle
           lives={3}
           time={settings.timeLimit}
           onPause={handleExit}
-          realmName="The Long Road"
+          realmName="The Metamorphosis"
+          targetScore={settings.nectarGoal}
         />
       )}
 
@@ -489,7 +834,7 @@ export default function InchwormRealm({ onExit, onEssenceCollected, onShardColle
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
+          background: 'rgba(0,0,0,0.85)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -497,13 +842,25 @@ export default function InchwormRealm({ onExit, onEssenceCollected, onShardColle
           color: 'white',
           zIndex: 100,
         }}>
-          <h1 style={{ fontSize: '48px', color: gameState === 'won' ? '#7CFC00' : '#ff4444' }}>
-            {gameState === 'won' ? 'PATH COMPLETE!' : 'GAME OVER'}
+          <h1 style={{ fontSize: '48px', color: gameState === 'won' ? '#00CED1' : '#ff4444', textShadow: '0 0 20px currentColor' }}>
+            {gameState === 'won' ? 'METAMORPHOSIS COMPLETE!' : 'GAME OVER'}
           </h1>
-          <p style={{ fontSize: '24px' }}>Score: {score}</p>
+          <p style={{ fontSize: '24px', marginTop: '10px' }}>Score: {score}</p>
           {gameState === 'won' && (
-            <p style={{ fontSize: '20px', color: '#7CFC00' }}>
-              Mind Shard Collected!
+            <>
+              <p style={{ fontSize: '20px', color: '#00CED1', marginTop: '10px' }}>
+                Cyan Essence Collected!
+              </p>
+              <p style={{ fontSize: '18px', color: '#FFD700', marginTop: '5px' }}>
+                Pyramid Shard Layer 4 Acquired - "From the Chrysalis"
+              </p>
+            </>
+          )}
+          {gameState === 'lost' && gameResult && (
+            <p style={{ fontSize: '16px', color: '#888', marginTop: '10px' }}>
+              {score < settings.nectarGoal
+                ? `Need ${settings.nectarGoal - score} more nectar points`
+                : 'Collect all 3 cyan essences and reach the Heart Garden!'}
             </p>
           )}
           <button
@@ -512,11 +869,12 @@ export default function InchwormRealm({ onExit, onEssenceCollected, onShardColle
               marginTop: '30px',
               padding: '15px 40px',
               fontSize: '18px',
-              background: '#7CFC00',
+              background: 'linear-gradient(135deg, #00CED1 0%, #008B8B 100%)',
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer',
-              color: '#000',
+              color: '#fff',
+              boxShadow: '0 0 15px rgba(0, 206, 209, 0.5)',
             }}
           >
             Return to Clock

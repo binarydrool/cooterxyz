@@ -208,13 +208,13 @@ function Loading() {
   );
 }
 
-// Pyramid shard info - 5 layers: rabbit (bottom), frog, cat, owl, inchworm (capstone)
+// Pyramid shard info - 5 layers: rabbit (bottom), frog, cat, inchworm, owl (capstone)
 const PYRAMID_SHARDS = {
-  rabbit: { layer: 1, name: 'Base Layer', direction: 'East', color: '#8B4513' },
-  frog: { layer: 2, name: 'Second Layer', direction: 'South', color: '#228B22' },
-  cat: { layer: 3, name: 'Third Layer', direction: 'West', color: '#FF8C00' },
-  owl: { layer: 4, name: 'Fourth Layer', direction: 'North', color: '#4B0082' },
-  inchworm: { layer: 5, name: 'Capstone', direction: 'above', color: '#7CFC00' },
+  rabbit: { layer: 1, name: 'Base Layer', direction: 'East', color: '#FFD700', quote: 'From the Warren' },
+  frog: { layer: 2, name: 'Second Layer', direction: 'South', color: '#228B22', quote: 'From the Marsh' },
+  cat: { layer: 3, name: 'Third Layer', direction: 'West', color: '#FF8C00', quote: 'From the Rooftops' },
+  inchworm: { layer: 4, name: 'Fourth Layer', direction: 'above', color: '#00CED1', quote: 'From the Chrysalis' },
+  owl: { layer: 5, name: 'Capstone', direction: 'North', color: '#4B0082', quote: 'From Above' },
 };
 
 // Mind Fusion Spell Sequence - plays when all 4 pyramid shards are collected
@@ -882,7 +882,7 @@ function GameContent() {
 
   // Map essence type to grain color
   const essenceToGrainColor = (essenceType) => {
-    const mapping = { forest: 'green', golden: 'gold', amber: 'orange', violet: 'purple' };
+    const mapping = { forest: 'green', golden: 'gold', amber: 'orange', violet: 'purple', cyan: 'cyan' };
     return mapping[essenceType] || 'gold';
   };
 
@@ -1069,7 +1069,7 @@ function GameContent() {
     frog: 'The Lily Marsh',
     owl: 'The Night Sky',
     elf: 'The Eternal Clocktower',
-    inchworm: 'The Long Road',
+    inchworm: 'The Metamorphosis',
   };
 
   return (
@@ -1198,7 +1198,7 @@ function GameContent() {
             title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/5 Mind Shards`}
           >
             {[
-              { realm: 'inchworm', color: '#7CFC00' },
+              { realm: 'inchworm', color: '#00CED1' },
               { realm: 'owl', color: '#4B0082' },
               { realm: 'cat', color: '#FF8C00' },
               { realm: 'frog', color: '#228B22' },
@@ -1224,7 +1224,7 @@ function GameContent() {
           { id: 'cat', color: '#ffa500' },
           { id: 'frog', color: '#22c55e' },
           { id: 'owl', color: '#8b5cf6' },
-          { id: 'inchworm', color: '#7CFC00' },
+          { id: 'inchworm', color: '#00CED1' },
           { id: 'elf', color: '#c4a000', requiresPyramid: true },
         ].map(realm => {
           const IconComponent = RealmIcons[realm.id];
@@ -1348,7 +1348,7 @@ function GameContent() {
             title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/5 Mind Shards`}
           >
             {[
-              { realm: 'inchworm', color: '#7CFC00' },
+              { realm: 'inchworm', color: '#00CED1' },
               { realm: 'owl', color: '#4B0082' },
               { realm: 'cat', color: '#FF8C00' },
               { realm: 'frog', color: '#228B22' },
@@ -1373,7 +1373,7 @@ function GameContent() {
             { id: 'cat', color: '#ffa500' },
             { id: 'frog', color: '#22c55e' },
             { id: 'owl', color: '#8b5cf6' },
-            { id: 'inchworm', color: '#7CFC00' },
+            { id: 'inchworm', color: '#00CED1' },
             { id: 'elf', color: '#c4a000', requiresPyramid: true },
           ].map(realm => {
             const IconComponent = RealmIcons[realm.id];

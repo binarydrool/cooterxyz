@@ -81,11 +81,12 @@ const ESSENCE_COLORS = {
   golden: { color: '#FFD700', emissive: '#CC9900' },
   amber: { color: '#FFA500', emissive: '#CC7700' },
   violet: { color: '#9932CC', emissive: '#660099' },
+  cyan: { color: '#00CED1', emissive: '#00999A' },
 };
 
 // Miles the Inchworm - walks around clock face in 24 hours
 const MILES_RADIUS = CLOCK_RADIUS * 0.92; // Near edge but not on outer rim
-const MILES_INTERACT_DISTANCE = 0.8; // Interaction distance for Miles
+const MILES_INTERACT_DISTANCE = 1.2; // Interaction distance for Miles (matches other animals)
 
 // Miles the Inchworm - cute little guy that walks around the clock face every 24 hours
 function Miles({ dejaVuState, onPositionUpdate }) {
@@ -266,6 +267,36 @@ function Miles({ dejaVuState, onPositionUpdate }) {
 
       {/* Subtle glow under the inchworm */}
       <pointLight position={[0, 0.05, 0]} intensity={0.3} color="#7CFC00" distance={0.5} decay={2} />
+    </group>
+  );
+}
+
+// Miles Portal - small cyan portal that hovers above Miles and follows him
+function MilesPortal({ milesPositionRef, isUnlocked }) {
+  const groupRef = useRef();
+  const PORTAL_HEIGHT_ABOVE_MILES = 1.5;
+  const PORTAL_SCALE = 0.6; // 60% size of normal portals
+
+  useFrame(({ clock }) => {
+    if (groupRef.current && isUnlocked) {
+      const t = clock.getElapsedTime();
+      // Follow Miles' position with gentle bob
+      groupRef.current.position.x = milesPositionRef.current.x;
+      groupRef.current.position.y = CLOCK_THICKNESS / 2 + PORTAL_HEIGHT_ABOVE_MILES + Math.sin(t * 1.5) * 0.1;
+      groupRef.current.position.z = milesPositionRef.current.z;
+    }
+  });
+
+  if (!isUnlocked) return null;
+
+  return (
+    <group ref={groupRef}>
+      <Portal
+        position={[0, 0, 0]} // Position is controlled by parent group
+        animal="inchworm"
+        isOpen={true}
+        size={PORTAL_SCALE}
+      />
     </group>
   );
 }
@@ -502,13 +533,13 @@ function AmberPyramid({ pyramidShards = {}, position = [0, 0, 0] }) {
   const groupRef = useRef();
   const floatRef = useRef(0);
 
-  // Pyramid layers from bottom to top: rabbit, frog, cat, owl, inchworm
+  // Pyramid layers from bottom to top: rabbit, frog, cat, inchworm (Miles), owl (capstone)
   const layers = [
-    { realm: 'rabbit', color: '#8B4513', y: 0.0, scale: 1.0 },      // Brown - base
-    { realm: 'frog', color: '#228B22', y: 0.14, scale: 0.8 },       // Green
-    { realm: 'cat', color: '#FFA500', y: 0.26, scale: 0.6 },        // Orange/Amber for cat
-    { realm: 'owl', color: '#4B0082', y: 0.36, scale: 0.4 },        // Purple
-    { realm: 'inchworm', color: '#7CFC00', y: 0.44, scale: 0.2 },   // Bright green - capstone (Miles)
+    { realm: 'rabbit', color: '#FFD700', y: 0.0, scale: 1.0 },      // Gold - base (From the Warren)
+    { realm: 'frog', color: '#228B22', y: 0.14, scale: 0.8 },       // Green (From the Marsh)
+    { realm: 'cat', color: '#FF8C00', y: 0.26, scale: 0.6 },        // Orange (From the Rooftops)
+    { realm: 'inchworm', color: '#00CED1', y: 0.36, scale: 0.4 },   // Cyan (From the Chrysalis - Miles)
+    { realm: 'owl', color: '#4B0082', y: 0.44, scale: 0.2 },        // Purple - capstone (From Above)
   ];
 
   useFrame((_, delta) => {
@@ -1548,8 +1579,16 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
     let nearestPortal = null;
     let nearestPortalDist = Infinity;
     for (const [realm, isUnlocked] of Object.entries(unlockedRealms)) {
-      if (isUnlocked && PORTAL_POSITIONS[realm]) {
-        const portalPos = PORTAL_POSITIONS[realm];
+      if (isUnlocked) {
+        let portalPos;
+        if (realm === 'inchworm') {
+          // Miles portal follows him - use current Miles position
+          portalPos = [milesPosition.current.x, 0, milesPosition.current.z];
+        } else if (PORTAL_POSITIONS[realm]) {
+          portalPos = PORTAL_POSITIONS[realm];
+        } else {
+          continue; // No valid position
+        }
         const portalDx = turtleX - portalPos[0];
         const portalDz = turtleZ - portalPos[2];
         const portalDist = Math.sqrt(portalDx * portalDx + portalDz * portalDz);
@@ -1650,7 +1689,7 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
         // Check if déjà vu is complete
         if (dv.progress >= 1) {
           // Spawn 3 time grains with random colors!
-          const essenceTypes = ['forest', 'golden', 'amber', 'violet'];
+          const essenceTypes = ['forest', 'golden', 'amber', 'violet', 'cyan'];
           const newGrains = [];
           const nowSeconds = Date.now() / 1000;
           for (let i = 0; i < 3; i++) {
@@ -1947,6 +1986,12 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
           />
         )
       ))}
+
+      {/* Miles Portal - hovers above Miles and follows him */}
+      <MilesPortal
+        milesPositionRef={milesPosition}
+        isUnlocked={unlockedRealms?.inchworm || false}
+      />
 
       {/* Victory ceremony shard */}
       {victoryCeremony && (

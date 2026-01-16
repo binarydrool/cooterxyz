@@ -216,10 +216,10 @@ export default function ChatModal({
   const [correctGrainsOffered, setCorrectGrainsOffered] = useState(0);
   const [selectedGrainColor, setSelectedGrainColor] = useState(null);
 
-  // Total ESSENCES needed for owl realm - only count golden, forest, amber (NOT violet)
-  // Need 9 total: 3 golden (rabbit) + 3 forest (frog) + 3 amber (cat)
-  const totalEssences = inventory
-    ? (inventory.essences.golden || 0) + (inventory.essences.forest || 0) + (inventory.essences.amber || 0)
+  // Total GRAINS needed for owl realm - need 3 of each of 4 colors = 12 total
+  // green (frog) + gold (rabbit) + orange (cat) + cyan (miles)
+  const totalOwlGrains = inventory
+    ? (inventory.grains?.green || 0) + (inventory.grains?.gold || 0) + (inventory.grains?.orange || 0) + (inventory.grains?.cyan || 0)
     : 0;
 
   // Reset state when modal opens
@@ -340,24 +340,22 @@ export default function ChatModal({
     }
   }, [selectedGrainColor, handleOfferGrain]);
 
-  // Handle owl special unlock (needs 9 essences: 3 from each realm)
+  // Handle owl special unlock (needs 12 grains: 3 of each color from all 4 realms)
   const handleOwlUnlock = useCallback(() => {
     if (realmUnlocked || !inventory) return;
 
     const result = checkOwlRequirements(inventory);
 
     if (result.correct) {
-      // Remove ALL essences from the 3 realm types (golden, forest, amber)
-      // This resets the counter to 0/9
-      const goldenCount = inventory.essences?.golden || 0;
-      const forestCount = inventory.essences?.forest || 0;
-      const amberCount = inventory.essences?.amber || 0;
-      if (goldenCount > 0) inventory.removeEssence('golden', goldenCount);
-      if (forestCount > 0) inventory.removeEssence('forest', forestCount);
-      if (amberCount > 0) inventory.removeEssence('amber', amberCount);
+      // Remove 3 grains of each of the 4 colors
+      if (result.grainsUsed) {
+        for (const [color, count] of Object.entries(result.grainsUsed)) {
+          if (count > 0) inventory.removeGrains(color, count);
+        }
+      }
 
       setDialogueHistory(prev => [...prev,
-        { role: 'player', content: `*presents nine essences from three realms*` },
+        { role: 'player', content: `*presents twelve Time Grains - three of each color*` },
         { role: 'animal', content: result.message, isSuccess: true },
       ]);
       setRealmUnlocked(true);
@@ -667,7 +665,7 @@ export default function ChatModal({
               }
 
               if (isHoots || isOwlRealm) {
-                // Hoots/Owl realm - needs 9 essences (3 from each of 3 realms)
+                // Hoots/Owl realm - needs 12 grains (3 of each of 4 colors from all realms)
                 // Also show dialogue options for Hoots
                 return (
                   <>
@@ -721,7 +719,7 @@ export default function ChatModal({
                     ) : (
                       <>
                         <div style={{ color: '#888', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', marginTop: '8px' }}>
-                          OFFER ESSENCES
+                          OFFER GRAINS
                         </div>
 
                         <div style={{
@@ -730,18 +728,19 @@ export default function ChatModal({
                           borderRadius: '10px',
                           border: '1px solid rgba(139, 69, 19, 0.4)',
                         }}>
-                          {/* Required essences display */}
+                          {/* Required grains display - 4 colors now */}
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {[
-                              { type: 'golden', realm: 'Warren', animal: 'Rabbit', needed: 3 },
-                              { type: 'forest', realm: 'Marsh', animal: 'Frog', needed: 3 },
-                              { type: 'amber', realm: 'Rooftops', animal: 'Cat', needed: 3 },
-                            ].map(({ type, realm, animal: animalName, needed }) => {
-                              const count = inventory?.essences[type] || 0;
+                              { color: 'green', animal: 'Frog', hex: '#00FF00', needed: 3 },
+                              { color: 'gold', animal: 'Rabbit', hex: '#FFD700', needed: 3 },
+                              { color: 'orange', animal: 'Cat', hex: '#FFA500', needed: 3 },
+                              { color: 'cyan', animal: 'Miles', hex: '#00CED1', needed: 3 },
+                            ].map(({ color, animal: animalName, hex, needed }) => {
+                              const count = inventory?.grains?.[color] || 0;
                               const hasEnough = count >= needed;
                               return (
                                 <div
-                                  key={type}
+                                  key={color}
                                   style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -752,7 +751,13 @@ export default function ChatModal({
                                     border: hasEnough ? '1px solid rgba(100, 255, 100, 0.3)' : '1px solid rgba(255,255,255,0.1)',
                                   }}
                                 >
-                                  <EssenceIcon type={type} size={16} />
+                                  <div style={{
+                                    width: 16,
+                                    height: 16,
+                                    borderRadius: '50%',
+                                    background: hex,
+                                    boxShadow: `0 0 4px ${hex}`,
+                                  }} />
                                   <div style={{ flex: 1, color: hasEnough ? '#90EE90' : '#888', fontSize: '10px' }}>
                                     {animalName}
                                   </div>
@@ -764,12 +769,13 @@ export default function ChatModal({
                             })}
                           </div>
 
-                          {/* Total counter - sum of capped values (max 3 each) */}
+                          {/* Total counter - sum of capped values (max 3 each, 4 colors = 12 total) */}
                           {(() => {
-                            const cappedGolden = Math.min(inventory?.essences?.golden || 0, 3);
-                            const cappedForest = Math.min(inventory?.essences?.forest || 0, 3);
-                            const cappedAmber = Math.min(inventory?.essences?.amber || 0, 3);
-                            const cappedTotal = cappedGolden + cappedForest + cappedAmber;
+                            const cappedGreen = Math.min(inventory?.grains?.green || 0, 3);
+                            const cappedGold = Math.min(inventory?.grains?.gold || 0, 3);
+                            const cappedOrange = Math.min(inventory?.grains?.orange || 0, 3);
+                            const cappedCyan = Math.min(inventory?.grains?.cyan || 0, 3);
+                            const cappedTotal = cappedGreen + cappedGold + cappedOrange + cappedCyan;
                             return (
                               <div style={{
                                 marginTop: '8px',
@@ -779,34 +785,34 @@ export default function ChatModal({
                                 textAlign: 'center',
                               }}>
                                 <span style={{ color: '#888', fontSize: '10px' }}>Total: </span>
-                                <span style={{ color: cappedTotal >= 9 ? '#90EE90' : '#ffd700', fontSize: '13px', fontWeight: 600 }}>
-                                  {cappedTotal}/9
+                                <span style={{ color: cappedTotal >= 12 ? '#90EE90' : '#ffd700', fontSize: '13px', fontWeight: 600 }}>
+                                  {cappedTotal}/12
                                 </span>
                               </div>
                             );
                           })()}
                         </div>
 
-                        {/* Offer essences button */}
+                        {/* Offer grains button */}
                         {!realmUnlocked && (
                           <button
                             onClick={handleOwlUnlock}
-                            disabled={!inventory || totalEssences < 9 || !['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3)}
+                            disabled={!inventory || totalOwlGrains < 12 || !['green', 'gold', 'orange', 'cyan'].every(c => (inventory?.grains?.[c] || 0) >= 3)}
                             style={{
                               padding: '12px',
-                              background: inventory && totalEssences >= 9 && ['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3)
-                                ? 'linear-gradient(135deg, #8B4513 0%, #654321 100%)'
+                              background: inventory && totalOwlGrains >= 12 && ['green', 'gold', 'orange', 'cyan'].every(c => (inventory?.grains?.[c] || 0) >= 3)
+                                ? 'linear-gradient(135deg, #4B0082 0%, #2E0854 100%)'
                                 : 'rgba(255, 255, 255, 0.1)',
                               border: 'none',
                               borderRadius: '8px',
-                              color: inventory && totalEssences >= 9 && ['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3) ? '#fff' : '#666',
+                              color: inventory && totalOwlGrains >= 12 && ['green', 'gold', 'orange', 'cyan'].every(c => (inventory?.grains?.[c] || 0) >= 3) ? '#fff' : '#666',
                               fontSize: '13px',
                               fontWeight: 600,
-                              cursor: inventory && totalEssences >= 9 && ['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3) ? 'pointer' : 'not-allowed',
-                              opacity: inventory && totalEssences >= 9 && ['golden', 'forest', 'amber'].every(t => (inventory?.essences[t] || 0) >= 3) ? 1 : 0.6,
+                              cursor: inventory && totalOwlGrains >= 12 && ['green', 'gold', 'orange', 'cyan'].every(c => (inventory?.grains?.[c] || 0) >= 3) ? 'pointer' : 'not-allowed',
+                              opacity: inventory && totalOwlGrains >= 12 && ['green', 'gold', 'orange', 'cyan'].every(c => (inventory?.grains?.[c] || 0) >= 3) ? 1 : 0.6,
                             }}
                           >
-                            Offer 9 Essences
+                            Offer 12 Grains
                           </button>
                         )}
 

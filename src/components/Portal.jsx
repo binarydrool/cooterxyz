@@ -26,6 +26,11 @@ const PORTAL_STYLES = {
     particleCount: 120, sandSpeed: 1.5, swirlSpeed: 1.0,
     innerRings: 4, pulseRate: 3.0, hasStars: true,
   },
+  inchworm: {
+    primary: '#00CED1', secondary: '#7FFFD4', sand: '#AFEEEE',
+    particleCount: 70, sandSpeed: 0.7, swirlSpeed: 0.6,
+    innerRings: 2, pulseRate: 2.0, hasSparkles: true,
+  },
 };
 
 // Individual sand grain that orbits the ring

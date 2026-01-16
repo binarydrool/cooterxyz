@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Cooter** is a 3D web-based adventure game set in a magical world centered around a golden clock hub called "The Eternal Clocktower." Players control Cooter the Turtle as they navigate through five distinct realm games, collect magical essences, and ultimately restore the legendary Dimitrius.
+**Cooter** is a 3D web-based adventure game set in a magical world centered around a golden clock hub called "The Eternal Clocktower." Players control Cooter the Turtle as they navigate through five distinct realm games (plus final boss), collect magical essences, and ultimately restore the legendary Dimitrius.
 
 **Tech Stack:** React/Next.js + Three.js (React Three Fiber)
 
@@ -14,7 +14,7 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
 
 - **Every 59 seconds:** Amadeus (Y/Nox) the Wizard jumps forward toward the center and blocks the second hand
 - **3-second time freeze:** Gears stop, second hand glows cyan
-- **Essence spawns:** Three collectible sand grains appear on the clock face with random colors (Forest, Golden, Amber, or Violet)
+- **Essence spawns:** Three collectible sand grains appear on the clock face with random colors (Forest, Golden, Amber, Violet, or Cyan)
 - **Resume:** Second hand catches up rapidly to real time
 
 ### Hub Layout
@@ -28,7 +28,8 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
                          |
                     6 (Frog)
 
-     Hoots rides on the second hand tip
+     Hoots rides on the second hand tail
+     Miles walks clockwise around the outer edge (24-hour cycle)
 ```
 
 ---
@@ -42,16 +43,18 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
 | **Cooter** | Turtle | Player-controlled | Protagonist - the player |
 | **Dimitrius** | Gnome Jester | 12 o'clock rim | Guardian, realm gatekeeper, final boss |
 | **Amadeus (Y/Nox)** | Wizard | 12 o'clock | Time blocker, triggers Deja Vu, jumps forward to stop time |
-| **Hoots** | Barn Owl | Second hand tip | Hint giver, rides the clock |
+| **Hoots** | Barn Owl | Second hand tail | Hint giver, rides the clock |
+| **Miles** | Inchworm | Clock outer edge | Slow traveler, walks full lap every 24 hours |
 
 ### Portal Guardians (Jump over second hand when it approaches - with extended hang time)
 
-| Character | Location | Realm |
-|-----------|----------|-------|
-| **Rabbit** | 9 o'clock (45 sec) | The Warren |
-| **Cat** | 3 o'clock (15 sec) | Rooftop Runner |
-| **Frog** | 6 o'clock (30 sec) | The Lily Marsh |
-| **Owl** | Center/Above | The Night Sky |
+| Character | Location | Realm | Grain Color |
+|-----------|----------|-------|-------------|
+| **Rabbit** | 9 o'clock (45 sec) | The Warren | Gold (9 needed) |
+| **Cat** | 3 o'clock (15 sec) | The Rooftops | Orange (3 needed) |
+| **Frog** | 6 o'clock (30 sec) | The Lily Marsh | Green (6 needed) |
+| **Owl** | Center/Above | The Night Sky | 12 total (3 each: green, gold, orange, cyan) |
+| **Miles** | Outer edge (moving) | The Metamorphosis | Cyan (12 needed) |
 
 ### Character Appearances
 
@@ -96,9 +99,17 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
 - Heart-shaped white face, brown back
 - Rotates with second hand, always faces outward
 
+**Miles the Inchworm**
+- 8 body segments in green gradient (bright lawn green head to lime tail)
+- Little black eyes with white highlights
+- Two antennae with glowing tips
+- Wave-like inching animation as he crawls
+- Walks clockwise around clock edge, completing one lap every 24 hours
+- Freezes during Deja Vu like everything else
+
 ---
 
-## The Five Realms
+## The Six Realms
 
 ### 1. The Warren (Rabbit Realm)
 
@@ -206,11 +217,65 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
 
 **Win Condition:** Survive/escape the forest
 
-**Reward:** Violet Essence + Pyramid Shard (Layer 4 - Capstone)
+**Reward:** Violet Essence + Pyramid Shard (Layer 5 - Capstone)
 
 ---
 
-### 5. The Eternal Clocktower (Elf Realm)
+### 5. The Metamorphosis (Inchworm Realm)
+
+**Theme:** Magical butterfly flight through an enchanted garden
+
+**Story:** Miles dreams of having wings. In his realm, players transform into a beautiful cyan butterfly emerging from a chrysalis.
+
+**Gameplay:**
+- Opening cutscene: Miles wrapped in glowing chrysalis
+- Hatching animation: Chrysalis cracks, butterfly emerges with iridescent wings
+- Fly through magical oversized garden (player is butterfly-sized)
+- Collect nectar droplets and find 3 hidden cyan essences
+- Navigate through 3 zones: Meadow, Flower Forest, Heart Garden
+
+**Controls:**
+- WASD: Directional flight
+- Space: Fly higher
+- Shift: Fly lower
+- Mouse/Arrows: Camera direction
+
+**Collectibles:**
+- Nectar Droplets (100 pts each)
+- Pollen Clouds (land on flowers, 250 pts)
+- Rainbow Dewdrops (rare, on leaf edges, 500 pts)
+- Cyan Essences (3 required, hidden throughout garden)
+
+**Hazards:**
+- Spider Webs: Slow player, wiggle to escape
+- Dragonflies: Patrol areas, push player back on contact
+- Healing Flowers: Rare pink glowing flowers restore health
+
+**Visual Environment:**
+- Giant flowers (oversized - player is small butterfly scale)
+- Soft morning light, god rays through leaves
+- Dewdrops on leaf edges that shimmer
+- Floating pollen particles
+- Mushrooms, ferns, tall grass blades
+
+**Difficulty Scaling:**
+| Level | Nectar Goal | Hazard Density |
+|-------|-------------|----------------|
+| Beginner | 500 | Light |
+| Easy | 1000 | Light |
+| Normal | 2000 | Medium |
+| Hard | 3500 | Medium |
+| Expert | 5000 | Heavy |
+| Master | 7500 | Heavy |
+| Impossible | 10000 | Extreme |
+
+**Win Condition:** Collect 3 cyan essences + reach score goal + reach Heart Garden
+
+**Reward:** Cyan Essence + Pyramid Shard (Layer 4)
+
+---
+
+### 6. The Eternal Clocktower (Elf Realm)
 
 **Theme:** Boss fight - spiral tower climb to battle Dimitrius
 
@@ -229,14 +294,15 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
 
 **Reward:** Victory Crown NFT, game completion
 
-**Unlock Requirement:** All 4 pyramid shards collected
+**Unlock Requirement:** All 5 pyramid shards collected
 
 ---
 
 ## Progression System
 
-### Essences (4 Types)
+### Essences (4 Types) & Grains (5 Colors)
 
+**Essences** (collected inside realms):
 | Essence | Color | Shape | Source |
 |---------|-------|-------|--------|
 | Forest | Green | Tetrahedron | Frog Realm |
@@ -244,7 +310,17 @@ The main hub is a massive interactive 3D golden analog clock. The clock drives t
 | Amber | Orange | Octahedron | Cat Realm |
 | Violet | Purple | Icosahedron | Owl Realm |
 
-Essences also spawn on the clock during Deja Vu events.
+**Grains** (spawn on clock during Deja Vu, offered to animals to unlock portals):
+| Grain | Color | Animal | Needed |
+|-------|-------|--------|--------|
+| Green | #00FF00 | Frog | 6 |
+| Gold | #FFD700 | Rabbit | 9 |
+| Orange | #FFA500 | Cat | 3 |
+| Cyan | #00CED1 | Miles | 12 |
+
+**Special: Owl (Hoots)** requires 12 grains total: 3 green + 3 gold + 3 orange + 3 cyan (from all 4 realms).
+
+Grains spawn randomly during Deja Vu events (3 per event, max 12 on clock) in 5 colors: Forest Green, Golden, Amber, Violet, and Cyan.
 
 ### Grain Offering System
 
@@ -272,14 +348,15 @@ This mechanic encourages players to collect grains quickly while staying aware o
 
 ### Pyramid Shards
 
-Complete each realm to earn a pyramid shard:
+Complete each realm to earn a pyramid shard (5 total):
 
-1. **Base Layer (Brown)** - Rabbit Realm - "From the East"
-2. **Layer 2 (Green)** - Frog Realm - "From the South"
-3. **Layer 3 (Orange)** - Cat Realm - "From the West"
-4. **Capstone (Purple)** - Owl Realm - "From Above"
+1. **Base Layer (Gold)** - Rabbit Realm - "From the Warren"
+2. **Layer 2 (Green)** - Frog Realm - "From the Marsh"
+3. **Layer 3 (Orange)** - Cat Realm - "From the Rooftops"
+4. **Layer 4 (Cyan)** - Inchworm Realm - "From the Chrysalis"
+5. **Capstone (Purple)** - Owl Realm - "From Above"
 
-Collecting all 4 unlocks the Elf Realm (final boss).
+Collecting all 5 unlocks the Elf Realm (final boss).
 
 ### Difficulty Levels
 
@@ -336,7 +413,8 @@ Completing on Impossible earns a **Black Shard** (special achievement).
 2. **Lily Marsh:** Water blues, green lilies, serene
 3. **Rooftops:** Sunset oranges/pinks, urban cityscape
 4. **Night Sky:** Dark forest, eerie fireflies
-5. **Clocktower:** Spiral architecture, rotating gears
+5. **Metamorphosis:** Magical garden, giant flowers, morning light
+6. **Clocktower:** Spiral architecture, rotating gears
 
 ---
 
@@ -345,19 +423,21 @@ Completing on Impossible earns a **Black Shard** (special achievement).
 ```
 1. Start in Hub (Clock)
         |
-2. Explore, talk to NPCs, collect Deja Vu essences
+2. Explore, talk to NPCs, collect Deja Vu grains
         |
-3. Enter realm portals -> Select difficulty
+3. Offer grains to animals to unlock portals
         |
-4. Complete realm objective
+4. Enter realm portals -> Select difficulty
         |
-5. Earn shard + essence -> Return to hub
+5. Complete realm objective
         |
-6. Repeat for all 4 realms
+6. Earn pyramid shard + essence -> Return to hub
         |
-7. Unlock Elf Realm (all shards collected)
+7. Repeat for all 5 realms (Rabbit, Frog, Cat, Owl, Inchworm)
         |
-8. Defeat Dimitrius -> Game complete!
+8. Unlock Elf Realm (all 5 shards collected)
+        |
+9. Defeat Dimitrius -> Game complete!
 ```
 
 ---
@@ -404,11 +484,12 @@ Completing on Impossible earns a **Black Shard** (special achievement).
 ├── Clock.jsx          # HUB CLOCK - Core gameplay component (~1900 lines)
 │                      # - 3D golden clock with hour/minute/second hands
 │                      # - Deja Vu mechanic (Nox stops time at :59)
-│                      # - Sand grain spawning (3 random colors)
+│                      # - Sand grain spawning (3 random colors, max 12, 3min lifetime)
 │                      # - Animal proximity detection (triggers chat)
 │                      # - Portal proximity detection
 │                      # - Second hand collision detection with Cooter
-│                      # - Renders all hub NPCs (Rabbit, Cat, Frog, Owl, Gnome)
+│                      # - Renders all hub NPCs (Rabbit, Cat, Frog, Owl, Gnome, Miles)
+│                      # - Miles walks clockwise around edge (24-hour cycle)
 │
 ├── Turtle.jsx         # PLAYER CHARACTER
 │                      # - 3D turtle model with shell, legs, head
@@ -491,11 +572,17 @@ Completing on Impossible earns a **Black Shard** (special achievement).
 │                      # - Avoid wolf packs
 │                      # - Navigate trees and rocks
 │
+├── InchwormRealm.jsx  # THE METAMORPHOSIS - Butterfly flight game
+│                      # - Transform into butterfly from chrysalis
+│                      # - Fly through magical oversized garden
+│                      # - Collect nectar, avoid dragonflies/webs
+│                      # - Find 3 cyan essences + reach Heart Garden
+│
 ├── ElfRealm3D.jsx     # THE ETERNAL CLOCKTOWER - Final boss
 │                      # - Spiral tower climb (12 platforms)
 │                      # - Rotating gear obstacles
 │                      # - Boss fight with Dimitrius
-│                      # - Requires all 4 pyramid shards
+│                      # - Requires all 5 pyramid shards
 │
 ├── CatRealm.jsx       # Legacy 2D cat realm (unused)
 ├── OwlRealm.jsx       # Legacy owl realm (unused)
@@ -543,9 +630,9 @@ Completing on Impossible earns a **Black Shard** (special achievement).
 ```
 /src/hooks/
 ├── useInventory.js    # INVENTORY MANAGEMENT
-│                      # - Grains: green, gold, orange, purple
+│                      # - Grains: green, gold, orange, purple, cyan
 │                      # - Essences: forest, golden, amber, violet
-│                      # - Pyramid shards per realm
+│                      # - Pyramid shards (5 realms)
 │                      # - addGrain(), removeGrains(), hasGrains()
 │                      # - LocalStorage persistence
 │
@@ -620,18 +707,53 @@ Completing on Impossible earns a **Black Shard** (special achievement).
 
 ## Lore Summary
 
-The Golden Clock is an ancient artifact measuring time itself. Within its mechanisms lives Dimitrius, a mystical entity whose essence was shattered into pyramid shards across four realms.
+The Golden Clock is an ancient artifact measuring time itself. Within its mechanisms lives Dimitrius, a mystical entity whose essence was shattered into pyramid shards across five realms.
 
-Cooter the Turtle must journey through each realm, gather the shards, and restore Dimitrius. Every minute, Amadeus the Wizard briefly stops time, allowing magical essences to manifest on the clock face.
+Cooter the Turtle must journey through each realm, gather the shards, and restore Dimitrius. Every minute, Amadeus the Wizard briefly stops time, allowing magical essence grains to manifest on the clock face.
 
-The four guardian animals (Rabbit, Frog, Cat, Owl) each protect a portal to their realm, jumping over the second hand as it passes to demonstrate their vigilance.
+The five guardian animals each protect a portal to their realm:
+- **Rabbit, Frog, Cat, Owl** - stand at fixed positions, jumping over the second hand as it passes
+- **Miles the Inchworm** - patiently walks the long way around the clock's edge, completing one full lap every 24 hours
+
+Miles represents patience and persistence - the slow and steady path that eventually covers the greatest distance.
 
 ---
 
 ## Version
 
-**Current:** v1.2.0
+**Current:** v1.4.0
 **Last Updated:** January 2026
+
+### Changelog v1.4.0
+- **The Metamorphosis (Inchworm Realm Complete Redesign):** Replaced "The Long Road" highway runner with butterfly flight game
+  - Opening chrysalis cutscene with hatching animation
+  - 3D flight through magical oversized garden
+  - Nectar droplets, pollen clouds, rainbow dewdrops as collectibles
+  - Dragonfly and spider web hazards
+  - 3 zones: Meadow, Flower Forest, Heart Garden
+  - 7 difficulty levels with scaling nectar goals (500-10000)
+- **Pyramid Shard Reorder:** Miles is now Layer 4 (Cyan), Owl is now Capstone Layer 5 (Purple)
+- **Owl Portal Requirements Updated:** Now requires 12 grains total (3 green + 3 gold + 3 orange + 3 cyan) instead of 12 purple
+- **Cyan Grains Added to Déjà Vu:** Cyan grains now spawn during time-stop events
+- **Miles E-Key Interaction Fixed:** Increased interaction distance from 0.8 to 1.2
+- **Dynamic Miles Portal:** Cyan portal now hovers above Miles and follows him as he walks
+- **Portal.jsx:** Added inchworm portal style (cyan theme)
+- **Performance Optimizations:** Object pooling, frustum culling, useMemo/useCallback throughout InchwormRealm
+
+### Changelog v1.3.0
+- **Miles the Inchworm:** New NPC that walks clockwise around the clock edge every 24 hours
+  - 8-segment caterpillar with wave-like inching animation
+  - Cyan grains (12 needed) unlock his portal
+- **The Long Road (Inchworm Realm):** Highway endless runner - dodge traffic, collect mile markers
+- **5-Shard Pyramid System:** Expanded from 4 to 5 shards (rabbit, frog, cat, owl, inchworm)
+- **Memory Leak Fixes:**
+  - Max 12 grains on clock at once (prevents accumulation)
+  - Grains despawn after 3 minutes if uncollected
+  - Removed expensive pointLights from grain objects
+- **Realm Improvements:**
+  - RabbitRealm: Enhanced autumn visuals (realistic hay bales, corn stalks, pumpkins, gourds, fallen leaves)
+  - CatRealm: Fixed theme coherence (rooftop surface, AC units, chimneys, security drones)
+  - Fixed essence collection in RabbitRealm and CatRealm (now properly adds to inventory)
 
 ### Changelog v1.2.0
 - **Second Hand Collision Mechanic:** Cooter blocking the second hand now causes grain loss

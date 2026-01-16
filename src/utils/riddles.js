@@ -44,32 +44,32 @@ export const RIDDLES = {
     name: 'Hoots',
     clockPosition: 12,  // 12 o'clock position for the owl realm portal
     isOwlRealm: true,  // Hoots owns The Night Sky realm
-    essencesNeeded: 9,  // 3 from each of 3 realms = 9 total
-    greeting: "Hoo-hoo! The square root of wisdom multiplied by three realms... brings you to me...",
+    grainsNeeded: 12,  // 3 of each color from all 4 realms = 12 total
+    greeting: "Hoo-hoo! Four colors, three each, twelve in total... the mathematics of time converge here...",
     dialogueOptions: [
       {
         question: "Who are you?",
-        answer: "Hoo-hoo... I am Hoots, keeper of calculations eternal! Three squared equals my desire, but nine divided by three realms... that is your task. Each realm holds three gems of time...",
+        answer: "Hoo-hoo... I am Hoots, keeper of calculations eternal! Twelve is my desire - three squared plus three more. Four colors of time, each thrice offered... that is your task!",
       },
       {
         question: "How do I open your portal?",
-        answer: "The root of eighty-one, divided by the root of nine... equals the essences per realm you must find. Hoo-hoo! Three from The Warren... three from The Marsh... three from The Rooftops. Nine in total, the square of three!",
+        answer: "Hoo-hoo! Bring me grains of FOUR colors - green for the Frog, gold for the Rabbit, orange for the Cat, and cyan for Miles! Three of each, twelve total. The sum of all four realms!",
       },
       {
-        question: "Where do I get essences?",
-        answer: "Hoo... Each realm guards three golden crystals of time. Three times three equals nine. The sum of all parts forms the whole. Bunzy, Pepe, and Kittle each hold a trinity of essences... gather them all!",
+        question: "Where do I get grains?",
+        answer: "Hoo... When Y stops time at fifty-nine seconds, grains of time appear on the clock face! Five colors spawn randomly - collect three of each: green, gold, orange, and cyan. Four times three equals twelve!",
       },
       {
         question: "What's in The Night Sky?",
-        answer: "Hoo-hoo-hoo! The fourth shard of AEIOU's shattered mind awaits in my domain! But only those who understand the mathematics of time may enter... Nine is the key, turtle. Three cubed minus eighteen equals your goal!",
+        answer: "Hoo-hoo-hoo! The FIFTH shard of AEIOU's shattered mind awaits in my domain - the capstone of the pyramid! But only those who master ALL four realms of time may enter... Twelve is the key!",
       },
       {
         question: "Can you speak plainly?",
-        answer: "Hoo... plainly? Very well: collect ALL 3 essences from The Warren, ALL 3 from The Lily Marsh, and ALL 3 from The Rooftops. That's 9 total. Bring them to me. The math is simple... hoo-hoo!",
+        answer: "Hoo... plainly? Very well: collect 3 green, 3 gold, 3 orange, AND 3 cyan Time Grains. That's 12 total from the four realms. Offer them to me, and my portal opens. The math is simple... hoo-hoo!",
       },
     ],
     riddle: "",
-    hint: "Hoots speaks in riddles. He needs 9 essences total - 3 from each of the three other realms.",
+    hint: "Hoots needs 12 Time Grains total - 3 green, 3 gold, 3 orange, and 3 cyan (from all 4 animal realms).",
   },
 
   nox: {
@@ -109,27 +109,27 @@ export const RIDDLES = {
 
   hoots: {
     name: 'Hoots',
-    greeting: "Hoo-hoo! I ride the second hand! To enter my realm, you need NINE essences!",
+    greeting: "Hoo-hoo! I ride the second hand! To enter my realm, you need TWELVE Time Grains - three of each color!",
     isHoots: true,  // Hoots on the second hand
-    isOwlRealm: true,  // Also requires essences to unlock
-    essencesNeeded: 9,  // 3 from each of 3 realms = 9 total
+    isOwlRealm: true,  // Requires grains to unlock
+    grainsNeeded: 12,  // 3 of each color from all 4 realms = 12 total
     dialogueOptions: [
       {
         question: "How do I unlock your realm?",
-        answer: "Hoo! You need NINE essences to enter The Night Sky! Three from The Warren (golden), three from The Lily Marsh (forest green), and three from The Rooftops (amber). Offer them here!",
+        answer: "Hoo! You need TWELVE Time Grains to enter The Night Sky! Three green (Frog), three gold (Rabbit), three orange (Cat), and three cyan (Miles). Offer them all here!",
       },
       {
         question: "Where is your portal?",
-        answer: "My portal appears at the 12 o'clock position once you offer 9 essences! No shortcuts, hoo-hoo!",
+        answer: "My portal appears at the 12 o'clock position once you offer all 12 grains - three of each of the four colors! No shortcuts, hoo-hoo!",
       },
       {
         question: "Any tips?",
-        answer: "Complete the other 3 realms - each has 3 essences to find inside! Complete all three realms, gather 9 total, then offer them to me!",
+        answer: "Stop time with Y at 59 seconds! Grains spawn in random colors. Collect three green, three gold, three orange, and three cyan. Twelve total from the four realms!",
       },
     ],
     riddle: "",
-    hint: "Hoots needs 9 essences total to open The Night Sky - 3 from each of the three other realms.",
-    unlockMessage: "Hoo-hoo! The mathematics align! The Night Sky opens before you! Seek the final shard of AEIOU's mind!",
+    hint: "Hoots needs 12 Time Grains total - 3 green, 3 gold, 3 orange, and 3 cyan.",
+    unlockMessage: "Hoo-hoo! All four colors aligned! The Night Sky opens before you! Seek the capstone shard of AEIOU's mind!",
   },
 
   gnome: {
@@ -157,21 +157,21 @@ export const RIDDLES = {
   miles: {
     name: 'Miles',
     clockPosition: 24,  // 24-hour cycle
-    grainsNeeded: 12,   // 12 grains (half a day, 12 hours)
-    greeting: "*inch inch* Oh! A turtle! I've been walking this clock face for sooo long... it takes me a whole day to get around! *inch inch*",
-    riddle: "I measure my journey in hours, not steps. Bring me Time Grains equal to half my daily voyage, and I shall show you The Long Road...",
+    grainsNeeded: 12,   // 12 cyan grains needed
+    greeting: "*inch inch* Oh! A turtle! I've been walking this clock face for sooo long... it takes me a whole day to get around! *inch inch* But sometimes... I dream of wings...",
+    riddle: "I measure my journey in hours, not steps. Bring me cyan Time Grains equal to half my daily voyage, and I shall show you The Metamorphosis...",
     hint: "Miles walks around the clock in 24 hours. Half of that is...",
-    unlockMessage: "*inch inch* Twelve! Yes, twelve hours, half my journey! *wiggles excitedly* The Long Road opens before you! Seek the final piece of AEIOU's mind within... but pace yourself, turtle friend!",
+    unlockMessage: "*inch inch* Twelve! Yes, twelve hours, half my journey! *wiggles excitedly* The Metamorphosis awaits! In my realm, you shall become what I dream of - a beautiful butterfly! Seek the fourth piece of AEIOU's mind within the chrysalis!",
     wrongMessage: "*inch* Hmm, that's not quite half my daily trek... count the hours more carefully! *inch inch*",
-    notEnoughMessage: "*inch inch* Not enough grains yet, friend. Keep stopping time! I'll be here... slowly... *inch*",
+    notEnoughMessage: "*inch inch* Not enough cyan grains yet, friend. Keep stopping time! I'll be here... slowly... *inch*",
     dialogueOptions: [
       {
         question: "Why do you walk so slow?",
         answer: "*inch* Slow? SLOW?! *inch inch* I prefer 'methodical'! Every inch is a meditation, every step a journey. Besides, have YOU tried walking on six tiny legs? *wiggles antennae indignantly*",
       },
       {
-        question: "What's The Long Road?",
-        answer: "*inch inch* The Long Road is MY realm! A winding path through gardens and leaves, where patience is rewarded and haste is punished! *inch* A piece of poor AEIOU got lost in there... the fifth shard of his shattered mind...",
+        question: "What's The Metamorphosis?",
+        answer: "*inch inch* The Metamorphosis is MY realm! A magical garden where transformation is possible... *dreamy sigh* In there, you become a butterfly - free to fly through flowers and light! *inch* But I always return to who I am... change comes to all of us.",
       },
       {
         question: "How long have you been here?",
@@ -179,7 +179,11 @@ export const RIDDLES = {
       },
       {
         question: "Any advice for your realm?",
-        answer: "*inch inch* In The Long Road, PATIENCE is your ally! Don't rush - the path reveals itself to those who take their time. *wiggles* Watch for my cousins... some are friendly, some... less so. *inch*",
+        answer: "*inch inch* In The Metamorphosis, embrace the freedom of flight! Use SPACE to soar higher, SHIFT to descend. *wiggles* Collect nectar, avoid the dragonflies, and find the three cyan essences hidden in the garden!",
+      },
+      {
+        question: "Do you dream of flying?",
+        answer: "*inch inch* Every night, turtle friend... every night. *gazes wistfully* In my dreams, I have the most beautiful cyan wings, iridescent like morning dew. That's why my realm shows you... my other self. *inch* Beautiful, isn't it?",
       },
     ],
     isMiles: true,  // Flag for Miles-specific handling
@@ -214,42 +218,41 @@ export function checkGrainCount(animal, grainCount) {
   }
 }
 
-// Check if player has required essences for owl's portal (9 total: 3 from each realm)
+// Check if player has required grains for owl's portal (12 total: 3 of each color from all 4 realms)
 export function checkOwlRequirements(inventory) {
-  const ESSENCES_NEEDED = 9;
+  const GRAINS_NEEDED = 12;
 
-  // Count total essences from all types
-  const totalEssences = Object.values(inventory.essences).reduce((sum, count) => sum + count, 0);
+  // Count total grains from all four colors
+  const greenCount = inventory.grains?.green || 0;
+  const goldCount = inventory.grains?.gold || 0;
+  const orangeCount = inventory.grains?.orange || 0;
+  const cyanCount = inventory.grains?.cyan || 0;
+  const totalGrains = greenCount + goldCount + orangeCount + cyanCount;
 
-  // Check if we have at least 3 of each type (golden from rabbit, forest from frog, amber from cat)
-  const goldenCount = inventory.essences.golden || 0;
-  const forestCount = inventory.essences.forest || 0;
-  const amberCount = inventory.essences.amber || 0;
-
-  const hasEnough = totalEssences >= ESSENCES_NEEDED &&
-    goldenCount >= 3 && forestCount >= 3 && amberCount >= 3;
+  // Check if we have at least 3 of each color (green=frog, gold=rabbit, orange=cat, cyan=miles)
+  const hasEnough = totalGrains >= GRAINS_NEEDED &&
+    greenCount >= 3 && goldCount >= 3 && orangeCount >= 3 && cyanCount >= 3;
 
   if (hasEnough) {
-    // Remove 3 of each type
     return {
       correct: true,
-      message: "Hoo-hoo! Nine essences... three squared... the mathematics of time align! The Night Sky opens before you!",
-      essencesUsed: ['golden', 'golden', 'golden', 'forest', 'forest', 'forest', 'amber', 'amber', 'amber'],
-      essenceAmounts: { golden: 3, forest: 3, amber: 3 },
+      message: "Hoo-hoo! Twelve grains... four colors thrice offered... the mathematics of ALL realms align! The Night Sky opens before you!",
+      grainsUsed: { green: 3, gold: 3, orange: 3, cyan: 3 },
     };
   } else {
     const needed = {
-      golden: Math.max(0, 3 - goldenCount),
-      forest: Math.max(0, 3 - forestCount),
-      amber: Math.max(0, 3 - amberCount),
+      green: Math.max(0, 3 - greenCount),
+      gold: Math.max(0, 3 - goldCount),
+      orange: Math.max(0, 3 - orangeCount),
+      cyan: Math.max(0, 3 - cyanCount),
     };
-    const totalNeeded = ESSENCES_NEEDED - totalEssences;
+    const totalNeeded = Math.max(0, GRAINS_NEEDED - totalGrains);
     return {
       correct: false,
-      message: `Hoo... The equation is incomplete. You need ${totalNeeded > 0 ? totalNeeded + ' more essences' : 'the right combination'}. Golden: ${goldenCount}/3, Forest: ${forestCount}/3, Amber: ${amberCount}/3.`,
+      message: `Hoo... The equation is incomplete. You need ${totalNeeded > 0 ? totalNeeded + ' more grains' : 'the right combination'}. Green: ${greenCount}/3, Gold: ${goldCount}/3, Orange: ${orangeCount}/3, Cyan: ${cyanCount}/3.`,
       needed,
-      totalHave: totalEssences,
-      totalNeeded: ESSENCES_NEEDED,
+      totalHave: totalGrains,
+      totalNeeded: GRAINS_NEEDED,
     };
   }
 }

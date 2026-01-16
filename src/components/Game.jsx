@@ -972,12 +972,17 @@ function GameContent() {
 
   // Handle realm unlock
   const handleUnlockRealm = useCallback((realm) => {
+    console.log('[Game] handleUnlockRealm called with realm:', realm);
     audio.playSound(SOUNDS.UNLOCK);
     gameState.unlockRealm(realm);
     gameState.resetStrikes(realm);
     gameState.clearRiddleProgress(realm);
     // Mark realm as unlocked (portal visible)
-    setUnlockedRealms(prev => ({ ...prev, [realm]: true }));
+    setUnlockedRealms(prev => {
+      const newState = { ...prev, [realm]: true };
+      console.log('[Game] setUnlockedRealms new state:', newState);
+      return newState;
+    });
     // After unlocking, show difficulty select
     setSelectedRealm(realm);
     setTimeout(() => {

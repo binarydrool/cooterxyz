@@ -314,6 +314,7 @@ export default function ChatModal({
         setTimeout(() => {
           // Translate animal name to realm name (miles -> inchworm)
           const realmName = animal === 'miles' ? 'inchworm' : animal;
+          console.log('[ChatModal] Unlocking realm:', realmName, '(animal was:', animal, ')');
           if (onUnlockRealm) onUnlockRealm(realmName);
           onClose();
         }, 1200);

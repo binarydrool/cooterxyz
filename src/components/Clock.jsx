@@ -277,6 +277,12 @@ function MilesPortal({ milesPositionRef, isUnlocked }) {
   const PORTAL_HEIGHT_ABOVE_MILES = 1.5;
   const PORTAL_SCALE = 0.6; // 60% size of normal portals
 
+  // Debug logging
+  useEffect(() => {
+    console.log('[MilesPortal] isUnlocked:', isUnlocked);
+    console.log('[MilesPortal] milesPositionRef:', milesPositionRef?.current);
+  }, [isUnlocked]);
+
   useFrame(({ clock }) => {
     if (groupRef.current && isUnlocked) {
       const t = clock.getElapsedTime();
@@ -287,8 +293,12 @@ function MilesPortal({ milesPositionRef, isUnlocked }) {
     }
   });
 
-  if (!isUnlocked) return null;
+  if (!isUnlocked) {
+    console.log('[MilesPortal] Not rendering - isUnlocked is false');
+    return null;
+  }
 
+  console.log('[MilesPortal] Rendering portal at milesPosition');
   return (
     <group ref={groupRef}>
       <Portal
@@ -1415,6 +1425,12 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
 
   // Track Miles position (updated by Miles component)
   const milesPosition = useRef({ x: 0, z: 0 });
+
+  // Debug: Log unlockedRealms changes
+  useEffect(() => {
+    console.log('[Clock] unlockedRealms:', unlockedRealms);
+    console.log('[Clock] unlockedRealms.inchworm:', unlockedRealms?.inchworm);
+  }, [unlockedRealms]);
 
   // Track Cooter blocking the second hand
   const cooterBlockingState = useRef({

@@ -955,8 +955,8 @@ function GameContent() {
       inventory.addGrain('orange');
       inventory.addGrain('cyan');
     }
-    // Add some purple for good measure
-    for (let i = 0; i < 5; i++) {
+    // Add purple too
+    for (let i = 0; i < 12; i++) {
       inventory.addGrain('purple');
     }
     console.log('[Game] Stock Up complete - grains:', inventory.grains);

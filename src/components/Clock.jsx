@@ -139,8 +139,7 @@ function Miles({ dejaVuState, onPositionUpdate }) {
       onPositionUpdate(x, z);
     }
     // Face the direction of travel (tangent to circle, clockwise)
-    // Head is at -Z in local space, so we need angle - π/2 to face clockwise tangent
-    groupRef.current.rotation.y = angle - Math.PI / 2;
+    groupRef.current.rotation.y = angle + Math.PI / 2;
 
     // Animate the segments for inching motion
     const phase = inchPhase.current;

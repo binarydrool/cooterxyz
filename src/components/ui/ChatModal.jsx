@@ -312,7 +312,9 @@ export default function ChatModal({
         setAttemptFeedback({ success: true, message: "Portal Unlocked!" });
 
         setTimeout(() => {
-          if (onUnlockRealm) onUnlockRealm(animal);
+          // Translate animal name to realm name (miles -> inchworm)
+          const realmName = animal === 'miles' ? 'inchworm' : animal;
+          if (onUnlockRealm) onUnlockRealm(realmName);
           onClose();
         }, 1200);
       } else {
@@ -362,8 +364,10 @@ export default function ChatModal({
 
       // Close modal after a brief moment, then trigger portal
       setTimeout(() => {
+        // Translate animal name to realm name (miles -> inchworm)
+        const realmName = animal === 'miles' ? 'inchworm' : animal;
         if (onUnlockRealm) {
-          onUnlockRealm(animal);
+          onUnlockRealm(realmName);
         }
         onClose();
       }, 1200);

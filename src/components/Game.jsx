@@ -943,6 +943,25 @@ function GameContent() {
     }
   }, [inventory]);
 
+  // Stock up - give player all grains needed for testing
+  const handleStockUp = useCallback(() => {
+    console.log('[Game] Stock Up - adding grains for testing');
+    // Add enough grains to unlock all portals
+    // Cat needs 3 orange, Frog needs 6 green, Rabbit needs 9 gold, Miles needs 12 cyan
+    // Owl needs 12 total (3 of each: green, gold, orange, cyan)
+    for (let i = 0; i < 12; i++) {
+      inventory.addGrain('green');
+      inventory.addGrain('gold');
+      inventory.addGrain('orange');
+      inventory.addGrain('cyan');
+    }
+    // Add some purple for good measure
+    for (let i = 0; i < 5; i++) {
+      inventory.addGrain('purple');
+    }
+    console.log('[Game] Stock Up complete - grains:', inventory.grains);
+  }, [inventory]);
+
   // Handle interaction (E key or button press) - disabled during realm gameplay
   const handleInteract = useCallback(() => {
     // Only allow interactions in hub
@@ -1261,6 +1280,30 @@ function GameContent() {
 
         {/* Desktop spacer */}
         {!isMobile && <div style={{ flex: 1 }} />}
+
+        {/* Stock Up button (for testing) */}
+        <button
+          onClick={handleStockUp}
+          style={{
+            background: 'rgba(100, 200, 100, 0.2)',
+            border: '1px solid rgba(100, 200, 100, 0.4)',
+            borderRadius: '6px',
+            color: '#6bff6b',
+            fontSize: isMobile ? '9px' : '11px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            padding: isMobile ? '3px 6px' : '4px 10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+          }}
+          title="Add grains for testing (12 of each color)"
+        >
+          <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          {!isMobile && 'Stock'}
+        </button>
 
         {/* Reset button */}
         <button

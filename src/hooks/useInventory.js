@@ -2,12 +2,13 @@
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
-// Time Grain types - 4 colored grains, each given to a specific animal to unlock their portal
+// Time Grain types - 5 colored grains, each given to a specific animal to unlock their portal
 export const GRAIN_TYPES = {
   GREEN: { id: 'green', name: 'Green Grain', color: '#00FF00', animal: 'frog', needed: 6 },
   GOLD: { id: 'gold', name: 'Gold Grain', color: '#FFD700', animal: 'rabbit', needed: 9 },
   ORANGE: { id: 'orange', name: 'Orange Grain', color: '#FFA500', animal: 'cat', needed: 3 },
   PURPLE: { id: 'purple', name: 'Purple Grain', color: '#9370DB', animal: 'owl', needed: 12 },
+  CYAN: { id: 'cyan', name: 'Cyan Grain', color: '#00CED1', animal: 'miles', needed: 12 },
 };
 
 // Essence types - collected inside realms, 9 total needed for owl realm
@@ -24,6 +25,7 @@ export const SHARD_TYPES = {
   CITRINE: { id: 'citrine', name: 'Citrine Shard', realm: 'cat' },
   EMERALD: { id: 'emerald', name: 'Emerald Shard', realm: 'frog' },
   AMETHYST: { id: 'amethyst', name: 'Amethyst Shard', realm: 'owl' },
+  PERIDOT: { id: 'peridot', name: 'Peridot Shard', realm: 'inchworm' },
 };
 
 // Difficulty grades
@@ -40,13 +42,14 @@ export const GRADES = {
 const STORAGE_KEY = 'cooter_inventory';
 
 const initialInventory = {
-  // Time Grains - 4 colored types, collected from clock by stopping time
-  // Each animal needs a specific color: green→frog(6), gold→rabbit(9), orange→cat(3), purple→owl(12)
+  // Time Grains - 5 colored types, collected from clock by stopping time
+  // Each animal needs a specific color: green→frog(6), gold→rabbit(9), orange→cat(3), purple→owl(12), cyan→miles(12)
   grains: {
     green: 0,   // For frog - needs 6
     gold: 0,    // For rabbit - needs 9
     orange: 0,  // For cat - needs 3
     purple: 0,  // For owl - needs 12
+    cyan: 0,    // For miles - needs 12
   },
   // Essences - collected INSIDE the realms (3 per realm)
   // Used to unlock owl realm: need 9 total (3 golden + 3 forest + 3 amber)
@@ -62,12 +65,13 @@ const initialInventory = {
     emerald: null,
     amethyst: null,
   },
-  // Pyramid shards - 4 layers (rabbit=1, frog=2, cat=3, owl=4) - pieces of AEIOU
+  // Pyramid shards - 5 layers (rabbit=1, frog=2, cat=3, owl=4, inchworm=5) - pieces of AEIOU
   pyramidShards: {
-    rabbit: false,  // Layer 1 (base) - from The Warren
-    frog: false,    // Layer 2 - from The Lily Marsh
-    cat: false,     // Layer 3 - from The Rooftops
-    owl: false,     // Layer 4 (capstone) - from The Night Sky
+    rabbit: false,    // Layer 1 (base) - from The Warren
+    frog: false,      // Layer 2 - from The Lily Marsh
+    cat: false,       // Layer 3 - from The Rooftops
+    owl: false,       // Layer 4 - from The Night Sky
+    inchworm: false,  // Layer 5 (capstone) - from The Long Road
   },
   // Black shards - earned by completing realms on IMPOSSIBLE difficulty
   blackShards: {
@@ -75,6 +79,7 @@ const initialInventory = {
     frog: false,
     cat: false,
     owl: false,
+    inchworm: false,
   },
   // AEIOU restoration state
   dimitriusRestored: false,  // True after fusion spell is cast
@@ -176,7 +181,7 @@ export function InventoryProvider({ children }) {
 
   // Add time grain of a specific color (collected from clock by stopping time with Y)
   const addGrain = useCallback((color) => {
-    if (!color || !['green', 'gold', 'orange', 'purple'].includes(color)) {
+    if (!color || !['green', 'gold', 'orange', 'purple', 'cyan'].includes(color)) {
       console.warn('Invalid grain color:', color);
       return;
     }
@@ -191,7 +196,7 @@ export function InventoryProvider({ children }) {
 
   // Remove grains of a specific color (spent to unlock portals)
   const removeGrains = useCallback((color, count) => {
-    if (!color || !['green', 'gold', 'orange', 'purple'].includes(color)) {
+    if (!color || !['green', 'gold', 'orange', 'purple', 'cyan'].includes(color)) {
       console.warn('Invalid grain color:', color);
       return;
     }

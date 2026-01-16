@@ -7,6 +7,7 @@ import GameHUD from '../ui/GameHUD';
 import IntroModal from '../ui/IntroModal';
 import { getInput, useIsMobile } from '@/hooks/useGameInput';
 import AEIOU from '../characters/AEIOU';
+import { useInventory } from '@/hooks/useInventory';
 
 // Game constants
 const ARENA_SIZE = 200;
@@ -208,67 +209,73 @@ function generateCollectibles(settings, hasPyramidShard = false) {
   return { essences, dimitrius, coins, powerUps };
 }
 
-// DARK VOID with subtle grid - visible floor grid pattern
+// ROOFTOP FLOOR - dark rooftop with air vents, pipes, and urban details
 function ArenaFloor() {
-  const gridLines = useMemo(() => {
-    const lines = [];
-    const spacing = 10; // Grid spacing
-    const halfSize = ARENA_SIZE / 2;
-
-    // Generate grid lines
-    for (let i = -halfSize; i <= halfSize; i += spacing) {
-      // Horizontal lines (along X axis)
-      lines.push({ start: [-halfSize, i], end: [halfSize, i] });
-      // Vertical lines (along Z axis)
-      lines.push({ start: [i, -halfSize], end: [i, halfSize] });
+  const rooftopDetails = useMemo(() => {
+    const details = [];
+    // Create rooftop panel lines
+    for (let x = -ARENA_SIZE / 2; x < ARENA_SIZE / 2; x += 8) {
+      for (let z = -ARENA_SIZE / 2; z < ARENA_SIZE / 2; z += 8) {
+        details.push({
+          type: 'panel',
+          x: x + 4,
+          z: z + 4,
+          rotation: Math.random() * 0.05 - 0.025,
+        });
+      }
     }
-    return lines;
+    return details;
   }, []);
 
   return (
     <group>
-      {/* Dark floor base */}
+      {/* Main rooftop surface - dark tar/asphalt */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
         <planeGeometry args={[ARENA_SIZE, ARENA_SIZE]} />
         <meshStandardMaterial
-          color="#050505"
-          roughness={0.9}
-          metalness={0.1}
+          color="#1a1a1a"
+          roughness={0.95}
+          metalness={0.05}
         />
       </mesh>
 
-      {/* Grid lines - subtle green glow */}
-      {gridLines.map((line, i) => {
-        const midX = (line.start[0] + line.end[0]) / 2;
-        const midZ = (line.start[1] + line.end[1]) / 2;
-        const isHorizontal = line.start[1] === line.end[1];
-        const length = isHorizontal ? ARENA_SIZE : ARENA_SIZE;
+      {/* Rooftop panel seams - subtle lines */}
+      {rooftopDetails.map((detail, i) => (
+        <mesh
+          key={i}
+          position={[detail.x, 0.01, detail.z]}
+          rotation={[-Math.PI / 2, detail.rotation, 0]}
+        >
+          <planeGeometry args={[7.8, 7.8]} />
+          <meshBasicMaterial color="#222222" />
+        </mesh>
+      ))}
 
-        return (
-          <mesh
-            key={i}
-            position={[midX, 0.01, midZ]}
-            rotation={[-Math.PI / 2, 0, isHorizontal ? 0 : Math.PI / 2]}
-          >
-            <planeGeometry args={[length, 0.15]} />
-            <meshBasicMaterial color="#003300" transparent opacity={0.4} />
-          </mesh>
-        );
-      })}
-
-      {/* Arena boundary glow */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <ringGeometry args={[ARENA_SIZE / 2 - 2, ARENA_SIZE / 2, 64]} />
-        <meshBasicMaterial color="#004400" transparent opacity={0.3} side={THREE.DoubleSide} />
+      {/* Rooftop edge parapet */}
+      <mesh position={[0, 0.3, -ARENA_SIZE / 2]}>
+        <boxGeometry args={[ARENA_SIZE, 0.6, 0.5]} />
+        <meshBasicMaterial color="#2a2a2a" />
+      </mesh>
+      <mesh position={[0, 0.3, ARENA_SIZE / 2]}>
+        <boxGeometry args={[ARENA_SIZE, 0.6, 0.5]} />
+        <meshBasicMaterial color="#2a2a2a" />
+      </mesh>
+      <mesh position={[-ARENA_SIZE / 2, 0.3, 0]}>
+        <boxGeometry args={[0.5, 0.6, ARENA_SIZE]} />
+        <meshBasicMaterial color="#2a2a2a" />
+      </mesh>
+      <mesh position={[ARENA_SIZE / 2, 0.3, 0]}>
+        <boxGeometry args={[0.5, 0.6, ARENA_SIZE]} />
+        <meshBasicMaterial color="#2a2a2a" />
       </mesh>
     </group>
   );
 }
 
-// Generate random obstacles
+// Generate rooftop obstacles - AC units, chimneys, vents, skylights
 function generateObstacles() {
   const obstacles = [];
-  const types = ['pillar', 'rock', 'wall'];
+  const types = ['ac_unit', 'chimney', 'vent', 'skylight', 'water_tank'];
 
   for (let i = 0; i < OBSTACLE_COUNT; i++) {
     let x, z;
@@ -303,53 +310,99 @@ function generateObstacles() {
   return obstacles;
 }
 
-// Obstacles component - pillars, rocks, walls that block movement
+// Rooftop Obstacles - AC units, chimneys, vents, skylights
 function Obstacles({ obstacles }) {
   return (
     <group>
       {obstacles.map((obs) => {
-        if (obs.type === 'pillar') {
+        if (obs.type === 'ac_unit') {
+          // Industrial AC unit
           return (
-            <group key={obs.id} position={[obs.x, 0, obs.z]}>
-              {/* Dark pillar */}
-              <mesh position={[0, 2 * obs.scale, 0]}>
-                <cylinderGeometry args={[1.5 * obs.scale, 2 * obs.scale, 4 * obs.scale, 8]} />
-                <meshStandardMaterial color="#111111" roughness={0.9} metalness={0.1} />
+            <group key={obs.id} position={[obs.x, 0, obs.z]} rotation={[0, obs.rotation, 0]}>
+              {/* Main unit body */}
+              <mesh position={[0, 1.2 * obs.scale, 0]}>
+                <boxGeometry args={[3 * obs.scale, 2.4 * obs.scale, 2 * obs.scale]} />
+                <meshStandardMaterial color="#3a3a3a" roughness={0.8} metalness={0.3} />
               </mesh>
-              {/* Subtle glow at base */}
-              <mesh position={[0, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[1.8 * obs.scale, 2.5 * obs.scale, 16]} />
-                <meshBasicMaterial color="#002200" transparent opacity={0.3} />
+              {/* Fan grill on top */}
+              <mesh position={[0, 2.5 * obs.scale, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.8 * obs.scale, 0.8 * obs.scale, 0.1, 12]} />
+                <meshBasicMaterial color="#2a2a2a" />
+              </mesh>
+              {/* Grill lines */}
+              <mesh position={[0, 2.55 * obs.scale, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.3 * obs.scale, 0.75 * obs.scale, 8]} />
+                <meshBasicMaterial color="#1a1a1a" />
               </mesh>
             </group>
           );
-        } else if (obs.type === 'rock') {
+        } else if (obs.type === 'chimney') {
+          // Brick chimney
           return (
             <group key={obs.id} position={[obs.x, 0, obs.z]} rotation={[0, obs.rotation, 0]}>
-              {/* Irregular rock shape using multiple spheres */}
-              <mesh position={[0, 1.2 * obs.scale, 0]}>
-                <dodecahedronGeometry args={[2 * obs.scale, 0]} />
-                <meshStandardMaterial color="#0a0a0a" roughness={1} metalness={0} />
+              <mesh position={[0, 2.5 * obs.scale, 0]}>
+                <boxGeometry args={[1.5 * obs.scale, 5 * obs.scale, 1.5 * obs.scale]} />
+                <meshStandardMaterial color="#4a3028" roughness={0.95} metalness={0} />
               </mesh>
-              <mesh position={[0.5 * obs.scale, 0.8 * obs.scale, 0.3 * obs.scale]}>
-                <dodecahedronGeometry args={[1.2 * obs.scale, 0]} />
-                <meshStandardMaterial color="#080808" roughness={1} metalness={0} />
+              {/* Chimney cap */}
+              <mesh position={[0, 5.2 * obs.scale, 0]}>
+                <boxGeometry args={[1.8 * obs.scale, 0.4 * obs.scale, 1.8 * obs.scale]} />
+                <meshStandardMaterial color="#333" roughness={0.7} metalness={0.4} />
+              </mesh>
+            </group>
+          );
+        } else if (obs.type === 'vent') {
+          // Metal ventilation shaft
+          return (
+            <group key={obs.id} position={[obs.x, 0, obs.z]} rotation={[0, obs.rotation, 0]}>
+              <mesh position={[0, 1 * obs.scale, 0]}>
+                <cylinderGeometry args={[1 * obs.scale, 1.2 * obs.scale, 2 * obs.scale, 8]} />
+                <meshStandardMaterial color="#4a4a4a" roughness={0.6} metalness={0.5} />
+              </mesh>
+              {/* Vent hood */}
+              <mesh position={[0, 2.3 * obs.scale, 0]}>
+                <coneGeometry args={[1.3 * obs.scale, 0.8 * obs.scale, 8]} />
+                <meshStandardMaterial color="#3a3a3a" roughness={0.7} metalness={0.4} />
+              </mesh>
+            </group>
+          );
+        } else if (obs.type === 'skylight') {
+          // Glass skylight
+          return (
+            <group key={obs.id} position={[obs.x, 0, obs.z]} rotation={[0, obs.rotation, 0]}>
+              {/* Frame */}
+              <mesh position={[0, 0.3 * obs.scale, 0]}>
+                <boxGeometry args={[4 * obs.scale, 0.6 * obs.scale, 3 * obs.scale]} />
+                <meshStandardMaterial color="#2a2a2a" roughness={0.8} metalness={0.3} />
+              </mesh>
+              {/* Glass - slightly glowing from below */}
+              <mesh position={[0, 0.35 * obs.scale, 0]}>
+                <boxGeometry args={[3.6 * obs.scale, 0.1 * obs.scale, 2.6 * obs.scale]} />
+                <meshBasicMaterial color="#334455" transparent opacity={0.7} />
               </mesh>
             </group>
           );
         } else {
-          // Wall segment
+          // Water tank
           return (
             <group key={obs.id} position={[obs.x, 0, obs.z]} rotation={[0, obs.rotation, 0]}>
-              <mesh position={[0, 1.5 * obs.scale, 0]}>
-                <boxGeometry args={[6 * obs.scale, 3 * obs.scale, 1 * obs.scale]} />
-                <meshStandardMaterial color="#0c0c0c" roughness={0.95} metalness={0.05} />
+              {/* Tank body */}
+              <mesh position={[0, 3 * obs.scale, 0]}>
+                <cylinderGeometry args={[2 * obs.scale, 2 * obs.scale, 4 * obs.scale, 12]} />
+                <meshStandardMaterial color="#3d5a5a" roughness={0.7} metalness={0.4} />
               </mesh>
-              {/* Edge glow */}
-              <mesh position={[0, 0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <planeGeometry args={[6.5 * obs.scale, 1.5 * obs.scale]} />
-                <meshBasicMaterial color="#001a00" transparent opacity={0.25} />
+              {/* Tank top */}
+              <mesh position={[0, 5.2 * obs.scale, 0]}>
+                <coneGeometry args={[2.2 * obs.scale, 0.8 * obs.scale, 12]} />
+                <meshStandardMaterial color="#2d4a4a" roughness={0.6} metalness={0.5} />
               </mesh>
+              {/* Support legs */}
+              {[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([dx, dz], i) => (
+                <mesh key={i} position={[dx * 1.5 * obs.scale, 0.5 * obs.scale, dz * 1.5 * obs.scale]}>
+                  <boxGeometry args={[0.3 * obs.scale, 1 * obs.scale, 0.3 * obs.scale]} />
+                  <meshStandardMaterial color="#333" roughness={0.8} metalness={0.3} />
+                </mesh>
+              ))}
             </group>
           );
         }
@@ -488,7 +541,8 @@ function Cat({ position, facingAngle, isHit, isSprinting, isInvincible, time, ey
   );
 }
 
-// Anglerfish enemy - hunt radius for awareness, light radius for damage
+// Security Searchlight - patrols the rooftop, shines light that damages the cat
+// Reskinned from anglerfish but now makes sense for rooftops
 function Anglerfish({ fish, time, catPosition, settings }) {
   const groupRef = useRef();
   const fishRef = useRef({ ...fish });
@@ -576,98 +630,90 @@ function Anglerfish({ fish, time, catPosition, settings }) {
     fish.isChasing = f.isChasing;
   });
 
-  // PERFORMANCE: Reduced from 4 lights to 1 per fish
+  // PERFORMANCE: Reduced from 4 lights to 1 per drone
   const pulseIntensity = 2 + Math.sin(time * 3 + fish.id.charCodeAt(5)) * 0.8;
+  const isAlert = fish.isChasing;
 
   return (
     <group ref={groupRef} position={[fish.x, fish.y, fish.z]}>
-      {/* Anglerfish body - using BasicMaterial with emissive-like color for performance */}
+      {/* Security Drone body - dark metallic sphere */}
       <mesh rotation={[0, 0, 0]}>
-        <sphereGeometry args={[1.0, 8, 8]} />
-        <meshBasicMaterial color="#2a3545" />
+        <sphereGeometry args={[0.8, 12, 12]} />
+        <meshStandardMaterial color="#2a2a2a" roughness={0.3} metalness={0.8} />
       </mesh>
 
-      {/* Body details - bioluminescent spots - reduced count */}
-      {[0, 2, 4].map((i) => (
-        <mesh
-          key={i}
-          position={[
-            Math.cos(i * 1.26) * 0.8,
-            Math.sin(i * 1.1) * 0.5,
-            Math.sin(i * 1.26) * 0.8
-          ]}
-        >
-          <sphereGeometry args={[0.1, 4, 4]} />
-          <meshBasicMaterial color="#66ffaa" transparent opacity={0.7} />
-        </mesh>
+      {/* Drone ring - equator belt */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.85, 0.08, 8, 24]} />
+        <meshBasicMaterial color={isAlert ? '#ff4444' : '#444444'} />
+      </mesh>
+
+      {/* Propeller housings (4 corners) */}
+      {[0, 1, 2, 3].map((i) => (
+        <group key={i} position={[Math.cos(i * Math.PI / 2) * 1.2, 0.2, Math.sin(i * Math.PI / 2) * 1.2]}>
+          <mesh>
+            <cylinderGeometry args={[0.3, 0.3, 0.15, 8]} />
+            <meshBasicMaterial color="#333" />
+          </mesh>
+          {/* Spinning propeller */}
+          <mesh position={[0, 0.1, 0]} rotation={[0, time * 20 + i, 0]}>
+            <boxGeometry args={[0.5, 0.02, 0.08]} />
+            <meshBasicMaterial color="#555" />
+          </mesh>
+        </group>
       ))}
 
-      {/* Lower jaw */}
-      <mesh position={[0, -0.4, 0.8]} rotation={[0.3, 0, 0]}>
-        <boxGeometry args={[0.6, 0.25, 0.5]} />
-        <meshBasicMaterial color="#2a3545" />
+      {/* Camera/sensor eye */}
+      <mesh position={[0, -0.3, 0.6]}>
+        <sphereGeometry args={[0.2, 8, 8]} />
+        <meshBasicMaterial color={isAlert ? '#ff0000' : '#333'} />
+      </mesh>
+      <mesh position={[0, -0.3, 0.7]}>
+        <sphereGeometry args={[0.1, 6, 6]} />
+        <meshBasicMaterial color={isAlert ? '#ff6666' : '#666'} />
       </mesh>
 
-      {/* Teeth - reduced count */}
-      {[-0.15, 0.15].map((offset, i) => (
-        <mesh key={i} position={[offset, -0.15, 1.0]} rotation={[0.2, 0, 0]}>
-          <coneGeometry args={[0.05, 0.2, 3]} />
-          <meshBasicMaterial color="#ffffcc" />
-        </mesh>
-      ))}
-
-      {/* Lure stalk */}
-      <mesh position={[0, 0.7, 0.6]} rotation={[-0.5, 0, 0]}>
-        <cylinderGeometry args={[0.04, 0.02, 0.8, 4]} />
-        <meshBasicMaterial color="#88ff88" />
+      {/* Searchlight housing */}
+      <mesh position={[0, -0.8, 0]} rotation={[0, 0, 0]}>
+        <cylinderGeometry args={[0.25, 0.4, 0.4, 8]} />
+        <meshStandardMaterial color="#222" roughness={0.4} metalness={0.6} />
       </mesh>
 
-      {/* Glowing lure (the dangerous light source) */}
-      <mesh position={[0, 1.1, 0.9]}>
-        <sphereGeometry args={[0.25, 6, 6]} />
-        <meshBasicMaterial color="#eeffaa" />
+      {/* Searchlight beam - cone of light pointing down */}
+      <mesh position={[0, -3, 0]}>
+        <coneGeometry args={[fish.lightRadius * 0.6, 5, 16, 1, true]} />
+        <meshBasicMaterial
+          color={isAlert ? '#ffaa00' : '#ffffaa'}
+          transparent
+          opacity={0.15}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
-      {/* Lure glow halo - single layer for performance */}
-      <mesh position={[0, 1.1, 0.9]}>
-        <sphereGeometry args={[0.5, 6, 6]} />
-        <meshBasicMaterial color="#ccff66" transparent opacity={0.4} />
+      {/* Light bulb glow */}
+      <mesh position={[0, -1, 0]}>
+        <sphereGeometry args={[0.15, 6, 6]} />
+        <meshBasicMaterial color={isAlert ? '#ffcc00' : '#ffffcc'} />
       </mesh>
 
-      {/* SINGLE PRIMARY LIGHT - the only light per fish for performance */}
+      {/* Status lights on drone body */}
+      <mesh position={[0.6, 0, 0.6]}>
+        <sphereGeometry args={[0.06, 4, 4]} />
+        <meshBasicMaterial color={isAlert ? '#ff0000' : '#00ff00'} />
+      </mesh>
+      <mesh position={[-0.6, 0, 0.6]}>
+        <sphereGeometry args={[0.06, 4, 4]} />
+        <meshBasicMaterial color={isAlert ? '#ff0000' : '#00ff00'} />
+      </mesh>
+
+      {/* SINGLE PRIMARY LIGHT - the searchlight beam */}
       <pointLight
-        position={[0, 0, 0]}
-        color="#ccff66"
+        position={[0, -2, 0]}
+        color={isAlert ? '#ffaa00' : '#ffffaa'}
         intensity={pulseIntensity * 10}
         distance={fish.lightRadius * 1.5}
         decay={2}
       />
-
-      {/* Eyes - glowing red */}
-      <mesh position={[-0.4, 0.25, 0.75]}>
-        <sphereGeometry args={[0.15, 4, 4]} />
-        <meshBasicMaterial color="#ff3333" />
-      </mesh>
-      <mesh position={[0.4, 0.25, 0.75]}>
-        <sphereGeometry args={[0.15, 4, 4]} />
-        <meshBasicMaterial color="#ff3333" />
-      </mesh>
-
-      {/* Fins - simplified */}
-      <mesh position={[-0.8, 0, -0.3]} rotation={[0, 0.5, Math.sin(time * 5) * 0.3]}>
-        <boxGeometry args={[0.6, 0.04, 0.5]} />
-        <meshBasicMaterial color="#4a5a7a" transparent opacity={0.9} />
-      </mesh>
-      <mesh position={[0.8, 0, -0.3]} rotation={[0, -0.5, -Math.sin(time * 5) * 0.3]}>
-        <boxGeometry args={[0.6, 0.04, 0.5]} />
-        <meshBasicMaterial color="#4a5a7a" transparent opacity={0.9} />
-      </mesh>
-
-      {/* Tail */}
-      <mesh position={[0, 0, -1.1]} rotation={[0, 0, Math.sin(time * 4) * 0.2]}>
-        <coneGeometry args={[0.4, 0.6, 4]} />
-        <meshBasicMaterial color="#2a3545" />
-      </mesh>
     </group>
   );
 }
@@ -1217,6 +1263,7 @@ export default function CatRealm3D({
 }) {
   const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
   const isMobile = useIsMobile();
+  const { addEssence } = useInventory();
 
   const [gameState, setGameState] = useState('ready');
   const [time, setTime] = useState(0);
@@ -1565,6 +1612,7 @@ export default function CatRealm3D({
     if (type === 'essence') {
       setEssencesCollected(prev => [...prev, id]);
       setScore(s => s + 500);
+      addEssence('amber'); // Add amber essence to inventory
     } else if (type === 'coin') {
       setCoinsCollected(c => c + 1);
       setScore(s => s + 100);
@@ -1601,7 +1649,7 @@ export default function CatRealm3D({
       // Clear message after 2 seconds
       setTimeout(() => setPowerUpMessage(''), 2000);
     }
-  }, []);
+  }, [addEssence]);
 
   const handleFindDimitrius = useCallback(() => {
     if (playerStateRef.current.foundDimitrius) return;

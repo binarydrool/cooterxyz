@@ -103,6 +103,31 @@ const AnimalIcons = {
       <path d="M26 8 L22 14 L24 10 Z" fill="#8B4513" />
     </svg>
   ),
+  miles: ({ size = 32 }) => (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      {/* Body segments - caterpillar/inchworm shape */}
+      <ellipse cx="6" cy="20" rx="4" ry="3" fill="#7CFC00" />
+      <ellipse cx="11" cy="18" rx="3.5" ry="3" fill="#66CD00" />
+      <ellipse cx="16" cy="17" rx="3.5" ry="3" fill="#228B22" />
+      <ellipse cx="21" cy="18" rx="3.5" ry="3" fill="#3CB371" />
+      <ellipse cx="26" cy="20" rx="4" ry="3.5" fill="#32CD32" />
+      {/* Head details */}
+      <circle cx="28" cy="17" r="1.5" fill="#111" />
+      <circle cx="24" cy="17" r="1.5" fill="#111" />
+      <circle cx="28.3" cy="16.5" r="0.5" fill="#FFF" />
+      <circle cx="24.3" cy="16.5" r="0.5" fill="#FFF" />
+      {/* Antennae */}
+      <path d="M26 14 L28 10" stroke="#228B22" strokeWidth="1" />
+      <path d="M27 14 L30 11" stroke="#228B22" strokeWidth="1" />
+      <circle cx="28" cy="10" r="1" fill="#7CFC00" />
+      <circle cx="30" cy="11" r="1" fill="#7CFC00" />
+      {/* Tiny legs */}
+      <path d="M6 23 L5 26" stroke="#2E5E1A" strokeWidth="1" />
+      <path d="M11 21 L10 24" stroke="#2E5E1A" strokeWidth="1" />
+      <path d="M16 20 L15 23" stroke="#2E5E1A" strokeWidth="1" />
+      <path d="M21 21 L20 24" stroke="#2E5E1A" strokeWidth="1" />
+    </svg>
+  ),
 };
 
 // Essence shape icons
@@ -172,6 +197,7 @@ export default function ChatModal({
   const isGuide = riddle?.isGuide;  // Nox is the main guide
   const isShattered = riddle?.isShattered;  // Dimitrius is shattered
   const isOwlRealm = riddle?.isOwlRealm || animal === 'owl';  // Hoots' realm needs victory essences
+  const isMiles = riddle?.isMiles;  // Miles the inchworm
   const grainsNeeded = riddle?.grainsNeeded || 0;
 
   // Find the grain type for this animal (each animal needs a specific color) - but don't reveal it!
@@ -180,7 +206,7 @@ export default function ChatModal({
   const grainsNeededCount = grainType?.needed || 3;
 
   // All grain colors available to offer
-  const allGrainColors = ['green', 'gold', 'orange', 'purple'];
+  const allGrainColors = ['green', 'gold', 'orange', 'purple', 'cyan'];
 
   // Get total of each grain color the player has
   const getGrainCount = (color) => inventory?.grains?.[color] || 0;
@@ -224,6 +250,13 @@ export default function ChatModal({
           { role: 'animal', content: "What wisdom do you seek, brave turtle?" },
         ]);
         setAskedQuestions([]);
+      } else if (isMiles) {
+        // Miles has both dialogue options AND a riddle
+        setDialogueHistory([
+          { role: 'animal', content: riddle.greeting },
+          { role: 'animal', content: riddle.riddle },
+        ]);
+        setAskedQuestions([]);
       } else {
         setDialogueHistory([
           { role: 'animal', content: riddle.greeting },
@@ -235,7 +268,7 @@ export default function ChatModal({
       setGrainInput('');
       setAttemptFeedback(null);
     }
-  }, [isOpen, animal, riddle, isTutorial, isHoots, isGuide, isShattered]);
+  }, [isOpen, animal, riddle, isTutorial, isHoots, isGuide, isShattered, isMiles]);
 
   // Handle tutorial question click
   const handleAskQuestion = useCallback((option, index) => {
@@ -801,6 +834,7 @@ export default function ChatModal({
                 { id: 'gold', name: 'Gold', color: '#FFD700' },
                 { id: 'orange', name: 'Orange', color: '#FFA500' },
                 { id: 'purple', name: 'Purple', color: '#9370DB' },
+                { id: 'cyan', name: 'Cyan', color: '#00CED1' },
               ];
 
               return (

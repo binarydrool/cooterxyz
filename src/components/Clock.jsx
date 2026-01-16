@@ -59,6 +59,8 @@ const GOLD_COLOR = new THREE.Color(0xFFD700);
 // Sand grain settings
 const SAND_GRAIN_RADIUS = 0.15;
 const CLAIM_DISTANCE = 1.0;
+const MAX_GRAINS = 12; // Maximum grains allowed on clock - prevents memory leak
+const GRAIN_LIFETIME = 180; // Grains despawn after 3 minutes (180 seconds) if not collected
 
 // Generate random position on clock face
 function getRandomClockPosition() {
@@ -81,12 +83,12 @@ const ESSENCE_COLORS = {
   violet: { color: '#9932CC', emissive: '#660099' },
 };
 
-// Inchworm settings - walks around clock face in 24 hours
-const INCHWORM_RADIUS = CLOCK_RADIUS * 0.92; // Near edge but not on outer rim
-const INCHWORM_SCALE = 0.08; // Small but visible
+// Miles the Inchworm - walks around clock face in 24 hours
+const MILES_RADIUS = CLOCK_RADIUS * 0.92; // Near edge but not on outer rim
+const MILES_INTERACT_DISTANCE = 0.8; // Interaction distance for Miles
 
-// Inchworm - cute little guy that walks around the clock face every 24 hours
-function Inchworm({ dejaVuState }) {
+// Miles the Inchworm - cute little guy that walks around the clock face every 24 hours
+function Miles({ dejaVuState, onPositionUpdate }) {
   const groupRef = useRef();
   const segmentsRef = useRef([]);
   const displayedAngle = useRef(0);
@@ -124,15 +126,21 @@ function Inchworm({ dejaVuState }) {
       inchPhase.current += delta * 4; // Inch cycle speed
     }
 
-    // Position the inchworm around the clock
+    // Position Miles around the clock
     const angle = displayedAngle.current;
-    const x = Math.sin(angle) * INCHWORM_RADIUS;
-    const z = Math.cos(angle) * INCHWORM_RADIUS;
+    const x = Math.sin(angle) * MILES_RADIUS;
+    const z = Math.cos(angle) * MILES_RADIUS;
     const y = CLOCK_THICKNESS / 2 + 0.02;
 
     groupRef.current.position.set(x, y, z);
+
+    // Report position for interaction detection
+    if (onPositionUpdate) {
+      onPositionUpdate(x, z);
+    }
     // Face the direction of travel (tangent to circle, clockwise)
-    groupRef.current.rotation.y = -angle + Math.PI / 2;
+    // Head is at -Z in local space, so we need angle - π/2 to face clockwise tangent
+    groupRef.current.rotation.y = angle - Math.PI / 2;
 
     // Animate the segments for inching motion
     const phase = inchPhase.current;
@@ -361,13 +369,12 @@ function Fireflies() {
 }
 
 // Sand grain component - collectible by turtle
+// NOTE: No pointLight per grain - they were causing massive performance issues
 function SandGrain({ position, spawnTime, turtlePosition, id, onNearGrain, essenceType = 'golden' }) {
   const groupRef = useRef();
   const meshRef = useRef();
-  const lightRef = useRef();
   const grainPos = useRef({ x: position[0], y: position[1], z: position[2] });
   const spawnComplete = useRef(false);
-  const glowIntensity = useRef(0.3);
   const wasNear = useRef(false);
 
   const essenceColor = ESSENCE_COLORS[essenceType] || ESSENCE_COLORS.golden;
@@ -404,13 +411,9 @@ function SandGrain({ position, spawnTime, turtlePosition, id, onNearGrain, essen
     }
 
     // Update glow intensity directly via refs (no setState)
-    const targetGlow = isNear ? 0.6 : 0.3;
-    glowIntensity.current = targetGlow;
+    const targetGlow = isNear ? 1.0 : 0.6;
     if (meshRef.current.material) {
       meshRef.current.material.emissiveIntensity = targetGlow;
-    }
-    if (lightRef.current) {
-      lightRef.current.intensity = targetGlow * 2;
     }
 
     const bobY = Math.sin(Date.now() / 300) * 0.05;
@@ -428,11 +431,10 @@ function SandGrain({ position, spawnTime, turtlePosition, id, onNearGrain, essen
           metalness={0.7}
           roughness={0.2}
           emissive={essenceColor.emissive}
-          emissiveIntensity={0.3}
+          emissiveIntensity={0.6}
           flatShading={true}
         />
       </mesh>
-      <pointLight ref={lightRef} color={essenceColor.color} intensity={0.6} distance={1} decay={2} />
     </group>
   );
 }
@@ -501,12 +503,13 @@ function AmberPyramid({ pyramidShards = {}, position = [0, 0, 0] }) {
   const groupRef = useRef();
   const floatRef = useRef(0);
 
-  // Pyramid layers from bottom to top: rabbit, frog, cat, owl
+  // Pyramid layers from bottom to top: rabbit, frog, cat, owl, inchworm
   const layers = [
-    { realm: 'rabbit', color: '#8B4513', y: 0.0, scale: 1.0 },    // Brown - base
-    { realm: 'frog', color: '#228B22', y: 0.18, scale: 0.75 },   // Green
-    { realm: 'cat', color: '#FFA500', y: 0.32, scale: 0.5 },     // Orange/Amber for cat
-    { realm: 'owl', color: '#4B0082', y: 0.44, scale: 0.25 },    // Purple - top
+    { realm: 'rabbit', color: '#8B4513', y: 0.0, scale: 1.0 },      // Brown - base
+    { realm: 'frog', color: '#228B22', y: 0.14, scale: 0.8 },       // Green
+    { realm: 'cat', color: '#FFA500', y: 0.26, scale: 0.6 },        // Orange/Amber for cat
+    { realm: 'owl', color: '#4B0082', y: 0.36, scale: 0.4 },        // Purple
+    { realm: 'inchworm', color: '#7CFC00', y: 0.44, scale: 0.2 },   // Bright green - capstone (Miles)
   ];
 
   useFrame((_, delta) => {
@@ -556,7 +559,7 @@ function AmberPyramid({ pyramidShards = {}, position = [0, 0, 0] }) {
       })}
 
       {/* Top glow when all collected */}
-      {pyramidShards?.rabbit && pyramidShards?.frog && pyramidShards?.cat && pyramidShards?.owl && (
+      {pyramidShards?.rabbit && pyramidShards?.frog && pyramidShards?.cat && pyramidShards?.owl && pyramidShards?.inchworm && (
         <pointLight
           position={[0, 0.6, 0]}
           color="#ffd700"
@@ -1337,7 +1340,7 @@ const SECOND_HAND_COLLISION_WIDTH = 0.35; // Width for collision detection
 const COOTER_BLOCKING_GRACE_PERIOD = 1.0; // 1 second free
 const COOTER_GRAIN_REMOVAL_INTERVAL = 1.0; // Remove 1 grain per second after grace
 
-const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStoppedChange, onStopDataChange, onNearGrain, onNearRabbit, onNearCat, onNearFrog, onNearOwl, onNearGnome, onNearHoots, onNearPortal, onGrainClaimed, onCooterBlockingGrain, victoryCeremony, unlockedRealms = {}, animalEnteringPortal = null, activeRealm = 'hub', pyramidShards = {} }, ref) {
+const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStoppedChange, onStopDataChange, onNearGrain, onNearRabbit, onNearCat, onNearFrog, onNearOwl, onNearGnome, onNearHoots, onNearMiles, onNearPortal, onGrainClaimed, onCooterBlockingGrain, victoryCeremony, unlockedRealms = {}, animalEnteringPortal = null, activeRealm = 'hub', pyramidShards = {} }, ref) {
   const hourHandRef = useRef();
   const minuteHandRef = useRef();
   const secondHandRef = useRef();
@@ -1376,8 +1379,12 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
     gnome: false,
     owl: false,
     hoots: false,
+    miles: false,
     portal: null,
   });
+
+  // Track Miles position (updated by Miles component)
+  const milesPosition = useRef({ x: 0, z: 0 });
 
   // Track Cooter blocking the second hand
   const cooterBlockingState = useRef({
@@ -1393,6 +1400,19 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
       onNearGrain(nearGrain || null);
     }
   }, [nearGrainId, sandGrains, onNearGrain]);
+
+  // Periodic cleanup of expired grains (prevents memory leak if game runs for a long time)
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const nowSeconds = Date.now() / 1000;
+      setSandGrains(prev => {
+        const validGrains = prev.filter(g => (nowSeconds - g.spawnTime) < GRAIN_LIFETIME);
+        // Only update if we actually removed something
+        return validGrains.length !== prev.length ? validGrains : prev;
+      });
+    }, 30000); // Check every 30 seconds
+    return () => clearInterval(cleanupInterval);
+  }, []);
 
   const handleGrainNear = useCallback((grainId, isNear) => {
     if (isNear) {
@@ -1515,6 +1535,16 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
       if (onNearHoots) onNearHoots(nearHoots);
     }
 
+    // Miles proximity check (walks around the clock edge every 24 hours)
+    const milesDx = turtleX - milesPosition.current.x;
+    const milesDz = turtleZ - milesPosition.current.z;
+    const milesDist = Math.sqrt(milesDx * milesDx + milesDz * milesDz);
+    const nearMiles = milesDist < MILES_INTERACT_DISTANCE;
+    if (nearMiles !== prevNearValues.current.miles) {
+      prevNearValues.current.miles = nearMiles;
+      if (onNearMiles) onNearMiles(nearMiles);
+    }
+
     // Check portal proximity
     let nearestPortal = null;
     let nearestPortalDist = Infinity;
@@ -1623,16 +1653,29 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
           // Spawn 3 time grains with random colors!
           const essenceTypes = ['forest', 'golden', 'amber', 'violet'];
           const newGrains = [];
+          const nowSeconds = Date.now() / 1000;
           for (let i = 0; i < 3; i++) {
             const randomEssence = essenceTypes[Math.floor(Math.random() * essenceTypes.length)];
             newGrains.push({
               id: Date.now() + i, // Unique IDs
               position: getRandomClockPosition(),
-              spawnTime: Date.now() / 1000,
+              spawnTime: nowSeconds,
               essenceType: randomEssence,
             });
           }
-          setSandGrains(prev => [...prev, ...newGrains]);
+          setSandGrains(prev => {
+            // First, remove expired grains (older than GRAIN_LIFETIME)
+            const validGrains = prev.filter(g => (nowSeconds - g.spawnTime) < GRAIN_LIFETIME);
+            // Combine with new grains
+            const combined = [...validGrains, ...newGrains];
+            // If over limit, remove oldest grains first
+            if (combined.length > MAX_GRAINS) {
+              // Sort by spawn time (oldest first) and take only the newest MAX_GRAINS
+              combined.sort((a, b) => b.spawnTime - a.spawnTime);
+              return combined.slice(0, MAX_GRAINS);
+            }
+            return combined;
+          });
 
           // End déjà vu
           dv.isActive = false;
@@ -1884,8 +1927,14 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
       {/* Y (Nox) - the elephant gnome who stops time at 59 seconds */}
       <Nox dejaVuState={dejaVuStateForRender} />
 
-      {/* Inchworm - walks around the clock face edge every 24 hours */}
-      <Inchworm dejaVuState={dejaVuStateForRender} />
+      {/* Miles the Inchworm - walks around the clock face edge every 24 hours */}
+      <Miles
+        dejaVuState={dejaVuStateForRender}
+        onPositionUpdate={(x, z) => {
+          milesPosition.current.x = x;
+          milesPosition.current.z = z;
+        }}
+      />
 
       {/* Portals */}
       {Object.entries(unlockedRealms).map(([realm, isUnlocked]) => (

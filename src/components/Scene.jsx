@@ -47,6 +47,7 @@ function TurtleWithCamera({ children, onTimeStoppedChange, onStopDataChange, onI
   const [nearOwl, setNearOwl] = useState(false);
   const [nearGnome, setNearGnome] = useState(false);
   const [nearHoots, setNearHoots] = useState(false);
+  const [nearMiles, setNearMiles] = useState(false);
   const [nearPortal, setNearPortal] = useState(null);
 
   // Update global clock ref for touch controls
@@ -64,6 +65,8 @@ function TurtleWithCamera({ children, onTimeStoppedChange, onStopDataChange, onI
         onInteractTargetChange({ type: 'grain', ...nearGrain });
       } else if (nearHoots) {
         onInteractTargetChange({ type: 'hoots' });
+      } else if (nearMiles) {
+        onInteractTargetChange({ type: 'miles' });
       } else if (nearRabbit) {
         onInteractTargetChange({ type: 'rabbit' });
       } else if (nearCat) {
@@ -78,7 +81,7 @@ function TurtleWithCamera({ children, onTimeStoppedChange, onStopDataChange, onI
         onInteractTargetChange(null);
       }
     }
-  }, [nearGrain, nearRabbit, nearCat, nearFrog, nearOwl, nearGnome, nearHoots, nearPortal, onInteractTargetChange]);
+  }, [nearGrain, nearRabbit, nearCat, nearFrog, nearOwl, nearGnome, nearHoots, nearMiles, nearPortal, onInteractTargetChange]);
 
   // Sync camera mode to movement hook
   useEffect(() => {
@@ -102,6 +105,7 @@ function TurtleWithCamera({ children, onTimeStoppedChange, onStopDataChange, onI
         onNearOwl={setNearOwl}
         onNearGnome={setNearGnome}
         onNearHoots={setNearHoots}
+        onNearMiles={setNearMiles}
         onNearPortal={setNearPortal}
         onGrainClaimed={onGrainClaimed}
         onCooterBlockingGrain={onCooterBlockingGrain}

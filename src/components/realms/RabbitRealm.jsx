@@ -8,6 +8,7 @@ import GameHUD from '../ui/GameHUD';
 import IntroModal from '../ui/IntroModal';
 import { getInput, useIsMobile, setActionState } from '@/hooks/useGameInput';
 import { useAudio, SOUNDS } from '@/hooks/useAudio';
+import { useInventory } from '@/hooks/useInventory';
 
 // Difficulty settings - maze size and speed scale with difficulty
 const DIFFICULTY_SETTINGS = {
@@ -75,12 +76,14 @@ function generateMaze(width, height) {
   return maze;
 }
 
-// Instanced Hay Bales - rectangular bales with straw texture lines
+// Instanced Hay Bales - more realistic with visible straw texture and layered look
 function HayBaleInstances({ maze, mazeSize }) {
   const meshRef = useRef();
   const topMeshRef = useRef();
   const bandMeshRef = useRef();
-  const strawRef = useRef();
+  const band2MeshRef = useRef();
+  const strawTopRef = useRef();
+  const strawSideRef = useRef();
 
   const count = useMemo(() => {
     let c = 0;
@@ -101,38 +104,58 @@ function HayBaleInstances({ maze, mazeSize }) {
     for (let y = 0; y < mazeSize; y++) {
       for (let x = 0; x < mazeSize; x++) {
         if (maze[y]?.[x] === 1) {
-          // Main rectangular hay bale body
-          tempObject.position.set(x + 0.5, 0.35, y + 0.5);
-          tempObject.rotation.set(0, 0, 0);
-          tempObject.scale.set(0.42, 0.35, 0.42);
+          const rotation = ((x + y) % 4) * Math.PI / 8; // Slight random rotation
+
+          // Main rectangular hay bale body - cylindrical for round bale look
+          tempObject.position.set(x + 0.5, 0.38, y + 0.5);
+          tempObject.rotation.set(Math.PI / 2, 0, rotation);
+          tempObject.scale.set(0.42, 0.42, 0.38);
           tempObject.updateMatrix();
           meshRef.current.setMatrixAt(i, tempObject.matrix);
 
-          // Top layer - slightly smaller
+          // Second stacked bale on top
           if (topMeshRef.current) {
-            tempObject.position.set(x + 0.5, 0.72, y + 0.5);
-            tempObject.rotation.set(0, Math.PI / 6, 0);
-            tempObject.scale.set(0.38, 0.32, 0.38);
+            tempObject.position.set(x + 0.5, 0.78, y + 0.5);
+            tempObject.rotation.set(Math.PI / 2, 0, rotation + Math.PI / 4);
+            tempObject.scale.set(0.38, 0.38, 0.36);
             tempObject.updateMatrix();
             topMeshRef.current.setMatrixAt(i, tempObject.matrix);
           }
 
-          // Twine bands around the bale
+          // Twine band lower
           if (bandMeshRef.current) {
-            tempObject.position.set(x + 0.5, 0.35, y + 0.5);
-            tempObject.rotation.set(Math.PI / 2, 0, 0);
-            tempObject.scale.set(0.44, 0.44, 0.06);
+            tempObject.position.set(x + 0.5, 0.25, y + 0.5);
+            tempObject.rotation.set(0, rotation, 0);
+            tempObject.scale.set(0.44, 0.05, 0.44);
             tempObject.updateMatrix();
             bandMeshRef.current.setMatrixAt(i, tempObject.matrix);
           }
 
-          // Straw texture lines on top
-          if (strawRef.current) {
-            tempObject.position.set(x + 0.5, 0.88, y + 0.5);
-            tempObject.rotation.set(0, 0, 0);
-            tempObject.scale.set(0.35, 0.02, 0.35);
+          // Twine band upper
+          if (band2MeshRef.current) {
+            tempObject.position.set(x + 0.5, 0.52, y + 0.5);
+            tempObject.rotation.set(0, rotation, 0);
+            tempObject.scale.set(0.44, 0.05, 0.44);
             tempObject.updateMatrix();
-            strawRef.current.setMatrixAt(i, tempObject.matrix);
+            band2MeshRef.current.setMatrixAt(i, tempObject.matrix);
+          }
+
+          // Straw wisps on top
+          if (strawTopRef.current) {
+            tempObject.position.set(x + 0.5, 0.97, y + 0.5);
+            tempObject.rotation.set(0, rotation * 2, 0);
+            tempObject.scale.set(0.32, 0.04, 0.32);
+            tempObject.updateMatrix();
+            strawTopRef.current.setMatrixAt(i, tempObject.matrix);
+          }
+
+          // Loose straw at sides
+          if (strawSideRef.current) {
+            tempObject.position.set(x + 0.5, 0.08, y + 0.5);
+            tempObject.rotation.set(0, rotation, 0);
+            tempObject.scale.set(0.55, 0.08, 0.55);
+            tempObject.updateMatrix();
+            strawSideRef.current.setMatrixAt(i, tempObject.matrix);
           }
 
           i++;
@@ -142,88 +165,196 @@ function HayBaleInstances({ maze, mazeSize }) {
     meshRef.current.instanceMatrix.needsUpdate = true;
     if (topMeshRef.current) topMeshRef.current.instanceMatrix.needsUpdate = true;
     if (bandMeshRef.current) bandMeshRef.current.instanceMatrix.needsUpdate = true;
-    if (strawRef.current) strawRef.current.instanceMatrix.needsUpdate = true;
+    if (band2MeshRef.current) band2MeshRef.current.instanceMatrix.needsUpdate = true;
+    if (strawTopRef.current) strawTopRef.current.instanceMatrix.needsUpdate = true;
+    if (strawSideRef.current) strawSideRef.current.instanceMatrix.needsUpdate = true;
   }, [maze, mazeSize]);
 
   if (count === 0) return null;
 
   return (
     <group>
-      {/* Main rectangular hay bale - golden straw color */}
+      {/* Main hay bale body - warm golden straw */}
       <instancedMesh ref={meshRef} args={[null, null, count]} frustumCulled={false}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial color="#c9a227" />
+        <cylinderGeometry args={[1, 1, 1, 12]} />
+        <meshBasicMaterial color="#d4a017" />
       </instancedMesh>
-      {/* Top stacked bale - slightly different shade */}
+      {/* Top stacked bale - slightly lighter */}
       <instancedMesh ref={topMeshRef} args={[null, null, count]} frustumCulled={false}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial color="#b8941f" />
+        <cylinderGeometry args={[1, 1, 1, 12]} />
+        <meshBasicMaterial color="#e6b422" />
       </instancedMesh>
-      {/* Twine bands - dark brown rope */}
+      {/* Lower twine band - dark sisal rope */}
       <instancedMesh ref={bandMeshRef} args={[null, null, count]} frustumCulled={false}>
-        <torusGeometry args={[1, 0.08, 4, 8]} />
-        <meshBasicMaterial color="#5d4037" />
+        <torusGeometry args={[1, 0.06, 4, 16]} />
+        <meshBasicMaterial color="#4a3728" />
       </instancedMesh>
-      {/* Straw texture on top - lighter yellow */}
-      <instancedMesh ref={strawRef} args={[null, null, count]} frustumCulled={false}>
+      {/* Upper twine band */}
+      <instancedMesh ref={band2MeshRef} args={[null, null, count]} frustumCulled={false}>
+        <torusGeometry args={[1, 0.06, 4, 16]} />
+        <meshBasicMaterial color="#4a3728" />
+      </instancedMesh>
+      {/* Straw wisps on top - lighter yellow */}
+      <instancedMesh ref={strawTopRef} args={[null, null, count]} frustumCulled={false}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial color="#daa520" />
+        <meshBasicMaterial color="#f0d060" />
+      </instancedMesh>
+      {/* Loose straw at base - scattered straw look */}
+      <instancedMesh ref={strawSideRef} args={[null, null, count]} frustumCulled={false}>
+        <circleGeometry args={[1, 8]} />
+        <meshBasicMaterial color="#c9a227" transparent opacity={0.7} />
       </instancedMesh>
     </group>
   );
 }
 
-// Corn stalk decoration
+// Corn stalk decoration - tall autumn corn with dried leaves
 function CornStalk({ position }) {
   return (
     <group position={position}>
       {/* Main stalk */}
-      <mesh position={[0, 0.6, 0]}>
-        <cylinderGeometry args={[0.03, 0.04, 1.2, 4]} />
-        <meshBasicMaterial color="#7a9a4a" />
+      <mesh position={[0, 0.7, 0]}>
+        <cylinderGeometry args={[0.03, 0.05, 1.4, 6]} />
+        <meshBasicMaterial color="#8B7355" />
       </mesh>
-      {/* Leaves */}
-      <mesh position={[-0.15, 0.5, 0]} rotation={[0.3, 0, -0.5]}>
-        <boxGeometry args={[0.25, 0.03, 0.08]} />
-        <meshBasicMaterial color="#5d8a3a" />
+      {/* Dried leaves - autumn brown/tan colors */}
+      <mesh position={[-0.2, 0.4, 0]} rotation={[0.3, 0, -0.6]}>
+        <boxGeometry args={[0.35, 0.02, 0.1]} />
+        <meshBasicMaterial color="#C4A35A" />
       </mesh>
-      <mesh position={[0.12, 0.7, 0]} rotation={[-0.2, 0, 0.4]}>
-        <boxGeometry args={[0.22, 0.03, 0.07]} />
-        <meshBasicMaterial color="#6d9a4a" />
+      <mesh position={[0.18, 0.55, 0]} rotation={[-0.2, 0, 0.5]}>
+        <boxGeometry args={[0.32, 0.02, 0.09]} />
+        <meshBasicMaterial color="#B8956E" />
       </mesh>
-      {/* Corn cob */}
-      <mesh position={[0.08, 0.45, 0.05]} rotation={[0, 0, 0.3]}>
-        <capsuleGeometry args={[0.04, 0.12, 3, 6]} />
-        <meshBasicMaterial color="#f4d03f" />
+      <mesh position={[-0.15, 0.75, 0.05]} rotation={[0.4, 0.2, -0.4]}>
+        <boxGeometry args={[0.28, 0.02, 0.08]} />
+        <meshBasicMaterial color="#D4B483" />
+      </mesh>
+      <mesh position={[0.12, 0.9, -0.03]} rotation={[-0.3, -0.1, 0.3]}>
+        <boxGeometry args={[0.25, 0.02, 0.07]} />
+        <meshBasicMaterial color="#BFA76F" />
+      </mesh>
+      {/* Corn cob with husk */}
+      <mesh position={[0.1, 0.5, 0.06]} rotation={[0, 0, 0.3]}>
+        <capsuleGeometry args={[0.05, 0.15, 4, 8]} />
+        <meshBasicMaterial color="#F5D76E" />
+      </mesh>
+      {/* Husk wrapper */}
+      <mesh position={[0.12, 0.45, 0.08]} rotation={[0.1, 0, 0.4]}>
+        <boxGeometry args={[0.08, 0.18, 0.04]} />
+        <meshBasicMaterial color="#C9B896" />
+      </mesh>
+      {/* Corn silk (dried) */}
+      <mesh position={[0.08, 0.62, 0.06]}>
+        <coneGeometry args={[0.03, 0.08, 4]} />
+        <meshBasicMaterial color="#8B6914" />
       </mesh>
     </group>
   );
 }
 
-// Simple pumpkin - PERFORMANCE OPTIMIZED (2 meshes only)
-function Pumpkin({ position, scale = 0.3 }) {
-  const color = useMemo(() => `hsl(${25 + Math.random() * 15}, 80%, 48%)`, []);
+// Gourd - smaller squash-like decoration
+function Gourd({ position, color = '#E07020' }) {
   return (
-    <group position={position} scale={scale}>
-      <mesh scale={[1, 0.7, 1]}>
-        <sphereGeometry args={[1, 6, 5]} />
+    <group position={position}>
+      <mesh scale={[0.6, 0.8, 0.6]} position={[0, 0.1, 0]}>
+        <sphereGeometry args={[0.15, 6, 5]} />
         <meshBasicMaterial color={color} />
       </mesh>
-      <mesh position={[0, 0.6, 0]}>
-        <cylinderGeometry args={[0.1, 0.15, 0.3, 4]} />
-        <meshBasicMaterial color="#5D4E37" />
+      <mesh position={[0, 0.2, 0]}>
+        <cylinderGeometry args={[0.02, 0.03, 0.06, 4]} />
+        <meshBasicMaterial color="#4A3728" />
       </mesh>
     </group>
   );
 }
 
-// Simple grass ground - PERFORMANCE OPTIMIZED - extends well beyond maze
-function GrassGround({ size }) {
+// Fallen leaf - flat autumn leaf
+function FallenLeaf({ position, color, rotation }) {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[size/2, -0.01, size/2]}>
-      <planeGeometry args={[size + 40, size + 40]} />
-      <meshBasicMaterial color="#6b8c4a" />
+    <mesh position={position} rotation={[-Math.PI / 2, 0, rotation]}>
+      <circleGeometry args={[0.08, 5]} />
+      <meshBasicMaterial color={color} transparent opacity={0.9} />
     </mesh>
+  );
+}
+
+// Detailed pumpkin - with ribs and varied colors
+function Pumpkin({ position, scale = 0.3 }) {
+  const hue = useMemo(() => 20 + Math.random() * 20, []);
+  const color = `hsl(${hue}, 85%, 45%)`;
+  const darkColor = `hsl(${hue}, 85%, 35%)`;
+  return (
+    <group position={position} scale={scale}>
+      {/* Main body */}
+      <mesh scale={[1, 0.75, 1]}>
+        <sphereGeometry args={[1, 8, 6]} />
+        <meshBasicMaterial color={color} />
+      </mesh>
+      {/* Ribs - give pumpkin texture */}
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <mesh key={i} position={[Math.sin(i * Math.PI / 3) * 0.85, 0, Math.cos(i * Math.PI / 3) * 0.85]} scale={[0.25, 0.65, 0.25]}>
+          <sphereGeometry args={[1, 4, 4]} />
+          <meshBasicMaterial color={darkColor} />
+        </mesh>
+      ))}
+      {/* Stem */}
+      <mesh position={[0, 0.65, 0]}>
+        <cylinderGeometry args={[0.08, 0.15, 0.35, 5]} />
+        <meshBasicMaterial color="#5D4E37" />
+      </mesh>
+      {/* Curly vine */}
+      <mesh position={[0.15, 0.75, 0]} rotation={[0, 0, 0.5]}>
+        <torusGeometry args={[0.08, 0.02, 4, 8, Math.PI]} />
+        <meshBasicMaterial color="#4A7023" />
+      </mesh>
+    </group>
+  );
+}
+
+// Autumn ground - brown/tan with fallen leaves scattered
+function AutumnGround({ size }) {
+  const leaves = useMemo(() => {
+    const leafColors = ['#C75D2C', '#E6A623', '#8B4513', '#D2691E', '#B22222', '#CD853F', '#DAA520'];
+    const scattered = [];
+    // Scatter leaves throughout the ground
+    for (let i = 0; i < 150; i++) {
+      scattered.push({
+        x: Math.random() * (size + 30) - 15,
+        z: Math.random() * (size + 30) - 15,
+        color: leafColors[Math.floor(Math.random() * leafColors.length)],
+        rotation: Math.random() * Math.PI * 2,
+        scale: 0.8 + Math.random() * 0.5,
+      });
+    }
+    return scattered;
+  }, [size]);
+
+  return (
+    <group>
+      {/* Base ground - autumn grass color */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[size/2, -0.01, size/2]}>
+        <planeGeometry args={[size + 40, size + 40]} />
+        <meshBasicMaterial color="#7A8B4A" />
+      </mesh>
+      {/* Dirt patches */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[size/2, 0, size/2]}>
+        <planeGeometry args={[size + 35, size + 35]} />
+        <meshBasicMaterial color="#8B7355" transparent opacity={0.3} />
+      </mesh>
+      {/* Scattered fallen leaves */}
+      {leaves.map((leaf, i) => (
+        <mesh
+          key={i}
+          position={[leaf.x, 0.02, leaf.z]}
+          rotation={[-Math.PI / 2, 0, leaf.rotation]}
+          scale={leaf.scale}
+        >
+          <circleGeometry args={[0.1, 5]} />
+          <meshBasicMaterial color={leaf.color} transparent opacity={0.85} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -630,33 +761,74 @@ function FollowCamera({ target }) {
   return null;
 }
 
-// Generate decoration positions around the maze edges
-const generateDecorationPositions = (mazeSize) => {
+// Generate decoration positions around and inside the maze
+const generateDecorationPositions = (mazeSize, maze) => {
   const pumpkins = [];
   const cornStalks = [];
+  const gourds = [];
+  const gourdColors = ['#E07020', '#D4A017', '#8B4513', '#CD853F', '#DAA520', '#F4A460'];
 
   // Add pumpkins and corn around the outer edges
-  for (let i = 0; i < 8; i++) {
-    const angle = (i / 8) * Math.PI * 2;
-    const radius = mazeSize / 2 + 3;
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * Math.PI * 2;
+    const radius = mazeSize / 2 + 4;
     const x = mazeSize / 2 + Math.cos(angle) * radius;
     const z = mazeSize / 2 + Math.sin(angle) * radius;
 
     pumpkins.push({
-      position: [x + (Math.random() - 0.5), 0, z + (Math.random() - 0.5)],
-      scale: 0.25 + Math.random() * 0.15
+      position: [x + (Math.random() - 0.5) * 2, 0, z + (Math.random() - 0.5) * 2],
+      scale: 0.2 + Math.random() * 0.2
     });
 
-    // Corn stalks near pumpkins
-    cornStalks.push({
-      position: [x + 0.8 + (Math.random() - 0.5) * 0.5, 0, z + (Math.random() - 0.5) * 0.5]
-    });
-    cornStalks.push({
-      position: [x - 0.8 + (Math.random() - 0.5) * 0.5, 0, z + (Math.random() - 0.5) * 0.5]
+    // Corn stalks in bundles near pumpkins
+    cornStalks.push({ position: [x + 1.2 + (Math.random() - 0.5), 0, z + (Math.random() - 0.5)] });
+    cornStalks.push({ position: [x - 1.2 + (Math.random() - 0.5), 0, z + (Math.random() - 0.5)] });
+    cornStalks.push({ position: [x + (Math.random() - 0.5), 0, z + 1.2 + (Math.random() - 0.5)] });
+
+    // Gourds scattered near pumpkins
+    gourds.push({
+      position: [x + (Math.random() - 0.5) * 1.5, 0, z + 0.5 + (Math.random() - 0.5)],
+      color: gourdColors[Math.floor(Math.random() * gourdColors.length)]
     });
   }
 
-  return { pumpkins, cornStalks };
+  // Add decorations in corners of the maze
+  const corners = [
+    [2, 2], [mazeSize - 3, 2], [2, mazeSize - 3], [mazeSize - 3, mazeSize - 3]
+  ];
+  corners.forEach(([cx, cz]) => {
+    // Pumpkin patch in each corner
+    for (let j = 0; j < 3; j++) {
+      pumpkins.push({
+        position: [cx + (Math.random() - 0.5) * 2, 0, cz + (Math.random() - 0.5) * 2],
+        scale: 0.15 + Math.random() * 0.15
+      });
+    }
+    // Corn stalks bundled
+    cornStalks.push({ position: [cx + 1, 0, cz] });
+    cornStalks.push({ position: [cx - 1, 0, cz] });
+    // Gourds
+    gourds.push({
+      position: [cx + 0.5, 0, cz + 0.5],
+      color: gourdColors[Math.floor(Math.random() * gourdColors.length)]
+    });
+    gourds.push({
+      position: [cx - 0.3, 0, cz - 0.4],
+      color: gourdColors[Math.floor(Math.random() * gourdColors.length)]
+    });
+  });
+
+  // Add scattered decorations along the edges inside the maze
+  for (let i = 0; i < 15; i++) {
+    const edgeX = Math.random() > 0.5 ? 1.5 + Math.random() * 2 : mazeSize - 2.5 - Math.random() * 2;
+    const edgeZ = Math.random() * (mazeSize - 4) + 2;
+    gourds.push({
+      position: [edgeX, 0, edgeZ],
+      color: gourdColors[Math.floor(Math.random() * gourdColors.length)]
+    });
+  }
+
+  return { pumpkins, cornStalks, gourds };
 };
 
 // Main game scene
@@ -681,23 +853,30 @@ function GameScene({
   hasPyramidShard,
 }) {
   // Generate decoration positions once
-  const decorations = useMemo(() => generateDecorationPositions(mazeSize), [mazeSize]);
+  const decorations = useMemo(() => generateDecorationPositions(mazeSize, maze), [mazeSize, maze]);
 
   return (
     <>
-      {/* Lighting - simple */}
-      <ambientLight intensity={0.9} />
-      <directionalLight position={[10, 15, 10]} intensity={0.6} />
+      {/* Lighting - warm autumn sunlight */}
+      <ambientLight intensity={0.7} color="#FFF8DC" />
+      <directionalLight position={[10, 15, 10]} intensity={0.8} color="#FFD700" />
 
-      {/* Sky/Background */}
+      {/* Sky/Background - autumn sky gradient (warm blue with orange tint) */}
       <color attach="background" args={['#87CEEB']} />
+      {/* Atmosphere fog for autumn haze */}
+      <fog attach="fog" args={['#C9B896', mazeSize * 0.8, mazeSize * 2]} />
 
-      {/* Grass Ground */}
-      <GrassGround size={mazeSize} />
+      {/* Autumn Ground with scattered leaves */}
+      <AutumnGround size={mazeSize} />
 
       {/* Pumpkins for decoration */}
       {decorations.pumpkins.map((p, i) => (
         <Pumpkin key={`pumpkin-${i}`} position={p.position} scale={p.scale} />
+      ))}
+
+      {/* Gourds scattered around */}
+      {decorations.gourds.map((g, i) => (
+        <Gourd key={`gourd-${i}`} position={g.position} color={g.color} />
       ))}
 
       {/* Corn stalks for decoration */}
@@ -801,6 +980,7 @@ export default function RabbitRealm({
   const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.normal;
   const mazeSize = settings.mazeSize; // Maze size scales with difficulty
   const { playSound } = useAudio();
+  const { addEssence } = useInventory();
 
   // Game state
   const [maze, setMaze] = useState(() => generateMaze(mazeSize, mazeSize));
@@ -1442,7 +1622,7 @@ export default function RabbitRealm({
           playSound(SOUNDS.COLLECT_ESSENCE);
           setScore(prev => prev + 250);
           setEssencesCollected(prev => prev + 1);
-          onEssenceCollected?.('golden');
+          addEssence('golden'); // Add golden essence to inventory
           return { ...essence, collected: true };
         }
         return essence;
@@ -1465,7 +1645,7 @@ export default function RabbitRealm({
     }, 1000 / 30); // 30fps for better performance
 
     return () => clearInterval(gameLoop);
-  }, [gameStarted, gameOver, gameWon, isPaused, isPoweredUp, isInvisible, playerPos, maze, settings, checkCollision, movePlayer, spawnParticles, onDeath, onComplete, time, score, invincibleTimer, isJumping, jumpHeight, jumpVelocity, lastFoxSpawnTime, spawnFox, carrotsCollected, coinsCollected, mazeSize, elfPos, elfFound, essences, essencesCollected, playSound, onEssenceCollected]);
+  }, [gameStarted, gameOver, gameWon, isPaused, isPoweredUp, isInvisible, playerPos, maze, settings, checkCollision, movePlayer, spawnParticles, onDeath, onComplete, time, score, invincibleTimer, isJumping, jumpHeight, jumpVelocity, lastFoxSpawnTime, spawnFox, carrotsCollected, coinsCollected, mazeSize, elfPos, elfFound, essences, essencesCollected, playSound, addEssence]);
 
   // Keyboard input for pause only (movement and jump handled by global useGameInput)
   useEffect(() => {

@@ -23,6 +23,7 @@ import CatRealm from "./realms/CatRealm3D";
 import FrogRealm3D from "./realms/FrogRealm3D";
 import OwlRealm from "./realms/OwlRealm3D";
 import ElfRealm from "./realms/ElfRealm3D";
+import InchwormRealm from "./realms/InchwormRealm";
 
 // SVG Icons for realm buttons (no emojis)
 const RealmIcons = {
@@ -85,6 +86,19 @@ const RealmIcons = {
       <circle cx="9.5" cy="10" r="0.8" fill="#333" />
       <path d="M2 6 L4 8" stroke="#F5DEB3" strokeWidth="2" />
       <path d="M14 6 L12 8" stroke="#F5DEB3" strokeWidth="2" />
+    </svg>
+  ),
+  inchworm: ({ size = 16 }) => (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+      <ellipse cx="3" cy="10" rx="2" ry="1.5" fill="#7CFC00" />
+      <ellipse cx="6" cy="9" rx="1.8" ry="1.5" fill="#66CD00" />
+      <ellipse cx="9" cy="8.5" rx="1.8" ry="1.5" fill="#228B22" />
+      <ellipse cx="12" cy="9" rx="1.8" ry="1.5" fill="#3CB371" />
+      <ellipse cx="14" cy="10" rx="2" ry="1.8" fill="#32CD32" />
+      <circle cx="14.5" cy="8.5" r="0.8" fill="#111" />
+      <circle cx="13" cy="8.5" r="0.8" fill="#111" />
+      <path d="M14 7 L15 5" stroke="#228B22" strokeWidth="0.5" />
+      <path d="M14.5 7 L16 5.5" stroke="#228B22" strokeWidth="0.5" />
     </svg>
   ),
 };
@@ -194,12 +208,13 @@ function Loading() {
   );
 }
 
-// Pyramid shard info - 4 layers: rabbit (bottom), frog, cat, owl (capstone)
+// Pyramid shard info - 5 layers: rabbit (bottom), frog, cat, owl, inchworm (capstone)
 const PYRAMID_SHARDS = {
   rabbit: { layer: 1, name: 'Base Layer', direction: 'East', color: '#8B4513' },
   frog: { layer: 2, name: 'Second Layer', direction: 'South', color: '#228B22' },
   cat: { layer: 3, name: 'Third Layer', direction: 'West', color: '#FF8C00' },
-  owl: { layer: 4, name: 'Capstone', direction: 'above', color: '#4B0082' },
+  owl: { layer: 4, name: 'Fourth Layer', direction: 'North', color: '#4B0082' },
+  inchworm: { layer: 5, name: 'Capstone', direction: 'above', color: '#7CFC00' },
 };
 
 // Mind Fusion Spell Sequence - plays when all 4 pyramid shards are collected
@@ -349,7 +364,7 @@ function MindFusionSpell({ onComplete }) {
           </div>
         )}
 
-        {/* Pyramid complete indicator */}
+        {/* Pyramid complete indicator - 5 layers */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -357,23 +372,28 @@ function MindFusionSpell({ onComplete }) {
           marginBottom: '20px',
         }}>
           <div style={{
-            width: '30px', height: '20px',
-            background: '#4B0082',
+            width: '20px', height: '16px',
+            background: '#7CFC00',
             borderRadius: '4px 4px 0 0',
+            boxShadow: '0 0 10px #7CFC00',
+          }} />
+          <div style={{
+            width: '35px', height: '16px',
+            background: '#4B0082',
             boxShadow: '0 0 10px #4B0082',
           }} />
           <div style={{
-            width: '45px', height: '20px',
+            width: '50px', height: '16px',
             background: '#FF8C00',
             boxShadow: '0 0 10px #FF8C00',
           }} />
           <div style={{
-            width: '60px', height: '20px',
+            width: '65px', height: '16px',
             background: '#228B22',
             boxShadow: '0 0 10px #228B22',
           }} />
           <div style={{
-            width: '75px', height: '20px',
+            width: '80px', height: '16px',
             background: '#8B4513',
             borderRadius: '0 0 4px 4px',
             boxShadow: '0 0 10px #8B4513',
@@ -460,29 +480,35 @@ function VictoryCeremony({ ceremony, onComplete }) {
             flexDirection: 'column',
             alignItems: 'center',
           }}>
-            {/* Pyramid representation - highlight acquired layer */}
+            {/* Pyramid representation - 5 layers, highlight acquired layer */}
             <div style={{
-              width: '20px',
-              height: '15px',
-              background: shardInfo.layer === 4 ? '#4B0082' : '#333',
+              width: '14px',
+              height: '12px',
+              background: shardInfo.layer === 5 ? '#7CFC00' : '#333',
               borderRadius: '2px 2px 0 0',
+              opacity: shardInfo.layer >= 5 ? 1 : 0.3,
+            }} />
+            <div style={{
+              width: '26px',
+              height: '12px',
+              background: shardInfo.layer === 4 ? '#4B0082' : '#333',
               opacity: shardInfo.layer >= 4 ? 1 : 0.3,
             }} />
             <div style={{
-              width: '35px',
-              height: '15px',
+              width: '38px',
+              height: '12px',
               background: shardInfo.layer === 3 ? '#FF8C00' : '#333',
               opacity: shardInfo.layer >= 3 ? 1 : 0.3,
             }} />
             <div style={{
               width: '50px',
-              height: '15px',
+              height: '12px',
               background: shardInfo.layer === 2 ? '#228B22' : '#333',
               opacity: shardInfo.layer >= 2 ? 1 : 0.3,
             }} />
             <div style={{
-              width: '65px',
-              height: '15px',
+              width: '62px',
+              height: '12px',
               background: shardInfo.layer === 1 ? '#8B4513' : '#333',
               borderRadius: '0 0 2px 2px',
               opacity: shardInfo.layer >= 1 ? 1 : 0.3,
@@ -517,9 +543,9 @@ function VictoryCeremony({ ceremony, onComplete }) {
           You got the {shardInfo.name} from the {shardInfo.direction}!
           <br />
           <span style={{ color: '#888', fontSize: '12px' }}>
-            {shardInfo.layer === 4
+            {shardInfo.layer === 5
               ? 'The pyramid is complete! The Elf awaits in the North.'
-              : `${4 - shardInfo.layer} shard${4 - shardInfo.layer > 1 ? 's' : ''} remaining to complete the pyramid.`
+              : `${5 - shardInfo.layer} shard${5 - shardInfo.layer > 1 ? 's' : ''} remaining to complete the pyramid.`
             }
           </span>
         </div>
@@ -822,6 +848,8 @@ function GameContent() {
           setChatAnimal('gnome');
         } else if (interactTarget.type === 'hoots') {
           setChatAnimal('hoots');
+        } else if (interactTarget.type === 'miles') {
+          setChatAnimal('miles');
         }
       }
     };
@@ -935,6 +963,8 @@ function GameContent() {
       setChatAnimal('hoots');
     } else if (interactTarget.type === 'nox') {
       setChatAnimal('nox');
+    } else if (interactTarget.type === 'miles') {
+      setChatAnimal('miles');
     } else if (interactTarget.type === 'aeiou' || interactTarget.type === 'dimitrius') {
       setChatAnimal('aeiou');
     }
@@ -1039,6 +1069,7 @@ function GameContent() {
     frog: 'The Lily Marsh',
     owl: 'The Night Sky',
     elf: 'The Eternal Clocktower',
+    inchworm: 'The Long Road',
   };
 
   return (
@@ -1160,13 +1191,14 @@ function GameContent() {
         {/* Spacer */}
         <div style={{ flex: 1, minWidth: isMobile ? '4px' : '20px' }} />
 
-        {/* Desktop: Pyramid indicator in navbar */}
+        {/* Desktop: Pyramid indicator in navbar - 5 layers */}
         {!isMobile && (
           <div
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px' }}
-            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/4 Mind Shards`}
+            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/5 Mind Shards`}
           >
             {[
+              { realm: 'inchworm', color: '#7CFC00' },
               { realm: 'owl', color: '#4B0082' },
               { realm: 'cat', color: '#FF8C00' },
               { realm: 'frog', color: '#228B22' },
@@ -1175,10 +1207,10 @@ function GameContent() {
               <div
                 key={layer.realm}
                 style={{
-                  width: `${8 + index * 6}px`,
-                  height: '5px',
+                  width: `${6 + index * 5}px`,
+                  height: '4px',
                   background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: index === 0 ? '2px 2px 0 0' : index === 3 ? '0 0 2px 2px' : '0',
+                  borderRadius: index === 0 ? '2px 2px 0 0' : index === 4 ? '0 0 2px 2px' : '0',
                 }}
               />
             ))}
@@ -1192,6 +1224,7 @@ function GameContent() {
           { id: 'cat', color: '#ffa500' },
           { id: 'frog', color: '#22c55e' },
           { id: 'owl', color: '#8b5cf6' },
+          { id: 'inchworm', color: '#7CFC00' },
           { id: 'elf', color: '#c4a000', requiresPyramid: true },
         ].map(realm => {
           const IconComponent = RealmIcons[realm.id];
@@ -1309,12 +1342,13 @@ function GameContent() {
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
         }}>
-          {/* Pyramid indicator */}
+          {/* Pyramid indicator - 5 layers */}
           <div
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', marginBottom: '2px' }}
-            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/4 Mind Shards`}
+            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/5 Mind Shards`}
           >
             {[
+              { realm: 'inchworm', color: '#7CFC00' },
               { realm: 'owl', color: '#4B0082' },
               { realm: 'cat', color: '#FF8C00' },
               { realm: 'frog', color: '#228B22' },
@@ -1323,10 +1357,10 @@ function GameContent() {
               <div
                 key={layer.realm}
                 style={{
-                  width: `${6 + index * 4}px`,
-                  height: '3px',
+                  width: `${4 + index * 3}px`,
+                  height: '2px',
                   background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: index === 0 ? '2px 2px 0 0' : index === 3 ? '0 0 2px 2px' : '0',
+                  borderRadius: index === 0 ? '1px 1px 0 0' : index === 4 ? '0 0 1px 1px' : '0',
                 }}
               />
             ))}
@@ -1339,6 +1373,7 @@ function GameContent() {
             { id: 'cat', color: '#ffa500' },
             { id: 'frog', color: '#22c55e' },
             { id: 'owl', color: '#8b5cf6' },
+            { id: 'inchworm', color: '#7CFC00' },
             { id: 'elf', color: '#c4a000', requiresPyramid: true },
           ].map(realm => {
             const IconComponent = RealmIcons[realm.id];
@@ -1439,6 +1474,19 @@ function GameContent() {
           onExit={handleRealmExit}
           onQuit={handleRealmExit}
           onNavigateRealm={handleNavigateRealm}
+        />
+      )}
+      {activeRealm === 'inchworm' && (
+        <InchwormRealm
+          difficulty={realmDifficulty}
+          freeMode={gameState.freeMode}
+          onToggleFreeMode={gameState.toggleFreeMode}
+          onComplete={handleRealmComplete}
+          onDeath={handleRealmDeath}
+          onExit={handleRealmExit}
+          onQuit={handleRealmExit}
+          onNavigateRealm={handleNavigateRealm}
+          hasPyramidShard={inventory.pyramidShards?.inchworm}
         />
       )}
 
@@ -1556,9 +1604,9 @@ function GameContent() {
             }
 
             // Check if pyramid will be complete after adding this shard
-            // Count existing shards + the one we just added
+            // Count existing shards + the one we just added (5 total shards needed)
             const existingShards = Object.values(inventory.pyramidShards || {}).filter(Boolean).length;
-            const willBeComplete = existingShards + 1 >= 4;
+            const willBeComplete = existingShards + 1 >= 5;
 
             // Mark as fading instead of removing immediately
             setVictoryCeremony(prev => prev ? { ...prev, isFading: true } : null);

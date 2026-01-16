@@ -1,5 +1,5 @@
 // Riddle system for unlocking realms
-// Story: AEIOU has been shattered into 4 pieces, one in each realm
+// Story: AEIOU has been shattered into 5 pieces, one in each realm
 // Players must explore and talk to characters to figure out what happened
 
 // Animal riddles - cryptic hints about clock position
@@ -153,6 +153,37 @@ export const RIDDLES = {
     riddle: "",
     hint: "Something terrible has happened here...",
   },
+
+  miles: {
+    name: 'Miles',
+    clockPosition: 24,  // 24-hour cycle
+    grainsNeeded: 12,   // 12 grains (half a day, 12 hours)
+    greeting: "*inch inch* Oh! A turtle! I've been walking this clock face for sooo long... it takes me a whole day to get around! *inch inch*",
+    riddle: "I measure my journey in hours, not steps. Bring me Time Grains equal to half my daily voyage, and I shall show you The Long Road...",
+    hint: "Miles walks around the clock in 24 hours. Half of that is...",
+    unlockMessage: "*inch inch* Twelve! Yes, twelve hours, half my journey! *wiggles excitedly* The Long Road opens before you! Seek the final piece of AEIOU's mind within... but pace yourself, turtle friend!",
+    wrongMessage: "*inch* Hmm, that's not quite half my daily trek... count the hours more carefully! *inch inch*",
+    notEnoughMessage: "*inch inch* Not enough grains yet, friend. Keep stopping time! I'll be here... slowly... *inch*",
+    dialogueOptions: [
+      {
+        question: "Why do you walk so slow?",
+        answer: "*inch* Slow? SLOW?! *inch inch* I prefer 'methodical'! Every inch is a meditation, every step a journey. Besides, have YOU tried walking on six tiny legs? *wiggles antennae indignantly*",
+      },
+      {
+        question: "What's The Long Road?",
+        answer: "*inch inch* The Long Road is MY realm! A winding path through gardens and leaves, where patience is rewarded and haste is punished! *inch* A piece of poor AEIOU got lost in there... the fifth shard of his shattered mind...",
+      },
+      {
+        question: "How long have you been here?",
+        answer: "*stops, thinks* I've made... *counts on tiny legs* ...thousands of trips around this clock face! Each lap takes exactly 24 hours. *inch inch* Time moves differently when you're this small. Every second is an adventure!",
+      },
+      {
+        question: "Any advice for your realm?",
+        answer: "*inch inch* In The Long Road, PATIENCE is your ally! Don't rush - the path reveals itself to those who take their time. *wiggles* Watch for my cousins... some are friendly, some... less so. *inch*",
+      },
+    ],
+    isMiles: true,  // Flag for Miles-specific handling
+  },
 };
 
 // Check if player has enough essences for this animal's portal
@@ -229,12 +260,13 @@ export function checkFusionRequirements(inventory) {
     inventory.pyramidShards.rabbit &&
     inventory.pyramidShards.frog &&
     inventory.pyramidShards.cat &&
-    inventory.pyramidShards.owl;
+    inventory.pyramidShards.owl &&
+    inventory.pyramidShards.inchworm;
 
   if (hasAllShards) {
     return {
       canFuse: true,
-      message: "All four shards pulse with AEIOU's fragmented essence... The Fusion Spell can be cast!",
+      message: "All five shards pulse with AEIOU's fragmented essence... The Fusion Spell can be cast!",
     };
   } else {
     const missing = [];
@@ -242,6 +274,7 @@ export function checkFusionRequirements(inventory) {
     if (!inventory.pyramidShards?.frog) missing.push('The Lily Marsh (Frog)');
     if (!inventory.pyramidShards?.cat) missing.push('The Rooftops (Cat)');
     if (!inventory.pyramidShards?.owl) missing.push('The Night Sky (Owl)');
+    if (!inventory.pyramidShards?.inchworm) missing.push('The Long Road (Miles)');
     return {
       canFuse: false,
       message: "You still need shards from: " + missing.join(', '),
@@ -256,12 +289,13 @@ export function checkMidnightRequirements(inventory) {
     inventory.blackShards.rabbit &&
     inventory.blackShards.frog &&
     inventory.blackShards.cat &&
-    inventory.blackShards.owl;
+    inventory.blackShards.owl &&
+    inventory.blackShards.inchworm;
 
   if (hasAllBlackShards) {
     return {
       canOpenMidnight: true,
-      message: "Four BLACK shards of impossible victory... The Midnight Gate shall open!",
+      message: "Five BLACK shards of impossible victory... The Midnight Gate shall open!",
     };
   } else {
     return {

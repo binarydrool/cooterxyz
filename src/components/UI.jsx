@@ -137,6 +137,7 @@ export default function UI({ timeStopped = false, stopData = {}, interactTarget 
            interactTarget.type === 'cat' ? 'Press E to Talk to Kittle' :
            interactTarget.type === 'frog' ? 'Press E to Talk to Pepe' :
            interactTarget.type === 'gnome' ? 'Press E to Talk to AEIOU' :
+           interactTarget.type === 'miles' ? 'Press E to Talk to Miles' :
            interactTarget.type === 'grain' ? 'Press E to Collect Essence' :
            null}
         </div>

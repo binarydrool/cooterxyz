@@ -1156,12 +1156,13 @@ function GameContent() {
           </div>
         ))}
 
-        {/* Essence total counter - 9 needed for owl realm (capped at 3 per type) */}
+        {/* Grain total counter - 12 needed for owl realm (3 of each of 4 colors) */}
         {(() => {
-          const cappedGolden = Math.min(inventory.essences?.golden || 0, 3);
-          const cappedForest = Math.min(inventory.essences?.forest || 0, 3);
-          const cappedAmber = Math.min(inventory.essences?.amber || 0, 3);
-          const cappedTotal = cappedGolden + cappedForest + cappedAmber;
+          const cappedGreen = Math.min(inventory.grains?.green || 0, 3);
+          const cappedGold = Math.min(inventory.grains?.gold || 0, 3);
+          const cappedOrange = Math.min(inventory.grains?.orange || 0, 3);
+          const cappedCyan = Math.min(inventory.grains?.cyan || 0, 3);
+          const cappedTotal = cappedGreen + cappedGold + cappedOrange + cappedCyan;
           return (
             <div
               style={{
@@ -1172,17 +1173,17 @@ function GameContent() {
                 background: 'rgba(212, 175, 55, 0.2)',
                 borderRadius: '4px',
               }}
-              title="Total Essences for Owl (3 from each realm = 9)"
+              title="Total Grains for Owl (3 green + 3 gold + 3 orange + 3 cyan = 12)"
             >
               <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24" fill="none">
                 <polygon points="12,2 2,22 22,22" fill="#D4AF37" />
               </svg>
               <span style={{
-                color: cappedTotal >= 9 ? '#90EE90' : '#D4AF37',
+                color: cappedTotal >= 12 ? '#90EE90' : '#D4AF37',
                 fontSize: isMobile ? '10px' : '12px',
                 fontWeight: 600,
               }}>
-                {cappedTotal}/9
+                {cappedTotal}/12
               </span>
             </div>
           );

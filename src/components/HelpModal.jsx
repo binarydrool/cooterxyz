@@ -305,7 +305,7 @@ export default function HelpModal({ isOpen, onClose }) {
           <SectionHeader color="#9370DB">The Story</SectionHeader>
           <InfoBox color="#9370DB">
             <strong>AEIOU</strong>, the gnome jester who lives on the clock, has had his mind <strong>shattered</strong> across four dimensions.
-            His partner <strong>Y</strong> needs your help to collect the <strong>4 Mind Shards</strong> from each realm and restore AEIOU's consciousness.
+            His partner <strong>Y</strong> needs your help to collect the <strong>5 Mind Shards</strong> from each realm and restore AEIOU's consciousness.
             Only then can AEIOU open the mysterious <strong>Noon Portal</strong>...
           </InfoBox>
 
@@ -317,7 +317,7 @@ export default function HelpModal({ isOpen, onClose }) {
               <li style={{ marginBottom: "6px" }}><strong>Unlock Portals</strong> - offer the right amount of Time Grains to each animal guardian</li>
               <li style={{ marginBottom: "6px" }}><strong>Explore Realms</strong> - find all hidden Essences and collect the Mind Shard</li>
               <li style={{ marginBottom: "6px" }}><strong>Unlock The Night Sky</strong> - offer Essences from all three realms to Hoots</li>
-              <li style={{ marginBottom: "6px" }}><strong>Collect all 4 Mind Shards</strong> - one from each realm</li>
+              <li style={{ marginBottom: "6px" }}><strong>Collect all 5 Mind Shards</strong> - one from each realm</li>
               <li><strong>Return to Y</strong> - cast the Fusion Spell and restore AEIOU's mind</li>
             </ol>
           </div>
@@ -382,7 +382,7 @@ export default function HelpModal({ isOpen, onClose }) {
             name="Y"
             position="12 o'clock"
             color="#8B4513"
-            description="Your guide and AEIOU's partner. Y stops time at :59 each minute. Talk to Y to learn about the quest. When you have all 4 Mind Shards, Y casts the Fusion Spell."
+            description="Your guide and AEIOU's partner. Y stops time at :59 each minute. Talk to Y to learn about the quest. When you have all 5 Mind Shards, Y casts the Fusion Spell."
           />
 
           <CharacterRow
@@ -421,52 +421,61 @@ export default function HelpModal({ isOpen, onClose }) {
           />
 
           {/* ============== THE REALMS ============== */}
-          <SectionHeader color="#4B0082">The Four Realms</SectionHeader>
+          <SectionHeader color="#4B0082">The Five Realms</SectionHeader>
 
           <RealmRow
-            name="The Void"
+            name="Shadow Hunt"
             guardian="Kittle (Cat)"
-            unlockCost="Time Grains"
+            unlockCost="3 Orange Grains"
             essence="Amber"
             color="#FFA500"
-            description="Navigate through a dark void avoiding anglerfish. Find all the hidden Amber Essences and the Mind Shard to complete."
+            description="Navigate through the shadowy rooftops avoiding anglerfish. Find AEIOU and collect 3 Essences to complete."
           />
 
           <RealmRow
-            name="The Lily Marsh"
+            name="Lily Pad Survival"
             guardian="Pepe (Frog)"
-            unlockCost="Time Grains"
+            unlockCost="6 Green Grains"
             essence="Forest"
             color="#4ade80"
-            description="Jump across lily pads in a misty swamp. Collect flies for points and find all the hidden Forest Essences plus the Mind Shard."
+            description="Jump across lily pads in a misty marsh. Stay too long and the fish eats you! Find AEIOU and collect 3 Essences."
           />
 
           <RealmRow
-            name="The Hay Maze"
+            name="Carrot Chase"
             guardian="Bunzy (Rabbit)"
-            unlockCost="Time Grains"
+            unlockCost="9 Gold Grains"
             essence="Golden"
             color="#DEB887"
-            description="Navigate through an underground maze filled with hay bales and carrots. Find all the hidden Golden Essences and the Mind Shard to complete."
+            description="Run through the burrow collecting carrots and avoiding foxes. Find AEIOU and collect 3 Essences."
           />
 
           <RealmRow
-            name="The Night Sky"
+            name="The Metamorphosis"
+            guardian="Miles (Inchworm)"
+            unlockCost="12 Cyan Grains"
+            essence="Cyan"
+            color="#00CED1"
+            description="Transform into a butterfly and fly through a magical garden! Shoot enemies and find AEIOU plus 3 Cyan Essences."
+          />
+
+          <RealmRow
+            name="Night Flight"
             guardian="Hoots (Owl)"
-            unlockCost="Essences"
+            unlockCost="12 Total (3 each color)"
             essence="Violet"
             color="#4B0082"
-            description="Fly through a starlit sky collecting stars. This is the final realm - find AEIOU's last Mind Shard here."
+            description="Fly through a starlit sky as an owl. This is the capstone realm - find AEIOU's final Mind Shard here."
           />
 
           {/* ============== MIND SHARDS & FUSION ============== */}
           <SectionHeader color="#ffd700">Mind Shards & The Fusion Spell</SectionHeader>
           <InfoBox color="#ffd700">
             Each realm contains one of AEIOU's <strong>Mind Shards</strong>. The floating amber pyramid near AEIOU shows your progress -
-            it has 4 layers (Rabbit base, Frog, Cat, Owl tip) that light up as you collect shards.
+            it has 5 layers (Rabbit base, Frog, Cat, Miles/Inchworm, Owl capstone) that light up as you collect shards.
           </InfoBox>
           <div style={{ color: "rgba(255,255,255,0.8)", fontSize: "12px", lineHeight: 1.7 }}>
-            <strong>When you have all 4 Mind Shards:</strong>
+            <strong>When you have all 5 Mind Shards:</strong>
             <ol style={{ paddingLeft: "20px", margin: "6px 0" }}>
               <li>Return to <strong>Y</strong> at 12 o'clock</li>
               <li>Y will cast the <strong>Fusion Spell</strong></li>

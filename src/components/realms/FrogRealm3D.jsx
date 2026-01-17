@@ -177,7 +177,6 @@ function generateLilyPads(count, jumpRange) {
   if (topFurthest.length > 0) {
     const aeiouPad = topFurthest[Math.floor(Math.random() * topFurthest.length)];
     aeiouPad.hasAEIOU = true;
-    console.log('AEIOU placed at pad:', aeiouPad.id, 'position:', aeiouPad.x, aeiouPad.z);
   }
 
   // Place essences - ALWAYS place 3 essences on random pads (not AEIOU's pad, not start pad)
@@ -185,7 +184,6 @@ function generateLilyPads(count, jumpRange) {
   const shuffled = [...validEssencePads].sort(() => Math.random() - 0.5);
   for (let i = 0; i < Math.min(ESSENCE_COUNT, shuffled.length); i++) {
     shuffled[i].hasEssence = true;
-    console.log('Essence placed at pad:', shuffled[i].id, 'position:', shuffled[i].x, shuffled[i].z);
   }
 
   return pads;
@@ -1138,7 +1136,7 @@ function GameScene({
 
 // Main component
 export default function FrogRealm3D({
-  difficulty = 'normal',
+  difficulty = { key: 'NORMAL', level: 3 },
   freeMode = false,
   onComplete,
   onDeath,
@@ -1148,7 +1146,9 @@ export default function FrogRealm3D({
   onNavigateRealm,
   hasPyramidShard = false,
 }) {
-  const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.normal;
+  // Handle both object and string difficulty formats
+  const difficultyKey = typeof difficulty === 'object' ? difficulty.key?.toLowerCase() : difficulty?.toLowerCase();
+  const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.normal;
   const { addEssence } = useInventory();
   const { playSound, startSwampMusic, stopSwampMusic, initialized } = useAudio();
 
@@ -1156,7 +1156,7 @@ export default function FrogRealm3D({
   const [lilyPads, setLilyPads] = useState(() => generateLilyPads(settings.padCount, settings.jumpRange));
   // More flowers at higher difficulty levels!
   const flowerMultiplier = { beginner: 1, easy: 1.2, normal: 1.5, hard: 2, expert: 2.5, master: 3, impossible: 4 };
-  const flowerCount = Math.floor(BASE_FLOWER_COUNT * (flowerMultiplier[difficulty] || 1));
+  const flowerCount = Math.floor(BASE_FLOWER_COUNT * (flowerMultiplier[difficultyKey] || 1));
   const [flowers] = useState(() => generateFlowers(flowerCount, lilyPads));
 
   // Initialize power-ups when lily pads are created
@@ -1962,7 +1962,7 @@ export default function FrogRealm3D({
         onPause={handlePause}
         onRestart={handleRestart}
         onQuit={handleQuit}
-        realmName="Frog Pond"
+        realmName="Lily Pad Survival"
         currentRealm="frog"
         onNavigateRealm={onNavigateRealm}
       />

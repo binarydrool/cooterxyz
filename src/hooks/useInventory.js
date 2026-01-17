@@ -2,12 +2,12 @@
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 
-// Time Grain types - 5 colored grains, each given to a specific animal to unlock their portal
+// Time Grain types - 4 colored grains, each given to a specific animal to unlock their portal
+// Owl requires 3 of EACH color (12 total) - not a specific color
 export const GRAIN_TYPES = {
   GREEN: { id: 'green', name: 'Green Grain', color: '#00FF00', animal: 'frog', needed: 6 },
   GOLD: { id: 'gold', name: 'Gold Grain', color: '#FFD700', animal: 'rabbit', needed: 9 },
   ORANGE: { id: 'orange', name: 'Orange Grain', color: '#FFA500', animal: 'cat', needed: 3 },
-  PURPLE: { id: 'purple', name: 'Purple Grain', color: '#9370DB', animal: 'owl', needed: 12 },
   CYAN: { id: 'cyan', name: 'Cyan Grain', color: '#00CED1', animal: 'miles', needed: 12 },
 };
 
@@ -42,14 +42,14 @@ export const GRADES = {
 const STORAGE_KEY = 'cooter_inventory';
 
 const initialInventory = {
-  // Time Grains - 5 colored types, collected from clock by stopping time
-  // Each animal needs a specific color: green→frog(6), gold→rabbit(9), orange→cat(3), purple→owl(12), cyan→miles(12)
+  // Time Grains - 4 colored types, collected from clock by stopping time
+  // Each animal needs a specific color: green→frog(6), gold→rabbit(9), orange→cat(3), cyan→miles(12)
+  // Owl needs 3 of EACH color (12 total) to unlock
   grains: {
     green: 0,   // For frog - needs 6
     gold: 0,    // For rabbit - needs 9
     orange: 0,  // For cat - needs 3
-    purple: 0,  // For owl - needs 12
-    cyan: 0,    // For miles - needs 12
+    cyan: 0,    // For miles - needs 12 (also contributes to owl's 12)
   },
   // Essences - collected INSIDE the realms (3 per realm)
   // Used to unlock owl realm: need 9 total (3 golden + 3 forest + 3 amber)
@@ -66,12 +66,14 @@ const initialInventory = {
     amethyst: null,
   },
   // Pyramid shards - 5 layers (rabbit=1, frog=2, cat=3, inchworm=4, owl=5) - pieces of AEIOU
+  // Each shard stores: { difficulty: 1-7, color: '#HEXCODE' } or null if not collected
+  // Difficulty colors: 1=White, 2=Green, 3=Yellow, 4=Orange, 5=Red, 6=Purple, 7=Black
   pyramidShards: {
-    rabbit: false,    // Layer 1 (base) - from The Warren
-    frog: false,      // Layer 2 - from The Lily Marsh
-    cat: false,       // Layer 3 - from The Rooftops
-    inchworm: false,  // Layer 4 - from The Metamorphosis (Miles)
-    owl: false,       // Layer 5 (capstone) - from The Night Sky
+    rabbit: null,     // Layer 1 (base) - from Carrot Chase
+    frog: null,       // Layer 2 - from Lily Pad Survival
+    cat: null,        // Layer 3 - from Shadow Hunt
+    inchworm: null,   // Layer 4 - from The Metamorphosis (Miles)
+    owl: null,        // Layer 5 (capstone) - from Night Flight
   },
   // Black shards - earned by completing realms on IMPOSSIBLE difficulty
   blackShards: {
@@ -86,6 +88,10 @@ const initialInventory = {
   prismKeys: [],  // Array of { grade: 1-7, components: { amber, citrine, emerald, amethyst }, date: string }
   victoryCrowns: [], // Array of { grade: 1-7, lives: number, score: number, time: number, date: string, pure: boolean }
   timeGrains: 0,  // Legacy time grains collected (deprecated, use grains)
+  // Best scores per realm per difficulty - stored locally in browser
+  // Key format: "realmname_DIFFICULTY" e.g. "carrot chase_NORMAL"
+  // Value: { score: number, time: number, date: string }
+  bestScores: {},
 };
 
 const InventoryContext = createContext(null);
@@ -119,6 +125,8 @@ function loadInventory() {
           ...initialInventory.blackShards,
           ...(parsed.blackShards || {}),
         },
+        // Ensure bestScores exists
+        bestScores: parsed.bestScores || {},
       };
     }
   } catch (e) {
@@ -181,7 +189,7 @@ export function InventoryProvider({ children }) {
 
   // Add time grain of a specific color (collected from clock by stopping time with Y)
   const addGrain = useCallback((color) => {
-    if (!color || !['green', 'gold', 'orange', 'purple', 'cyan'].includes(color)) {
+    if (!color || !['green', 'gold', 'orange', 'cyan'].includes(color)) {
       console.warn('Invalid grain color:', color);
       return;
     }
@@ -196,17 +204,21 @@ export function InventoryProvider({ children }) {
 
   // Remove grains of a specific color (spent to unlock portals)
   const removeGrains = useCallback((color, count) => {
-    if (!color || !['green', 'gold', 'orange', 'purple', 'cyan'].includes(color)) {
+    if (!color || !['green', 'gold', 'orange', 'cyan'].includes(color)) {
       console.warn('Invalid grain color:', color);
       return;
     }
-    setInventory(prev => ({
-      ...prev,
-      grains: {
-        ...prev.grains,
-        [color]: Math.max(0, (prev.grains[color] || 0) - count),
-      },
-    }));
+    setInventory(prev => {
+      const oldValue = prev.grains[color] || 0;
+      const newValue = Math.max(0, oldValue - count);
+      return {
+        ...prev,
+        grains: {
+          ...prev.grains,
+          [color]: newValue,
+        },
+      };
+    });
   }, []);
 
   // Check if has enough grains of a specific color
@@ -306,20 +318,47 @@ export function InventoryProvider({ children }) {
     return crown;
   }, []);
 
+  // Difficulty colors mapping
+  const DIFFICULTY_COLORS = {
+    1: '#FFFFFF', // Beginner - White
+    2: '#00FF00', // Easy - Green
+    3: '#FFFF00', // Normal - Yellow
+    4: '#FFA500', // Hard - Orange
+    5: '#FF0000', // Expert - Red
+    6: '#800080', // Master - Purple
+    7: '#000000', // Impossible - Black
+  };
+
   // Collect pyramid shard (after completing a realm)
-  const addPyramidShard = useCallback((realm) => {
-    setInventory(prev => ({
-      ...prev,
-      pyramidShards: {
-        ...prev.pyramidShards,
-        [realm]: true,
-      },
-    }));
+  // difficulty: 1-7 (matches DIFFICULTIES.level)
+  const addPyramidShard = useCallback((realm, difficulty = 3) => {
+    const difficultyLevel = typeof difficulty === 'object' ? difficulty.level : difficulty;
+    const color = DIFFICULTY_COLORS[difficultyLevel] || '#FFFF00';
+
+    setInventory(prev => {
+      const existingShard = prev.pyramidShards[realm];
+      // Only upgrade if new difficulty is higher or no existing shard
+      if (!existingShard || difficultyLevel > existingShard.difficulty) {
+        return {
+          ...prev,
+          pyramidShards: {
+            ...prev.pyramidShards,
+            [realm]: { difficulty: difficultyLevel, color },
+          },
+        };
+      }
+      return prev;
+    });
   }, []);
 
-  // Check if pyramid is complete
+  // Check if pyramid is complete (any difficulty)
   const isPyramidComplete = useCallback(() => {
-    return Object.values(inventory.pyramidShards).every(v => v === true);
+    return Object.values(inventory.pyramidShards).every(v => v !== null);
+  }, [inventory.pyramidShards]);
+
+  // Check if pyramid is complete with ALL black (impossible) shards
+  const isPyramidAllBlack = useCallback(() => {
+    return Object.values(inventory.pyramidShards).every(v => v && v.difficulty === 7);
   }, [inventory.pyramidShards]);
 
   // Add black shard (for impossible difficulty completion)
@@ -379,6 +418,37 @@ export function InventoryProvider({ children }) {
     }
   }, []);
 
+  // Save best score for a realm/difficulty combo
+  // Key format: "realmname_DIFFICULTY" e.g. "carrot chase_NORMAL"
+  // Only saves if score is higher than existing best
+  const saveBestScore = useCallback((realmName, difficultyKey, score, time) => {
+    const key = `${realmName.toLowerCase()}_${difficultyKey}`;
+    setInventory(prev => {
+      const existing = prev.bestScores[key];
+      // Only save if score is better (or no existing score)
+      if (!existing || score > existing.score) {
+        return {
+          ...prev,
+          bestScores: {
+            ...prev.bestScores,
+            [key]: {
+              score,
+              time,
+              date: new Date().toISOString(),
+            },
+          },
+        };
+      }
+      return prev;
+    });
+  }, []);
+
+  // Get best score for a realm/difficulty
+  const getBestScore = useCallback((realmName, difficultyKey) => {
+    const key = `${realmName.toLowerCase()}_${difficultyKey}`;
+    return inventory.bestScores[key] || null;
+  }, [inventory.bestScores]);
+
   const value = {
     ...inventory,
     addGrain,
@@ -395,6 +465,7 @@ export function InventoryProvider({ children }) {
     awardVictoryCrown,
     addPyramidShard,
     isPyramidComplete,
+    isPyramidAllBlack,
     addBlackShard,
     hasAllBlackShards,
     castFusionSpell,
@@ -403,6 +474,8 @@ export function InventoryProvider({ children }) {
     getTotalEssences,
     getShardCount,
     resetInventory,
+    saveBestScore,
+    getBestScore,
   };
 
   return (

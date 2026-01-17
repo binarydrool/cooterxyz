@@ -1253,7 +1253,7 @@ function GameScene({
 
 // Main component
 export default function CatRealm3D({
-  difficulty = 'NORMAL',
+  difficulty = { key: 'NORMAL', level: 3 },
   freeMode = false,
   onComplete,
   onQuit,
@@ -1261,7 +1261,9 @@ export default function CatRealm3D({
   onNavigateRealm,
   hasPyramidShard = false,
 }) {
-  const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
+  // Handle both object and string difficulty formats
+  const difficultyKey = typeof difficulty === 'object' ? difficulty.key?.toUpperCase() : difficulty?.toUpperCase();
+  const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.NORMAL;
   const isMobile = useIsMobile();
   const { addEssence } = useInventory();
 

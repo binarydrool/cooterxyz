@@ -68,15 +68,16 @@ export default function AEIOU({
   const groupRef = useRef();
   const bodyRef = useRef();
   const hatRef = useRef();
-  const currentRotation = useRef(0);
-  const targetRotation = useRef(0);
+  const currentRotation = useRef(Math.PI); // Start facing center
+  const targetRotation = useRef(Math.PI); // Default: face center of clock
 
   useFrame((_, delta) => {
     if (!bodyRef.current || !groupRef.current) return;
 
     if (animate) {
-      // Smooth 180° rotation for victory ceremony - slow and deliberate turn
-      targetRotation.current = victoryCeremony ? Math.PI : 0;
+      // Always face center of clock (Math.PI rotation)
+      // During victory ceremony, do a full celebratory spin
+      targetRotation.current = victoryCeremony ? Math.PI * 3 : Math.PI;
       const rotationDiff = targetRotation.current - currentRotation.current;
       if (Math.abs(rotationDiff) > 0.01) {
         // Slow turn speed (1.5 radians per second = ~1 second for 180°)

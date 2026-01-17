@@ -292,7 +292,7 @@ export async function mintShard(provider, chainId, address, metadata) {
   throw new Error('Contract not deployed on this network');
 }
 
-// Mint a Prism Key NFT (fusing 4 shards)
+// Mint a Prism Key NFT (fusing 5 shards)
 export async function mintPrismKey(provider, chainId, address, metadata, shardTokenIds) {
   if (!provider || !address) {
     throw new Error('Wallet not connected');

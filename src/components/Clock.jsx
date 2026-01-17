@@ -18,7 +18,7 @@ import Portal from "./Portal";
 // Hoots - small white owl that rides on the tip of the tail of the second hand
 const HOOTS_SCALE = 0.25;
 const HOOTS_HAND_OFFSET = CLOCK_RADIUS * -0.25; // At the very tip of the tail end
-const HOOTS_INTERACT_DISTANCE = 1.5;
+const HOOTS_INTERACT_DISTANCE = 1.0; // Tighter range so grains take priority
 
 // Hour markers positions (12 positions around the clock)
 const HOUR_MARKERS = Array.from({ length: 12 }, (_, i) => {
@@ -58,7 +58,7 @@ const GOLD_COLOR = new THREE.Color(0xFFD700);
 
 // Sand grain settings
 const SAND_GRAIN_RADIUS = 0.15;
-const CLAIM_DISTANCE = 1.0;
+const CLAIM_DISTANCE = 1.5; // Grain interaction range - larger than animals so grains take priority
 const MAX_GRAINS = 12; // Maximum grains allowed on clock - prevents memory leak
 const GRAIN_LIFETIME = 180; // Grains despawn after 3 minutes (180 seconds) if not collected
 
@@ -86,7 +86,7 @@ const ESSENCE_COLORS = {
 
 // Miles the Inchworm - walks around clock face in 24 hours
 const MILES_RADIUS = CLOCK_RADIUS * 0.92; // Near edge but not on outer rim
-const MILES_INTERACT_DISTANCE = 1.2; // Interaction distance for Miles (matches other animals)
+const MILES_INTERACT_DISTANCE = 0.9; // Tighter range so grains take priority
 
 // Miles the Inchworm - cute little guy that walks around the clock face every 24 hours
 function Miles({ dejaVuState, onPositionUpdate }) {
@@ -107,8 +107,12 @@ function Miles({ dejaVuState, onPositionUpdate }) {
 
     // Total seconds in 24 hours = 86400
     const totalSeconds = hours * 3600 + minutes * 60 + seconds + ms / 1000;
-    // Convert to radians (full circle = 2π)
-    return (totalSeconds / 86400) * Math.PI * 2;
+    // Midnight (0 seconds) = 12 o'clock position (where AEIOU is, z+)
+    // Noon (43200 seconds) = 6 o'clock position (z-)
+    // Worm moves CLOCKWISE when viewed from above (12→3→6→9→12)
+    // At 9:48 PM, worm should be at ~2 o'clock position (approaching 12 from the right)
+    // Negative angle makes it go clockwise (positive angle was counter-clockwise)
+    return -(totalSeconds / 86400) * Math.PI * 2;
   };
 
   useFrame((_, delta) => {
@@ -128,6 +132,8 @@ function Miles({ dejaVuState, onPositionUpdate }) {
     }
 
     // Position Miles around the clock
+    // Midnight = 12 o'clock (top, z+), Noon = 6 o'clock (bottom, z-)
+    // Worm moves CLOCKWISE: at 9:48 PM, worm is at ~2 o'clock (right side, approaching 12)
     const angle = displayedAngle.current;
     const x = Math.sin(angle) * MILES_RADIUS;
     const z = Math.cos(angle) * MILES_RADIUS;
@@ -139,8 +145,9 @@ function Miles({ dejaVuState, onPositionUpdate }) {
     if (onPositionUpdate) {
       onPositionUpdate(x, z);
     }
-    // Face the direction of travel (tangent to circle, clockwise)
-    groupRef.current.rotation.y = angle + Math.PI / 2;
+    // Face the direction of travel (tangent, moving clockwise toward 12)
+    // Worm should face the direction it's traveling (toward 12 o'clock)
+    groupRef.current.rotation.y = angle - Math.PI / 2;
 
     // Animate the segments for inching motion
     const phase = inchPhase.current;
@@ -185,7 +192,8 @@ function Miles({ dejaVuState, onPositionUpdate }) {
         const isHead = i === 0;
         const isTail = i === segmentColors.length - 1;
         const segmentSize = isHead ? 0.12 : isTail ? 0.08 : 0.1;
-        const zPos = (i - segmentColors.length / 2) * 0.08;
+        // Flip so head is at front (+Z) - worm walks forward in direction of travel
+        const zPos = (segmentColors.length / 2 - i) * 0.08;
 
         return (
           <group key={i} ref={el => segmentsRef.current[i] = el} position={[0, 0, zPos]}>
@@ -277,12 +285,6 @@ function MilesPortal({ milesPositionRef, isUnlocked }) {
   const PORTAL_HEIGHT_ABOVE_MILES = 1.5;
   const PORTAL_SCALE = 0.6; // 60% size of normal portals
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[MilesPortal] isUnlocked:', isUnlocked);
-    console.log('[MilesPortal] milesPositionRef:', milesPositionRef?.current);
-  }, [isUnlocked]);
-
   useFrame(({ clock }) => {
     if (groupRef.current && isUnlocked) {
       const t = clock.getElapsedTime();
@@ -294,16 +296,49 @@ function MilesPortal({ milesPositionRef, isUnlocked }) {
   });
 
   if (!isUnlocked) {
-    console.log('[MilesPortal] Not rendering - isUnlocked is false');
     return null;
   }
 
-  console.log('[MilesPortal] Rendering portal at milesPosition');
   return (
     <group ref={groupRef}>
       <Portal
         position={[0, 0, 0]} // Position is controlled by parent group
         animal="inchworm"
+        isOpen={true}
+        size={PORTAL_SCALE}
+      />
+    </group>
+  );
+}
+
+// Owl Portal - sits at center of clock, spins with second hand facing Hoots
+function OwlPortal({ secondAngleRef, isUnlocked }) {
+  const groupRef = useRef();
+  const PORTAL_HEIGHT = CLOCK_THICKNESS / 2 + 1.2; // Above where hands connect
+  const PORTAL_SCALE = 0.7; // Slightly smaller
+
+  useFrame(({ clock }) => {
+    if (groupRef.current && isUnlocked) {
+      const t = clock.getElapsedTime();
+      // Position at center of clock
+      groupRef.current.position.x = 0;
+      groupRef.current.position.y = PORTAL_HEIGHT + Math.sin(t * 1.5) * 0.1;
+      groupRef.current.position.z = 0;
+      // Rotate with the second hand to face Hoots (at the tail end)
+      // Hoots is at the tail, so we rotate opposite to face him
+      groupRef.current.rotation.y = -secondAngleRef.current + Math.PI;
+    }
+  });
+
+  if (!isUnlocked) {
+    return null;
+  }
+
+  return (
+    <group ref={groupRef}>
+      <Portal
+        position={[0, 0, 0]} // Position is controlled by parent group
+        animal="owl"
         isOpen={true}
         size={PORTAL_SCALE}
       />
@@ -485,11 +520,11 @@ const RABBIT_DISTANCE = CLOCK_RADIUS * 0.6;
 const RABBIT_POSITION_ANGLE = (RABBIT_SECOND * 6 * Math.PI) / 180 + Math.PI;
 const RABBIT_POS_X = Math.sin(RABBIT_POSITION_ANGLE) * RABBIT_DISTANCE;
 const RABBIT_POS_Z = Math.cos(RABBIT_POSITION_ANGLE) * RABBIT_DISTANCE;
-const RABBIT_INTERACT_DISTANCE = 1.2;
-const CAT_INTERACT_DISTANCE = 1.2;
-const FROG_INTERACT_DISTANCE = 1.2;
-const GNOME_INTERACT_DISTANCE = 1.2;
-const NOX_INTERACT_DISTANCE = 1.2;
+const RABBIT_INTERACT_DISTANCE = 0.9; // Tighter range so grains take priority
+const CAT_INTERACT_DISTANCE = 0.9;
+const FROG_INTERACT_DISTANCE = 0.9;
+const GNOME_INTERACT_DISTANCE = 0.9;
+const NOX_INTERACT_DISTANCE = 0.9;
 
 // Floating Time Shard for victory ceremony
 function CeremonyShard({ gnomePosition, isFading = false, onFadeComplete }) {
@@ -544,13 +579,22 @@ function AmberPyramid({ pyramidShards = {}, position = [0, 0, 0] }) {
   const floatRef = useRef(0);
 
   // Pyramid layers from bottom to top: rabbit, frog, cat, inchworm (Miles), owl (capstone)
+  // Colors now come from the shard's difficulty level, not the realm
+  // Difficulty colors: 1=White, 2=Green, 3=Yellow, 4=Orange, 5=Red, 6=Purple, 7=Black
   const layers = [
-    { realm: 'rabbit', color: '#FFD700', y: 0.0, scale: 1.0 },      // Gold - base (From the Warren)
-    { realm: 'frog', color: '#228B22', y: 0.14, scale: 0.8 },       // Green (From the Marsh)
-    { realm: 'cat', color: '#FF8C00', y: 0.26, scale: 0.6 },        // Orange (From the Rooftops)
-    { realm: 'inchworm', color: '#00CED1', y: 0.36, scale: 0.4 },   // Cyan (From the Chrysalis - Miles)
-    { realm: 'owl', color: '#4B0082', y: 0.44, scale: 0.2 },        // Purple - capstone (From Above)
+    { realm: 'rabbit', y: 0.0, scale: 1.0 },      // Base layer
+    { realm: 'frog', y: 0.14, scale: 0.8 },       // Layer 2
+    { realm: 'cat', y: 0.26, scale: 0.6 },        // Layer 3
+    { realm: 'inchworm', y: 0.36, scale: 0.4 },   // Layer 4
+    { realm: 'owl', y: 0.44, scale: 0.2 },        // Capstone
   ];
+
+  // Check if all shards are black (impossible difficulty = 7)
+  const allBlack = pyramidShards?.rabbit?.difficulty === 7 &&
+                   pyramidShards?.frog?.difficulty === 7 &&
+                   pyramidShards?.cat?.difficulty === 7 &&
+                   pyramidShards?.inchworm?.difficulty === 7 &&
+                   pyramidShards?.owl?.difficulty === 7;
 
   useFrame((_, delta) => {
     if (groupRef.current) {
@@ -566,7 +610,10 @@ function AmberPyramid({ pyramidShards = {}, position = [0, 0, 0] }) {
     <group position={position} ref={groupRef}>
       {/* Pyramid layers - larger scale */}
       {layers.map((layer) => {
-        const hasShard = pyramidShards?.[layer.realm] || false;
+        const shardData = pyramidShards?.[layer.realm];
+        const hasShard = shardData !== null && shardData !== undefined;
+        // Get color from shard difficulty, or default gray if no shard
+        const shardColor = hasShard ? (shardData.color || '#FFFF00') : '#222';
         const size = 0.22 * layer.scale;
 
         return (
@@ -575,8 +622,8 @@ function AmberPyramid({ pyramidShards = {}, position = [0, 0, 0] }) {
             <mesh>
               <coneGeometry args={[size, 0.15, 4]} />
               <meshStandardMaterial
-                color={hasShard ? layer.color : '#222'}
-                emissive={hasShard ? layer.color : '#000'}
+                color={shardColor}
+                emissive={hasShard ? shardColor : '#000'}
                 emissiveIntensity={hasShard ? 0.6 : 0}
                 metalness={hasShard ? 0.7 : 0.1}
                 roughness={hasShard ? 0.2 : 0.9}
@@ -588,7 +635,7 @@ function AmberPyramid({ pyramidShards = {}, position = [0, 0, 0] }) {
             {/* Glow when collected */}
             {hasShard && (
               <pointLight
-                color={layer.color}
+                color={shardColor}
                 intensity={0.8}
                 distance={1.5}
                 decay={2}
@@ -598,12 +645,12 @@ function AmberPyramid({ pyramidShards = {}, position = [0, 0, 0] }) {
         );
       })}
 
-      {/* Top glow when all collected */}
+      {/* Top glow when all collected - gold for noon portal, dark red for midnight (all black) */}
       {pyramidShards?.rabbit && pyramidShards?.frog && pyramidShards?.cat && pyramidShards?.owl && pyramidShards?.inchworm && (
         <pointLight
           position={[0, 0.6, 0]}
-          color="#ffd700"
-          intensity={3}
+          color={allBlack ? '#880000' : '#ffd700'}
+          intensity={allBlack ? 5 : 3}
           distance={3}
           decay={2}
         />
@@ -633,7 +680,7 @@ const PORTAL_POSITIONS = {
   cat: [CAT_PORTAL_X, PORTAL_HEIGHT, CAT_PORTAL_Z],
   frog: [FROG_PORTAL_X, PORTAL_HEIGHT, FROG_PORTAL_Z],
   rabbit: [RABBIT_PORTAL_X, PORTAL_HEIGHT, RABBIT_PORTAL_Z],
-  owl: [0, 0.4, 0], // Center of clock, over the main pivot gear
+  owl: [0, 1.5, 0], // Center of clock, raised up to be visible
 };
 
 // Wrapper to animate animal jumping into portal
@@ -1426,12 +1473,6 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
   // Track Miles position (updated by Miles component)
   const milesPosition = useRef({ x: 0, z: 0 });
 
-  // Debug: Log unlockedRealms changes
-  useEffect(() => {
-    console.log('[Clock] unlockedRealms:', unlockedRealms);
-    console.log('[Clock] unlockedRealms.inchworm:', unlockedRealms?.inchworm);
-  }, [unlockedRealms]);
-
   // Track Cooter blocking the second hand
   const cooterBlockingState = useRef({
     isBlocking: false,
@@ -1705,7 +1746,9 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
         // Check if déjà vu is complete
         if (dv.progress >= 1) {
           // Spawn 3 time grains with random colors!
-          const essenceTypes = ['forest', 'golden', 'amber', 'violet', 'cyan'];
+          // Only 4 colors: green(frog), gold(rabbit), orange(cat), cyan(miles)
+          // These are used to unlock portals - owl needs 3 of each = 12 total
+          const essenceTypes = ['forest', 'golden', 'amber', 'cyan'];
           const newGrains = [];
           const nowSeconds = Date.now() / 1000;
           for (let i = 0; i < 3; i++) {
@@ -1990,15 +2033,15 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
         }}
       />
 
-      {/* Portals */}
+      {/* Portals - static positions (excluding owl and inchworm which are dynamic) */}
       {Object.entries(unlockedRealms).map(([realm, isUnlocked]) => (
-        isUnlocked && PORTAL_POSITIONS[realm] && (
+        isUnlocked && PORTAL_POSITIONS[realm] && realm !== 'owl' && (
           <Portal
             key={realm}
             position={PORTAL_POSITIONS[realm]}
             animal={realm}
             isOpen={true}
-            size={realm === 'owl' ? 0.8 : 1.5} // Owl portal is smaller, in center
+            size={1.5}
           />
         )
       ))}
@@ -2007,6 +2050,12 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
       <MilesPortal
         milesPositionRef={milesPosition}
         isUnlocked={unlockedRealms?.inchworm || false}
+      />
+
+      {/* Owl Portal - sits at center of clock, spins with second hand facing Hoots */}
+      <OwlPortal
+        secondAngleRef={displayedSecondAngle}
+        isUnlocked={unlockedRealms?.owl || false}
       />
 
       {/* Victory ceremony shard */}

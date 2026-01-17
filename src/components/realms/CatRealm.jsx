@@ -125,12 +125,15 @@ function generateLevel(settings) {
 
 // Main component
 export default function CatRealm({
-  difficulty = 'NORMAL',
+  difficulty = { key: 'NORMAL', level: 3 },
   freeMode = false,
   onComplete,
   onQuit,
   onToggleFreeMode,
 }) {
+  // Handle both object and string difficulty formats
+  const difficultyKey = typeof difficulty === 'object' ? difficulty.key?.toUpperCase() : difficulty?.toUpperCase();
+  const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.NORMAL;
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('playing');
   const [score, setScore] = useState(0);
@@ -165,7 +168,6 @@ export default function CatRealm({
 
   // Initialize game
   useEffect(() => {
-    const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
     const level = generateLevel(settings);
 
     gameDataRef.current = {
@@ -198,7 +200,7 @@ export default function CatRealm({
     setCoins(0);
     setNoHit(true);
     setGameState('playing');
-  }, [difficulty]);
+  }, [difficultyKey, settings]);
 
   // Timer
   useEffect(() => {
@@ -666,7 +668,6 @@ export default function CatRealm({
   }, []);
 
   const handleRestart = useCallback(() => {
-    const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
     const level = generateLevel(settings);
 
     gameDataRef.current = {
@@ -688,17 +689,16 @@ export default function CatRealm({
     setCoins(0);
     setNoHit(true);
     setGameState('playing');
-  }, [difficulty]);
+  }, [settings]);
 
   const handleComplete = useCallback(() => {
     if (onComplete) {
-      const settings = DIFFICULTY_SETTINGS[difficulty];
       const timeBonus = Math.max(0, (settings.parTime - time) * 10);
       const noHitBonus = noHit ? 500 : 0;
       const finalScore = score + timeBonus + (lives * 300) + noHitBonus + (coins * 100);
-      onComplete({ score: finalScore, time, difficulty, height: height.current, coins, lives, noHit });
+      onComplete({ score: finalScore, time, difficulty: difficultyKey, height: height.current, coins, lives, noHit });
     }
-  }, [onComplete, difficulty, score, time, lives, height, coins, noHit]);
+  }, [onComplete, difficultyKey, settings, score, time, lives, height, coins, noHit]);
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#0a0a2e' }}>

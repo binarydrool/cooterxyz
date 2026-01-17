@@ -57,7 +57,7 @@ export const RIDDLES = {
       },
       {
         question: "Where do I get grains?",
-        answer: "Hoo... When Y stops time at fifty-nine seconds, grains of time appear on the clock face! Five colors spawn randomly - collect three of each: green, gold, orange, and cyan. Four times three equals twelve!",
+        answer: "Hoo... When Y stops time at fifty-nine seconds, grains of time appear on the clock face! Four colors spawn randomly - green, gold, orange, and cyan. Collect three of each! Four times three equals twelve!",
       },
       {
         question: "What's in The Night Sky?",
@@ -84,7 +84,7 @@ export const RIDDLES = {
       },
       {
         question: "How do I restore his mind?",
-        answer: "You must venture into each realm and recover the Mind Shards. One lies in The Warren with Bunzy... one in The Lily Marsh with Pepe... one in The Rooftops with Kittle... and the final piece waits in The Night Sky with Hoots. Four shards to make him whole.",
+        answer: "You must venture into each realm and recover the Mind Shards. One lies in The Warren with Bunzy... one in The Lily Marsh with Pepe... one in The Rooftops with Kittle... one in The Metamorphosis with Miles... and the capstone waits in The Night Sky with Hoots. Five shards to make him whole.",
       },
       {
         question: "How do I unlock the portals?",
@@ -95,8 +95,8 @@ export const RIDDLES = {
         answer: "Hoots guards The Night Sky. His realm requires proof of your mastery - the three Victory Essences from the other realms. One GOLDEN from The Warren, one FOREST GREEN from The Lily Marsh, one AMBER from The Rooftops. Complete each realm, claim its essence, then speak with Hoots.",
       },
       {
-        question: "What happens with all four shards?",
-        answer: "Bring all four Mind Shards to me. I shall perform the FUSION SPELL - ancient magic that will reunite my partner's scattered consciousness across dimensions. Only then will AEIOU's mind be restored... and only then can he open the NOON PORTAL.",
+        question: "What happens with all five shards?",
+        answer: "Bring all five Mind Shards to me. I shall perform the FUSION SPELL - ancient magic that will reunite my partner's scattered consciousness across dimensions. Only then will AEIOU's mind be restored... and only then can he open the NOON PORTAL.",
       },
       {
         question: "What is the Noon Portal?",
@@ -134,7 +134,7 @@ export const RIDDLES = {
 
   gnome: {
     name: 'AEIOU',
-    isShattered: true,  // AEIOU is broken, can only say "..."
+    isShattered: true,  // AEIOU is broken, can only say "..." until restored
     greeting: "...",
     dialogueOptions: [
       {
@@ -152,6 +152,59 @@ export const RIDDLES = {
     ],
     riddle: "",
     hint: "Something terrible has happened here...",
+  },
+
+  // AEIOU after being restored (all 5 pyramid shards collected)
+  gnomeRestored: {
+    name: 'AEIOU',
+    isRestored: true,
+    isNoonPortal: true,  // Guards the noon portal
+    greeting: "*blinks, stretching* Ahhhh... my mind... it's WHOLE again! Thank you, time-walker! Now... shall we unlock the secrets of NOON?",
+    // Noon Portal Riddle - requires specific grain amounts
+    // Solution: green=2, gold=5, orange=4, cyan=3 (total=14)
+    noonPortalGrains: {
+      green: 2,
+      gold: 5,
+      orange: 4,
+      cyan: 3,
+    },
+    riddle: `*AEIOU's eyes gleam with ancient knowledge*
+
+"To open the Noon Gate, you must understand my TRUE name...
+
+The SECOND letter of the alphabet meets the MARSH where frogs sing low...
+The FIFTH vowel's position marks how GOLD must flow...
+The FOURTH prime number dances in ORANGE glow...
+And where THREE meets the CYAN, inchworms inch slow...
+
+Bring me grains that spell my name across time's face,
+And the Noon Gate shall reveal its hidden grace."`,
+    hint: "AEIOU speaks of letters and numbers. Second letter (B=2), fifth vowel (U is 5th vowel after AEIO), fourth prime (2,3,5,7=7? No, prime #4 is 7)... Or maybe: A=1, E=5? The numbers are hidden in his clues.",
+    dialogueOptions: [
+      {
+        question: "What is the Noon Portal?",
+        answer: "*stretches grandly* The Noon Portal leads to the HEART of the Eternal Clocktower! Where time itself was BORN! But only those who truly understand vowels and numbers may enter... Speak my name in grains, and it shall open!",
+      },
+      {
+        question: "Can you give me a hint?",
+        answer: "*taps nose* Each line of my riddle speaks of a COLOR and a NUMBER. 'Second' for the marsh... 'Fifth' for the gold... 'Fourth prime' for orange... and simply 'three' for cyan. Count carefully, time-walker!",
+      },
+      {
+        question: "What do the numbers mean?",
+        answer: "*chuckles* My riddle speaks plainly to those who LISTEN! GREEN grains equal the SECOND position. GOLD grains match the FIFTH. ORANGE needs the FOURTH prime number. CYAN requires just THREE. Add them correctly!",
+      },
+      {
+        question: "What's inside the clocktower?",
+        answer: "*eyes grow distant* Beyond the Noon Gate lies... revelation. The truth of this clock, the purpose of time itself. But beware - the MIDNIGHT GATE requires far greater sacrifice. Only those with ALL FIVE IMPOSSIBLE victories may tread that dark path...",
+      },
+      {
+        question: "Thank you for being restored!",
+        answer: "*smiles warmly* Thank YOU, brave turtle! Y and I have been partners since the beginning of time. When my mind shattered... *shudders* ...it was like being scattered across infinity. You brought me back. Now, let us unlock the secrets together!",
+      },
+    ],
+    unlockMessage: "*AEIOU's eyes widen with joy* YES! Two green, five gold, four orange, three cyan... you've spelled my essence in TIME itself! *raises hands dramatically* THE NOON GATE OPENS! Step through, time-walker, and witness the heart of forever!",
+    wrongMessage: "*AEIOU frowns* Hmm... those numbers don't quite spell my name. Listen again to my riddle - each color has its hidden count!",
+    notEnoughMessage: "*AEIOU looks sympathetic* You don't have enough grains yet, friend. Gather more from the clock face when Y stops time at 59 seconds!",
   },
 
   miles: {
@@ -257,6 +310,50 @@ export function checkOwlRequirements(inventory) {
   }
 }
 
+// Check if player has required grains for AEIOU's Noon Portal
+// Solution: green=2, gold=5, orange=4, cyan=3 (total=14)
+export function checkNoonPortalRequirements(inventory) {
+  const required = RIDDLES.gnomeRestored.noonPortalGrains;
+
+  const greenCount = inventory.grains?.green || 0;
+  const goldCount = inventory.grains?.gold || 0;
+  const orangeCount = inventory.grains?.orange || 0;
+  const cyanCount = inventory.grains?.cyan || 0;
+
+  const hasEnough = greenCount >= required.green &&
+                    goldCount >= required.gold &&
+                    orangeCount >= required.orange &&
+                    cyanCount >= required.cyan;
+
+  if (hasEnough) {
+    return {
+      correct: true,
+      message: RIDDLES.gnomeRestored.unlockMessage,
+      grainsUsed: { ...required },
+    };
+  } else {
+    // Check if they have ANY grains but wrong amounts
+    const totalHave = greenCount + goldCount + orangeCount + cyanCount;
+    const totalNeeded = required.green + required.gold + required.orange + required.cyan;
+
+    if (totalHave === 0) {
+      return {
+        correct: false,
+        message: RIDDLES.gnomeRestored.notEnoughMessage,
+        needed: required,
+        have: { green: greenCount, gold: goldCount, orange: orangeCount, cyan: cyanCount },
+      };
+    } else {
+      return {
+        correct: false,
+        message: RIDDLES.gnomeRestored.wrongMessage,
+        needed: required,
+        have: { green: greenCount, gold: goldCount, orange: orangeCount, cyan: cyanCount },
+      };
+    }
+  }
+}
+
 // Check if player can perform the fusion spell
 export function checkFusionRequirements(inventory) {
   const hasAllShards = inventory.pyramidShards &&
@@ -277,7 +374,7 @@ export function checkFusionRequirements(inventory) {
     if (!inventory.pyramidShards?.frog) missing.push('The Lily Marsh (Frog)');
     if (!inventory.pyramidShards?.cat) missing.push('The Rooftops (Cat)');
     if (!inventory.pyramidShards?.owl) missing.push('The Night Sky (Owl)');
-    if (!inventory.pyramidShards?.inchworm) missing.push('The Long Road (Miles)');
+    if (!inventory.pyramidShards?.inchworm) missing.push('The Metamorphosis (Miles)');
     return {
       canFuse: false,
       message: "You still need shards from: " + missing.join(', '),
@@ -287,23 +384,49 @@ export function checkFusionRequirements(inventory) {
 }
 
 // Check if player has all impossible (black) shards for midnight gate
+// Black shards = difficulty level 7 (impossible) on all 5 realm pyramid shards
 export function checkMidnightRequirements(inventory) {
-  const hasAllBlackShards = inventory.blackShards &&
-    inventory.blackShards.rabbit &&
-    inventory.blackShards.frog &&
-    inventory.blackShards.cat &&
-    inventory.blackShards.owl &&
-    inventory.blackShards.inchworm;
+  const shards = inventory.pyramidShards || {};
 
-  if (hasAllBlackShards) {
+  // Check if all 5 shards exist AND are difficulty 7 (impossible/black)
+  const allShardsBlack = shards.rabbit?.difficulty === 7 &&
+                         shards.frog?.difficulty === 7 &&
+                         shards.cat?.difficulty === 7 &&
+                         shards.owl?.difficulty === 7 &&
+                         shards.inchworm?.difficulty === 7;
+
+  if (allShardsBlack) {
     return {
       canOpenMidnight: true,
-      message: "Five BLACK shards of impossible victory... The Midnight Gate shall open!",
+      message: "*The air grows cold as AEIOU's eyes turn midnight black*\n\nFive IMPOSSIBLE victories... five obsidian shards... You have proven yourself a TRUE MASTER of time!\n\nTHE MIDNIGHT GATE OPENS! Beyond lies the ultimate challenge... the VOID where time itself was born. Are you ready to face ETERNITY?",
     };
   } else {
+    // Count how many black shards they have
+    const blackCount = [shards.rabbit, shards.frog, shards.cat, shards.owl, shards.inchworm]
+      .filter(s => s?.difficulty === 7).length;
+
+    const difficultyNames = {
+      1: 'Beginner (White)',
+      2: 'Easy (Green)',
+      3: 'Normal (Yellow)',
+      4: 'Hard (Orange)',
+      5: 'Expert (Red)',
+      6: 'Master (Purple)',
+      7: 'IMPOSSIBLE (Black)',
+    };
+
+    const shardStatus = [
+      `Rabbit: ${shards.rabbit ? difficultyNames[shards.rabbit.difficulty] : 'Not collected'}`,
+      `Frog: ${shards.frog ? difficultyNames[shards.frog.difficulty] : 'Not collected'}`,
+      `Cat: ${shards.cat ? difficultyNames[shards.cat.difficulty] : 'Not collected'}`,
+      `Inchworm: ${shards.inchworm ? difficultyNames[shards.inchworm.difficulty] : 'Not collected'}`,
+      `Owl: ${shards.owl ? difficultyNames[shards.owl.difficulty] : 'Not collected'}`,
+    ].join('\n');
+
     return {
       canOpenMidnight: false,
-      message: "Only those who conquer ALL realms on IMPOSSIBLE difficulty may open the Midnight Gate.",
+      message: `*AEIOU's gaze grows stern*\n\nThe Midnight Gate requires ALL FIVE shards to be OBSIDIAN BLACK - earned only through IMPOSSIBLE difficulty.\n\nYour current shards (${blackCount}/5 Black):\n${shardStatus}\n\nReturn when your pyramid burns with the darkness of impossible victories!`,
+      blackCount,
     };
   }
 }

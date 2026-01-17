@@ -71,12 +71,15 @@ function spawnEnemy(wave, settings) {
 }
 
 export default function OwlRealm({
-  difficulty = 'NORMAL',
+  difficulty = { key: 'NORMAL', level: 3 },
   freeMode = false,
   onComplete,
   onQuit,
   onToggleFreeMode,
 }) {
+  // Handle both object and string difficulty formats
+  const difficultyKey = typeof difficulty === 'object' ? difficulty.key?.toUpperCase() : difficulty?.toUpperCase();
+
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('playing');
   const [score, setScore] = useState(0);
@@ -109,7 +112,7 @@ export default function OwlRealm({
   }, []);
 
   useEffect(() => {
-    const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
+    const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.NORMAL;
 
     gameDataRef.current = {
       settings,
@@ -682,7 +685,7 @@ export default function OwlRealm({
   }, []);
 
   const handleRestart = useCallback(() => {
-    const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
+    const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.NORMAL;
 
     gameDataRef.current = {
       settings,
@@ -713,7 +716,7 @@ export default function OwlRealm({
 
   const handleComplete = useCallback(() => {
     if (onComplete) {
-      const settings = DIFFICULTY_SETTINGS[difficulty];
+      const settings = DIFFICULTY_SETTINGS[difficultyKey];
       const timeBonus = Math.max(0, (settings.waves * 20 - time) * 5);
       const livesBonus = lives * 500;
       const finalScore = score + timeBonus + livesBonus;
@@ -731,7 +734,7 @@ export default function OwlRealm({
         coins={coins}
         time={time}
         lives={lives}
-        maxLives={DIFFICULTY_SETTINGS[difficulty]?.lives || 4}
+        maxLives={DIFFICULTY_SETTINGS[difficultyKey]?.lives || 4}
         isPaused={gameState === 'paused'}
         onPause={handlePause}
         onRestart={handleRestart}

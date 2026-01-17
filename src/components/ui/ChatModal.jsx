@@ -206,7 +206,7 @@ export default function ChatModal({
   const grainsNeededCount = grainType?.needed || 3;
 
   // All grain colors available to offer
-  const allGrainColors = ['green', 'gold', 'orange', 'purple', 'cyan'];
+  const allGrainColors = ['green', 'gold', 'orange', 'cyan'];
 
   // Get total of each grain color the player has
   const getGrainCount = (color) => inventory?.grains?.[color] || 0;
@@ -312,9 +312,10 @@ export default function ChatModal({
         setAttemptFeedback({ success: true, message: "Portal Unlocked!" });
 
         setTimeout(() => {
-          // Translate animal name to realm name (miles -> inchworm)
-          const realmName = animal === 'miles' ? 'inchworm' : animal;
-          console.log('[ChatModal] Unlocking realm:', realmName, '(animal was:', animal, ')');
+          // Translate animal name to realm name (miles -> inchworm, hoots -> owl)
+          let realmName = animal;
+          if (animal === 'miles') realmName = 'inchworm';
+          else if (animal === 'hoots') realmName = 'owl';
           if (onUnlockRealm) onUnlockRealm(realmName);
           onClose();
         }, 1200);
@@ -365,8 +366,10 @@ export default function ChatModal({
 
       // Close modal after a brief moment, then trigger portal
       setTimeout(() => {
-        // Translate animal name to realm name (miles -> inchworm)
-        const realmName = animal === 'miles' ? 'inchworm' : animal;
+        // Translate animal name to realm name (miles -> inchworm, hoots -> owl)
+        let realmName = animal;
+        if (animal === 'miles') realmName = 'inchworm';
+        else if (animal === 'hoots') realmName = 'owl';
         if (onUnlockRealm) {
           onUnlockRealm(realmName);
         }
@@ -844,7 +847,6 @@ export default function ChatModal({
                 { id: 'green', name: 'Green', color: '#00FF00' },
                 { id: 'gold', name: 'Gold', color: '#FFD700' },
                 { id: 'orange', name: 'Orange', color: '#FFA500' },
-                { id: 'purple', name: 'Purple', color: '#9370DB' },
                 { id: 'cyan', name: 'Cyan', color: '#00CED1' },
               ];
 

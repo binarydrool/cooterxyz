@@ -533,7 +533,7 @@ function GameScene({ towerData, playerState, bossState, projectiles, gearSpeedMu
 
 // Main component
 export default function ElfRealm3D({
-  difficulty = 'NORMAL',
+  difficulty = { key: 'NORMAL', level: 3 },
   freeMode = false,
   onComplete,
   onExit,
@@ -541,6 +541,9 @@ export default function ElfRealm3D({
   onToggleFreeMode,
   onNavigateRealm,
 }) {
+  // Handle both object and string difficulty formats
+  const difficultyKey = typeof difficulty === 'object' ? difficulty.key?.toUpperCase() : difficulty?.toUpperCase();
+
   const [gameState, setGameState] = useState('playing');
   const [score, setScore] = useState(0);
   const [time, setTime] = useState(0);
@@ -580,7 +583,7 @@ export default function ElfRealm3D({
   const [projectiles, setProjectiles] = useState([]);
 
   const isMobile = useIsMobile();
-  const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
+  const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.NORMAL;
 
   // Mobile input now handled globally by useGameInput
 

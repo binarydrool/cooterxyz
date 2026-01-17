@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { PerspectiveCamera } from '@react-three/drei';
+import { OrthographicCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import GameHUD from '../ui/GameHUD';
 import IntroModal from '../ui/IntroModal';
@@ -24,7 +24,7 @@ const DIFFICULTY_SETTINGS = {
 // Carrot respawn delay in seconds
 const CARROT_RESPAWN_TIME = 8;
 const INVISIBILITY_DURATION = 5;
-const MAX_FOXES = 4;
+const MAX_FOXES = 5; // Matches impossible difficulty
 
 // Maze generation - balanced: feels like a maze but easy to navigate
 function generateMaze(width, height) {
@@ -76,14 +76,12 @@ function generateMaze(width, height) {
   return maze;
 }
 
-// Instanced Hay Bales - more realistic with visible straw texture and layered look
+// Glowing Autumn Wall Instances - 3D Pac-Man style with neon borders
 function HayBaleInstances({ maze, mazeSize }) {
   const meshRef = useRef();
-  const topMeshRef = useRef();
-  const bandMeshRef = useRef();
-  const band2MeshRef = useRef();
-  const strawTopRef = useRef();
-  const strawSideRef = useRef();
+  const topGlowRef = useRef();
+  const borderRef = useRef();
+  const innerGlowRef = useRef();
 
   const count = useMemo(() => {
     let c = 0;
@@ -104,58 +102,35 @@ function HayBaleInstances({ maze, mazeSize }) {
     for (let y = 0; y < mazeSize; y++) {
       for (let x = 0; x < mazeSize; x++) {
         if (maze[y]?.[x] === 1) {
-          const rotation = ((x + y) % 4) * Math.PI / 8; // Slight random rotation
-
-          // Main rectangular hay bale body - cylindrical for round bale look
-          tempObject.position.set(x + 0.5, 0.38, y + 0.5);
-          tempObject.rotation.set(Math.PI / 2, 0, rotation);
-          tempObject.scale.set(0.42, 0.42, 0.38);
+          // Main wall block
+          tempObject.position.set(x + 0.5, 0.4, y + 0.5);
+          tempObject.rotation.set(0, 0, 0);
+          tempObject.scale.set(0.92, 0.8, 0.92);
           tempObject.updateMatrix();
           meshRef.current.setMatrixAt(i, tempObject.matrix);
 
-          // Second stacked bale on top
-          if (topMeshRef.current) {
-            tempObject.position.set(x + 0.5, 0.78, y + 0.5);
-            tempObject.rotation.set(Math.PI / 2, 0, rotation + Math.PI / 4);
-            tempObject.scale.set(0.38, 0.38, 0.36);
+          // Top glow accent
+          if (topGlowRef.current) {
+            tempObject.position.set(x + 0.5, 0.82, y + 0.5);
+            tempObject.scale.set(0.88, 0.04, 0.88);
             tempObject.updateMatrix();
-            topMeshRef.current.setMatrixAt(i, tempObject.matrix);
+            topGlowRef.current.setMatrixAt(i, tempObject.matrix);
           }
 
-          // Twine band lower
-          if (bandMeshRef.current) {
-            tempObject.position.set(x + 0.5, 0.25, y + 0.5);
-            tempObject.rotation.set(0, rotation, 0);
-            tempObject.scale.set(0.44, 0.05, 0.44);
+          // Glowing border at base
+          if (borderRef.current) {
+            tempObject.position.set(x + 0.5, 0.02, y + 0.5);
+            tempObject.scale.set(0.96, 0.04, 0.96);
             tempObject.updateMatrix();
-            bandMeshRef.current.setMatrixAt(i, tempObject.matrix);
+            borderRef.current.setMatrixAt(i, tempObject.matrix);
           }
 
-          // Twine band upper
-          if (band2MeshRef.current) {
-            tempObject.position.set(x + 0.5, 0.52, y + 0.5);
-            tempObject.rotation.set(0, rotation, 0);
-            tempObject.scale.set(0.44, 0.05, 0.44);
+          // Inner glow core
+          if (innerGlowRef.current) {
+            tempObject.position.set(x + 0.5, 0.4, y + 0.5);
+            tempObject.scale.set(0.85, 0.75, 0.85);
             tempObject.updateMatrix();
-            band2MeshRef.current.setMatrixAt(i, tempObject.matrix);
-          }
-
-          // Straw wisps on top
-          if (strawTopRef.current) {
-            tempObject.position.set(x + 0.5, 0.97, y + 0.5);
-            tempObject.rotation.set(0, rotation * 2, 0);
-            tempObject.scale.set(0.32, 0.04, 0.32);
-            tempObject.updateMatrix();
-            strawTopRef.current.setMatrixAt(i, tempObject.matrix);
-          }
-
-          // Loose straw at sides
-          if (strawSideRef.current) {
-            tempObject.position.set(x + 0.5, 0.08, y + 0.5);
-            tempObject.rotation.set(0, rotation, 0);
-            tempObject.scale.set(0.55, 0.08, 0.55);
-            tempObject.updateMatrix();
-            strawSideRef.current.setMatrixAt(i, tempObject.matrix);
+            innerGlowRef.current.setMatrixAt(i, tempObject.matrix);
           }
 
           i++;
@@ -163,46 +138,56 @@ function HayBaleInstances({ maze, mazeSize }) {
       }
     }
     meshRef.current.instanceMatrix.needsUpdate = true;
-    if (topMeshRef.current) topMeshRef.current.instanceMatrix.needsUpdate = true;
-    if (bandMeshRef.current) bandMeshRef.current.instanceMatrix.needsUpdate = true;
-    if (band2MeshRef.current) band2MeshRef.current.instanceMatrix.needsUpdate = true;
-    if (strawTopRef.current) strawTopRef.current.instanceMatrix.needsUpdate = true;
-    if (strawSideRef.current) strawSideRef.current.instanceMatrix.needsUpdate = true;
+    if (topGlowRef.current) topGlowRef.current.instanceMatrix.needsUpdate = true;
+    if (borderRef.current) borderRef.current.instanceMatrix.needsUpdate = true;
+    if (innerGlowRef.current) innerGlowRef.current.instanceMatrix.needsUpdate = true;
   }, [maze, mazeSize]);
 
   if (count === 0) return null;
 
   return (
     <group>
-      {/* Main hay bale body - warm golden straw */}
+      {/* Main wall body - warm amber with glow */}
       <instancedMesh ref={meshRef} args={[null, null, count]} frustumCulled={false}>
-        <cylinderGeometry args={[1, 1, 1, 12]} />
-        <meshBasicMaterial color="#d4a017" />
-      </instancedMesh>
-      {/* Top stacked bale - slightly lighter */}
-      <instancedMesh ref={topMeshRef} args={[null, null, count]} frustumCulled={false}>
-        <cylinderGeometry args={[1, 1, 1, 12]} />
-        <meshBasicMaterial color="#e6b422" />
-      </instancedMesh>
-      {/* Lower twine band - dark sisal rope */}
-      <instancedMesh ref={bandMeshRef} args={[null, null, count]} frustumCulled={false}>
-        <torusGeometry args={[1, 0.06, 4, 16]} />
-        <meshBasicMaterial color="#4a3728" />
-      </instancedMesh>
-      {/* Upper twine band */}
-      <instancedMesh ref={band2MeshRef} args={[null, null, count]} frustumCulled={false}>
-        <torusGeometry args={[1, 0.06, 4, 16]} />
-        <meshBasicMaterial color="#4a3728" />
-      </instancedMesh>
-      {/* Straw wisps on top - lighter yellow */}
-      <instancedMesh ref={strawTopRef} args={[null, null, count]} frustumCulled={false}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial color="#f0d060" />
+        <meshStandardMaterial
+          color="#B8860B"
+          emissive="#FF6600"
+          emissiveIntensity={0.25}
+          metalness={0.3}
+          roughness={0.5}
+        />
       </instancedMesh>
-      {/* Loose straw at base - scattered straw look */}
-      <instancedMesh ref={strawSideRef} args={[null, null, count]} frustumCulled={false}>
-        <circleGeometry args={[1, 8]} />
-        <meshBasicMaterial color="#c9a227" transparent opacity={0.7} />
+      {/* Top glow accent - bright orange */}
+      <instancedMesh ref={topGlowRef} args={[null, null, count]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial
+          color="#FFD700"
+          emissive="#FF8C00"
+          emissiveIntensity={0.8}
+          transparent
+          opacity={0.95}
+        />
+      </instancedMesh>
+      {/* Base border glow - neon orange outline */}
+      <instancedMesh ref={borderRef} args={[null, null, count]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial
+          color="#FF4500"
+          emissive="#FF6600"
+          emissiveIntensity={1.2}
+        />
+      </instancedMesh>
+      {/* Inner glow core for depth */}
+      <instancedMesh ref={innerGlowRef} args={[null, null, count]} frustumCulled={false}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial
+          color="#8B4513"
+          emissive="#D2691E"
+          emissiveIntensity={0.15}
+          metalness={0.1}
+          roughness={0.7}
+        />
       </instancedMesh>
     </group>
   );
@@ -735,26 +720,42 @@ function ParticleBurst({ onComplete }) {
   return null;
 }
 
-// Camera that follows the player
-function FollowCamera({ target }) {
+// Isometric camera that follows the player - Pac-Man 3D style
+function IsometricCamera({ target, mazeSize }) {
   const { camera } = useThree();
-  const currentPosition = useRef(new THREE.Vector3(22, 12, 30));
+  const currentPosition = useRef(new THREE.Vector3());
   const currentLookAt = useRef(new THREE.Vector3());
 
+  // Isometric angles - 45° horizontal, ~35° vertical for classic look
+  const ISO_ANGLE = Math.PI / 4; // 45 degrees
+  const ISO_ELEVATION = Math.PI / 5.5; // ~33 degrees for nice 3D pac-man view
+  const CAMERA_DISTANCE = Math.max(mazeSize * 0.7, 20);
+
   useFrame(() => {
-    if (target) {
+    if (target && camera.isOrthographicCamera) {
+      // Calculate isometric camera position relative to target
+      const offsetX = Math.cos(ISO_ANGLE) * Math.cos(ISO_ELEVATION) * CAMERA_DISTANCE;
+      const offsetY = Math.sin(ISO_ELEVATION) * CAMERA_DISTANCE;
+      const offsetZ = Math.sin(ISO_ANGLE) * Math.cos(ISO_ELEVATION) * CAMERA_DISTANCE;
+
       const targetPosition = new THREE.Vector3(
-        target[0],
-        target[1] + 10,
-        target[2] + 9
+        target[0] + offsetX,
+        target[1] + offsetY,
+        target[2] + offsetZ
       );
 
-      currentPosition.current.lerp(targetPosition, 0.06);
+      // Smooth camera follow
+      currentPosition.current.lerp(targetPosition, 0.08);
       camera.position.copy(currentPosition.current);
 
+      // Look at player
       const lookAtTarget = new THREE.Vector3(target[0], target[1], target[2]);
-      currentLookAt.current.lerp(lookAtTarget, 0.08);
+      currentLookAt.current.lerp(lookAtTarget, 0.1);
       camera.lookAt(currentLookAt.current);
+
+      // Update zoom based on maze size for consistent view
+      camera.zoom = Math.max(25, 50 - mazeSize * 0.6);
+      camera.updateProjectionMatrix();
     }
   });
 
@@ -962,24 +963,26 @@ function GameScene({
         />
       ))}
 
-      {/* Camera */}
-      <FollowCamera target={playerPos} />
+      {/* Isometric Camera */}
+      <IsometricCamera target={playerPos} mazeSize={mazeSize} />
     </>
   );
 }
 
 // Main component
 export default function RabbitRealm({
-  difficulty = 'normal',
+  difficulty = { key: 'NORMAL', level: 3 },
   onComplete,
   onDeath,
   onExit,
   onEssenceCollected,
   hasPyramidShard = false,
 }) {
-  const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.normal;
+  // Handle both object and string difficulty formats
+  const difficultyKey = typeof difficulty === 'object' ? difficulty.key?.toLowerCase() : difficulty;
+  const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.normal;
   const mazeSize = settings.mazeSize; // Maze size scales with difficulty
-  const { playSound } = useAudio();
+  const { playSound, startAutumnMusic, stopAutumnMusic } = useAudio();
   const { addEssence } = useInventory();
 
   // Game state
@@ -1052,13 +1055,20 @@ export default function RabbitRealm({
   const particleIdRef = useRef(0);
   const isMobile = useIsMobile();
 
+  // Grid-based movement with input buffering
+  const bufferedInputRef = useRef(null); // Stores next intended direction
+  const currentDirectionRef = useRef(null); // Current movement direction
+  const inputBufferTimeRef = useRef(0);
+  const INPUT_BUFFER_DURATION = 250; // ms - how long to remember buffered input
+
   // Mobile input now handled globally by useGameInput
 
   // Handle start game from intro modal
   const handleStartGame = useCallback(() => {
     setShowIntroModal(false);
     setGameStarted(true);
-  }, []);
+    startAutumnMusic();
+  }, [startAutumnMusic]);
 
   // Get open cells for spawning
   const getOpenCells = useCallback(() => {
@@ -1219,85 +1229,118 @@ export default function RabbitRealm({
     return false;
   }, [isWall]);
 
-  // PAC-MAN STYLE movement - STRONG lane centering for easy turning
+  // GRID-BASED movement with input buffering - smooth Pac-Man style, NEVER get stuck
   const movePlayer = useCallback((currentX, currentZ, moveX, moveZ, delta) => {
     const speed = 7;
+    const SNAP_THRESHOLD = 0.15; // Distance to snap to cell center
+    const now = Date.now();
 
-    // Get current cell center
+    // Get current cell and center
     const cellX = Math.floor(currentX);
     const cellZ = Math.floor(currentZ);
     const centerX = cellX + 0.5;
     const centerZ = cellZ + 0.5;
+    const distToCenter = Math.sqrt(Math.pow(currentX - centerX, 2) + Math.pow(currentZ - centerZ, 2));
 
-    // Distance from center
-    const xOffset = currentX - centerX;
-    const zOffset = currentZ - centerZ;
+    // Determine intended direction from input
+    let intendedDirection = null;
+    if (Math.abs(moveX) > 0.3 || Math.abs(moveZ) > 0.3) {
+      if (Math.abs(moveX) > Math.abs(moveZ)) {
+        intendedDirection = moveX > 0 ? 'right' : 'left';
+      } else {
+        intendedDirection = moveZ > 0 ? 'down' : 'up';
+      }
+      // Buffer the input
+      bufferedInputRef.current = intendedDirection;
+      inputBufferTimeRef.current = now;
+    } else if (now - inputBufferTimeRef.current > INPUT_BUFFER_DURATION) {
+      // Clear buffer after duration
+      bufferedInputRef.current = null;
+    }
+
+    // Helper to check if can move in direction
+    const canMove = (fromX, fromZ, dir) => {
+      const dx = dir === 'right' ? 1 : dir === 'left' ? -1 : 0;
+      const dz = dir === 'down' ? 1 : dir === 'up' ? -1 : 0;
+      const targetCellX = Math.floor(fromX) + dx;
+      const targetCellZ = Math.floor(fromZ) + dz;
+      return !isWall(targetCellX, targetCellZ);
+    };
 
     let newX = currentX;
     let newZ = currentZ;
 
-    // Determine primary direction
-    const movingHorizontal = Math.abs(moveX) > Math.abs(moveZ);
-    const movingVertical = Math.abs(moveZ) > Math.abs(moveX);
+    // At or near cell center - can change direction
+    if (distToCenter < SNAP_THRESHOLD) {
+      // Snap to center first
+      newX = centerX;
+      newZ = centerZ;
 
-    if (movingHorizontal) {
-      // Moving left/right - STRONGLY center on Z axis
-      const moveAmount = moveX * speed * delta;
-
-      // Snap Z toward center (fast centering)
-      if (Math.abs(zOffset) > 0.02) {
-        newZ = centerZ + zOffset * 0.7; // Strong pull to center (keep 70% of offset, lose 30%)
-      } else {
-        newZ = centerZ; // Snap when very close
+      // Check buffered input for turn
+      if (bufferedInputRef.current && canMove(centerX, centerZ, bufferedInputRef.current)) {
+        currentDirectionRef.current = bufferedInputRef.current;
+        bufferedInputRef.current = null;
       }
-
-      // Try to move in X
-      const tryX = currentX + moveAmount;
-      if (!checkCollision(tryX, newZ)) {
-        newX = tryX;
-      } else if (!checkCollision(tryX, centerZ)) {
-        // Can move if perfectly centered
-        newX = tryX;
-        newZ = centerZ;
+      // If no buffered turn works, continue in current direction if possible
+      else if (currentDirectionRef.current && !canMove(centerX, centerZ, currentDirectionRef.current)) {
+        // Current direction blocked - stop
+        currentDirectionRef.current = null;
       }
-      // If still blocked, just stay centered (no X movement)
     }
-    else if (movingVertical) {
-      // Moving up/down - STRONGLY center on X axis
-      const moveAmount = moveZ * speed * delta;
 
-      // Snap X toward center (fast centering)
-      if (Math.abs(xOffset) > 0.02) {
-        newX = centerX + xOffset * 0.7; // Strong pull to center
-      } else {
-        newX = centerX; // Snap when very close
+    // Execute movement in current direction
+    if (currentDirectionRef.current) {
+      const dir = currentDirectionRef.current;
+      const dx = dir === 'right' ? 1 : dir === 'left' ? -1 : 0;
+      const dz = dir === 'down' ? 1 : dir === 'up' ? -1 : 0;
+
+      // Move toward next cell
+      const moveAmount = speed * delta;
+      let tryX = newX + dx * moveAmount;
+      let tryZ = newZ + dz * moveAmount;
+
+      // Clamp to lane (stay centered on perpendicular axis)
+      if (dx !== 0) {
+        // Moving horizontally - center on Z
+        tryZ = centerZ;
+      }
+      if (dz !== 0) {
+        // Moving vertically - center on X
+        tryX = centerX;
       }
 
-      // Try to move in Z
-      const tryZ = currentZ + moveAmount;
-      if (!checkCollision(newX, tryZ)) {
+      // Check if movement is valid
+      if (!checkCollision(tryX, tryZ)) {
+        newX = tryX;
         newZ = tryZ;
-      } else if (!checkCollision(centerX, tryZ)) {
-        // Can move if perfectly centered
+      } else {
+        // Hit a wall - snap to cell center
         newX = centerX;
-        newZ = tryZ;
+        newZ = centerZ;
+        currentDirectionRef.current = null;
       }
-      // If still blocked, just stay centered (no Z movement)
     }
 
-    // Final safety check
+    // Final safety - never allow position inside wall
     if (checkCollision(newX, newZ)) {
-      // Try just the centering without movement
-      const centeredX = Math.abs(xOffset) < 0.1 ? centerX : currentX;
-      const centeredZ = Math.abs(zOffset) < 0.1 ? centerZ : currentZ;
-      if (!checkCollision(centeredX, centeredZ)) {
-        return [centeredX, centeredZ];
+      // Emergency: find nearest valid position
+      const safePositions = [
+        [centerX, centerZ],
+        [centerX - 1, centerZ],
+        [centerX + 1, centerZ],
+        [centerX, centerZ - 1],
+        [centerX, centerZ + 1],
+      ];
+      for (const [sx, sz] of safePositions) {
+        if (!checkCollision(sx, sz)) {
+          return [sx, sz];
+        }
       }
-      return [currentX, currentZ];
+      return [currentX, currentZ]; // Last resort: don't move
     }
 
     return [newX, newZ];
-  }, [checkCollision]);
+  }, [checkCollision, isWall]);
 
   // Spawn a new fox
   const spawnFox = useCallback(() => {
@@ -1507,6 +1550,7 @@ export default function RabbitRealm({
 
             if (isPoweredUp) {
               spawnParticles(fox.x, 0.5, fox.z, '#6666ff');
+              playSound(SOUNDS.FOX_CHOMP);
               setScore(prev => prev + 200);
               return { ...fox, active: false, respawnTimer: 8 };
             } else if (isInvisible) {
@@ -1520,10 +1564,13 @@ export default function RabbitRealm({
         });
 
         if (playerHit) {
+          playSound(SOUNDS.PLAYER_HIT);
           setHealth(prev => {
             const newHealth = prev - 1;
             if (newHealth <= 0) {
               setGameOver(true);
+              stopAutumnMusic();
+              playSound(SOUNDS.GAME_OVER);
               onDeath?.({ carrotsCollected, coinsCollected, time, score });
             } else {
               // Don't reset position, just give invincibility
@@ -1547,11 +1594,13 @@ export default function RabbitRealm({
           const dist = Math.sqrt(dx * dx + dz * dz);
 
           if (dist < 0.45) {
+            playSound(SOUNDS.CARROT_CRUNCH);
             // Life carrot restores health
             if (carrot.isLife) {
               setHealth(prev => Math.min(prev + 1, 3)); // Max 3 health
               spawnParticles(carrot.x, 0.5, carrot.z, '#22ff22');
               setScore(prev => prev + 50);
+              playSound(SOUNDS.EXTRA_LIFE);
             } else if (carrot.isGhost) {
               // Ghost carrot gives invisibility
               setIsInvisible(true);
@@ -1603,6 +1652,7 @@ export default function RabbitRealm({
         if (Math.sqrt(dx * dx + dz * dz) < 0.5) {
           spawnParticles(pellet.x, 0.5, pellet.z, '#ffd700');
           playSound(SOUNDS.POWERUP);
+          playSound(SOUNDS.FOX_SCARED);
           setIsPoweredUp(true);
           setPowerUpTimer(settings.powerUpDuration);
           setScore(prev => prev + 50);
@@ -1636,6 +1686,7 @@ export default function RabbitRealm({
           setElfFound(true);
           setGameWon(true);
           spawnParticles(elfPos[0], 0.5, elfPos[2], '#88ff88');
+          stopAutumnMusic();
           playSound(SOUNDS.VICTORY);
           setScore(prev => prev + 500);
           onComplete?.({ carrotsCollected, coinsCollected, essencesCollected, time, score: score + 500 });
@@ -1645,7 +1696,14 @@ export default function RabbitRealm({
     }, 1000 / 30); // 30fps for better performance
 
     return () => clearInterval(gameLoop);
-  }, [gameStarted, gameOver, gameWon, isPaused, isPoweredUp, isInvisible, playerPos, maze, settings, checkCollision, movePlayer, spawnParticles, onDeath, onComplete, time, score, invincibleTimer, isJumping, jumpHeight, jumpVelocity, lastFoxSpawnTime, spawnFox, carrotsCollected, coinsCollected, mazeSize, elfPos, elfFound, essences, essencesCollected, playSound, addEssence]);
+  }, [gameStarted, gameOver, gameWon, isPaused, isPoweredUp, isInvisible, playerPos, maze, settings, checkCollision, movePlayer, spawnParticles, onDeath, onComplete, time, score, invincibleTimer, isJumping, jumpHeight, jumpVelocity, lastFoxSpawnTime, spawnFox, carrotsCollected, coinsCollected, mazeSize, elfPos, elfFound, essences, essencesCollected, playSound, addEssence, stopAutumnMusic]);
+
+  // Cleanup: stop music when component unmounts
+  useEffect(() => {
+    return () => {
+      stopAutumnMusic();
+    };
+  }, [stopAutumnMusic]);
 
   // Keyboard input for pause only (movement and jump handled by global useGameInput)
   useEffect(() => {
@@ -1677,10 +1735,11 @@ export default function RabbitRealm({
       zIndex: 100,
     }}>
       <Canvas
+        orthographic
         gl={{ antialias: !isMobile, powerPreference: isMobile ? 'low-power' : 'high-performance' }}
         dpr={isMobile ? 1 : [1, 1.5]}
       >
-        <PerspectiveCamera makeDefault position={[22, 12, 30]} fov={55} />
+        <OrthographicCamera makeDefault position={[mazeSize, mazeSize * 0.6, mazeSize]} zoom={35} near={0.1} far={1000} />
         <GameScene
           maze={maze}
           mazeSize={mazeSize}
@@ -1705,7 +1764,7 @@ export default function RabbitRealm({
 
       {/* HUD */}
       <GameHUD
-        collectibles={{ current: carrotsCollected, total: 999 }}
+        collectibles={{ current: carrotsCollected, total: settings.carrots }}
         collectibleIcon="carrot"
         coins={score}
         time={time}
@@ -1714,8 +1773,11 @@ export default function RabbitRealm({
         isPaused={isPaused}
         onPause={() => setIsPaused(p => !p)}
         onRestart={handleRestart}
-        onQuit={onExit}
-        realmName="The Burrow"
+        onQuit={() => {
+          stopAutumnMusic();
+          onExit();
+        }}
+        realmName="Autumn Maze"
         currentRealm="rabbit"
       />
 

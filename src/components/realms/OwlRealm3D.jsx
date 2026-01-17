@@ -577,7 +577,7 @@ function GameScene({ forestData, playerState, wolves, elfState, onElfFound, isIn
 
 // Main component
 export default function OwlRealm3D({
-  difficulty = 'NORMAL',
+  difficulty = { key: 'NORMAL', level: 3 },
   freeMode = false,
   onComplete,
   onExit,
@@ -585,6 +585,9 @@ export default function OwlRealm3D({
   onToggleFreeMode,
   onNavigateRealm,
 }) {
+  // Handle both object and string difficulty formats
+  const difficultyKey = typeof difficulty === 'object' ? difficulty.key?.toUpperCase() : difficulty?.toUpperCase();
+
   const [gameState, setGameState] = useState('playing');
   const [score, setScore] = useState(0);
   const [time, setTime] = useState(0);
@@ -621,7 +624,7 @@ export default function OwlRealm3D({
 
   // Initialize game
   useEffect(() => {
-    const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
+    const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.NORMAL;
     const forest = generateForest(settings.forestSize);
     forest.size = settings.forestSize;
     forestDataRef.current = forest;
@@ -690,7 +693,7 @@ export default function OwlRealm3D({
 
     let animationId;
     let lastTime = performance.now();
-    const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
+    const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.NORMAL;
 
     const update = () => {
       const now = performance.now();
@@ -872,7 +875,7 @@ export default function OwlRealm3D({
   }, []);
 
   const handleRestart = useCallback(() => {
-    const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.NORMAL;
+    const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.NORMAL;
     const forest = generateForest(settings.forestSize);
     forest.size = settings.forestSize;
     forestDataRef.current = forest;
@@ -942,7 +945,7 @@ export default function OwlRealm3D({
         onPause={handlePause}
         onRestart={handleRestart}
         onQuit={handleQuit}
-        realmName="Dark Forest"
+        realmName="Night Flight"
         currentRealm="owl"
         onNavigateRealm={onNavigateRealm}
       />
@@ -976,7 +979,7 @@ export default function OwlRealm3D({
           {/* Danger zone */}
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
-            height: `${(DIFFICULTY_SETTINGS[difficulty]?.safeHeight || 3) / 20 * 100}%`,
+            height: `${(DIFFICULTY_SETTINGS[difficultyKey]?.safeHeight || 3) / 20 * 100}%`,
             background: 'rgba(139, 0, 0, 0.5)', borderRadius: '0 0 10px 10px',
           }} />
           {/* Current height marker */}

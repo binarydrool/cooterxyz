@@ -61,6 +61,22 @@ const RealmIcons = {
       <ellipse cx="16" cy="24" rx="2" ry="1.5" fill="#DC7F7F" />
     </svg>
   ),
+  inchworm: ({ size = 48 }) => (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      {/* Butterfly wings */}
+      <ellipse cx="10" cy="14" rx="7" ry="9" fill="#00CED1" opacity="0.8" />
+      <ellipse cx="22" cy="14" rx="7" ry="9" fill="#00CED1" opacity="0.8" />
+      <ellipse cx="10" cy="22" rx="5" ry="6" fill="#7FFFD4" opacity="0.8" />
+      <ellipse cx="22" cy="22" rx="5" ry="6" fill="#7FFFD4" opacity="0.8" />
+      {/* Body */}
+      <ellipse cx="16" cy="18" rx="2" ry="8" fill="#2F4F4F" />
+      {/* Antennae */}
+      <path d="M15 10 Q13 6 11 4" stroke="#2F4F4F" strokeWidth="1" fill="none" />
+      <path d="M17 10 Q19 6 21 4" stroke="#2F4F4F" strokeWidth="1" fill="none" />
+      <circle cx="11" cy="4" r="1" fill="#00CED1" />
+      <circle cx="21" cy="4" r="1" fill="#00CED1" />
+    </svg>
+  ),
 };
 
 const realmInfo = {
@@ -128,6 +144,20 @@ const realmInfo = {
     ],
     color: "#ffd700",
     bgGradient: "linear-gradient(135deg, #2a1a4a 0%, #0a0a20 100%)"
+  },
+  inchworm: {
+    title: "The Metamorphosis",
+    IconComponent: RealmIcons.inchworm,
+    description: "PRIMARY: Find AEIOU in the Heart Garden and collect 3 Cyan Essences. Transform into a butterfly and fly through a magical garden!",
+    controls: [
+      "WASD - Fly in direction",
+      "SPACE - Fly higher",
+      "SHIFT - Fly lower",
+      "Find AEIOU (golden glow in Heart Garden)",
+      "Collect 3 Cyan Essences to complete"
+    ],
+    color: "#00CED1",
+    bgGradient: "linear-gradient(135deg, #0a2a2a 0%, #1a4a4a 100%)"
   }
 };
 

@@ -217,7 +217,7 @@ const PYRAMID_SHARDS = {
   owl: { layer: 5, name: 'Capstone', direction: 'North', color: '#4B0082', quote: 'From Above' },
 };
 
-// Mind Fusion Spell Sequence - plays when all 4 pyramid shards are collected
+// Mind Fusion Spell Sequence - plays when all 5 pyramid shards are collected
 function MindFusionSpell({ onComplete }) {
   const [phase, setPhase] = useState(0);
   // Phase 0: Y casts spell
@@ -688,7 +688,7 @@ function GameContent() {
 
   // Active realm for quick-jump
   const [activeRealm, setActiveRealm] = useState('hub');
-  const [realmDifficulty, setRealmDifficulty] = useState('normal');
+  const [realmDifficulty, setRealmDifficulty] = useState({ key: 'NORMAL', name: 'Normal', color: '#FFFF00', grade: 'Rare', level: 3 });
 
   // Track which realms have been unlocked (portals visible) - persisted to localStorage
   const [unlockedRealms, setUnlockedRealms] = useState(() => {
@@ -722,7 +722,7 @@ function GameContent() {
   // Victory ceremony state (after completing rabbit realm)
   const [victoryCeremony, setVictoryCeremony] = useState(null);
 
-  // Mind Fusion Spell state (when all 4 pyramid shards are collected)
+  // Mind Fusion Spell state (when all 5 pyramid shards are collected)
   const [showMindFusionSpell, setShowMindFusionSpell] = useState(false);
 
   useEffect(() => {
@@ -880,9 +880,9 @@ function GameContent() {
     audio.playSound(SOUNDS.COLLECT_ESSENCE);
   }, [inventory, audio]);
 
-  // Map essence type to grain color
+  // Map essence type to grain color (4 colors: green, gold, orange, cyan)
   const essenceToGrainColor = (essenceType) => {
-    const mapping = { forest: 'green', golden: 'gold', amber: 'orange', violet: 'purple', cyan: 'cyan' };
+    const mapping = { forest: 'green', golden: 'gold', amber: 'orange', cyan: 'cyan' };
     return mapping[essenceType] || 'gold';
   };
 
@@ -918,7 +918,7 @@ function GameContent() {
   // Handle Cooter blocking the second hand - removes a random grain from inventory
   const handleCooterBlockingGrain = useCallback(() => {
     // Get all grain colors that have at least 1 grain
-    const grainColors = ['green', 'gold', 'orange', 'purple'];
+    const grainColors = ['green', 'gold', 'orange', 'cyan'];
     const availableColors = grainColors.filter(color => (inventory.grains?.[color] || 0) > 0);
 
     // If player has any grains, remove one at random
@@ -927,7 +927,6 @@ function GameContent() {
       inventory.removeGrains(randomColor, 1);
       // Play a sound effect for grain loss
       audio.playSound(SOUNDS.COLLECT_ESSENCE); // Reuse essence sound for now
-      console.log(`Cooter blocked second hand! Lost 1 ${randomColor} grain.`);
     }
   }, [inventory, audio]);
 
@@ -945,7 +944,6 @@ function GameContent() {
 
   // Stock up - give player all grains needed for testing
   const handleStockUp = useCallback(() => {
-    console.log('[Game] Stock Up - adding grains for testing');
     // Add enough grains to unlock all portals
     // Cat needs 3 orange, Frog needs 6 green, Rabbit needs 9 gold, Miles needs 12 cyan
     // Owl needs 12 total (3 of each: green, gold, orange, cyan)
@@ -955,11 +953,6 @@ function GameContent() {
       inventory.addGrain('orange');
       inventory.addGrain('cyan');
     }
-    // Add purple too
-    for (let i = 0; i < 12; i++) {
-      inventory.addGrain('purple');
-    }
-    console.log('[Game] Stock Up complete - grains:', inventory.grains);
   }, [inventory]);
 
   // Handle interaction (E key or button press) - disabled during realm gameplay
@@ -991,17 +984,12 @@ function GameContent() {
 
   // Handle realm unlock
   const handleUnlockRealm = useCallback((realm) => {
-    console.log('[Game] handleUnlockRealm called with realm:', realm);
     audio.playSound(SOUNDS.UNLOCK);
     gameState.unlockRealm(realm);
     gameState.resetStrikes(realm);
     gameState.clearRiddleProgress(realm);
     // Mark realm as unlocked (portal visible)
-    setUnlockedRealms(prev => {
-      const newState = { ...prev, [realm]: true };
-      console.log('[Game] setUnlockedRealms new state:', newState);
-      return newState;
-    });
+    setUnlockedRealms(prev => ({ ...prev, [realm]: true }));
     // After unlocking, show difficulty select
     setSelectedRealm(realm);
     setTimeout(() => {
@@ -1031,7 +1019,7 @@ function GameContent() {
 
   // Handle realm quick-jump selection - show difficulty selection first
   const handleRealmSelect = useCallback((realmId) => {
-    // Elf realm requires all 4 pyramid shards
+    // Elf realm requires all 5 pyramid shards
     if (realmId === 'elf' && !inventory.isPyramidComplete()) {
       // Could show a message here, but for now just don't allow
       return;
@@ -1058,12 +1046,12 @@ function GameContent() {
 
   // Handle realm completion
   const handleRealmComplete = useCallback((result) => {
-    console.log('Realm completed:', activeRealm, result);
     audio.playSound(SOUNDS.SUCCESS);
     // Trigger victory ceremony - realm tracks which pyramid layer was acquired
     setVictoryCeremony({
-      realm: activeRealm, // rabbit, frog, cat, or owl
+      realm: activeRealm, // rabbit, frog, cat, owl, or inchworm
       result,
+      difficulty: realmDifficulty, // Pass difficulty for shard color
       phase: 'intro',
       startTime: Date.now(),
     });
@@ -1071,11 +1059,10 @@ function GameContent() {
     // Dimitrius is at (0, y, 5), place turtle at (0, y, 4.0) facing north toward Dimitrius
     setTurtlePosition(0, 4.0, 0); // x=0, z=4.0, rotation=0 (facing north toward Dimitrius)
     setActiveRealm('hub');
-  }, [activeRealm, audio]);
+  }, [activeRealm, audio, realmDifficulty]);
 
   // Handle realm death
   const handleRealmDeath = useCallback(() => {
-    console.log('Realm death');
     // Could show game over, update stats, etc.
   }, []);
 
@@ -1088,11 +1075,11 @@ function GameContent() {
   }
 
   const realmNames = {
-    rabbit: 'The Warren',
-    cat: 'The Rooftops',
-    frog: 'The Lily Marsh',
-    owl: 'The Night Sky',
-    elf: 'The Eternal Clocktower',
+    rabbit: 'Carrot Chase',
+    cat: 'Shadow Hunt',
+    frog: 'Lily Pad Survival',
+    owl: 'Night Flight',
+    elf: 'Eternal Clocktower',
     inchworm: 'The Metamorphosis',
   };
 
@@ -1217,28 +1204,34 @@ function GameContent() {
         <div style={{ flex: 1, minWidth: isMobile ? '4px' : '20px' }} />
 
         {/* Desktop: Pyramid indicator in navbar - 5 layers */}
+        {/* Colors now match difficulty level: White=1, Green=2, Yellow=3, Orange=4, Red=5, Purple=6, Black=7 */}
         {!isMobile && (
           <div
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px' }}
-            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/5 Mind Shards`}
+            title={`${Object.values(inventory.pyramidShards || {}).filter(v => v !== null).length}/5 Mind Shards`}
           >
             {[
-              { realm: 'inchworm', color: '#00CED1' },
-              { realm: 'owl', color: '#4B0082' },
-              { realm: 'cat', color: '#FF8C00' },
-              { realm: 'frog', color: '#228B22' },
-              { realm: 'rabbit', color: '#8B4513' },
-            ].map((layer, index) => (
-              <div
-                key={layer.realm}
-                style={{
-                  width: `${6 + index * 5}px`,
-                  height: '4px',
-                  background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: index === 0 ? '2px 2px 0 0' : index === 4 ? '0 0 2px 2px' : '0',
-                }}
-              />
-            ))}
+              { realm: 'owl' },        // Layer 5 - capstone
+              { realm: 'inchworm' },   // Layer 4
+              { realm: 'cat' },        // Layer 3
+              { realm: 'frog' },       // Layer 2
+              { realm: 'rabbit' },     // Layer 1 - base
+            ].map((layer, index) => {
+              const shardData = inventory.pyramidShards?.[layer.realm];
+              const hasShard = shardData !== null && shardData !== undefined;
+              const shardColor = hasShard ? (shardData.color || '#FFFF00') : 'rgba(255, 255, 255, 0.2)';
+              return (
+                <div
+                  key={layer.realm}
+                  style={{
+                    width: `${6 + index * 5}px`,
+                    height: '4px',
+                    background: shardColor,
+                    borderRadius: index === 0 ? '2px 2px 0 0' : index === 4 ? '0 0 2px 2px' : '0',
+                  }}
+                />
+              );
+            })}
           </div>
         )}
 
@@ -1392,27 +1385,33 @@ function GameContent() {
           WebkitBackdropFilter: 'blur(12px)',
         }}>
           {/* Pyramid indicator - 5 layers */}
+          {/* Colors match difficulty level: White=1, Green=2, Yellow=3, Orange=4, Red=5, Purple=6, Black=7 */}
           <div
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1px', marginBottom: '2px' }}
-            title={`${Object.values(inventory.pyramidShards || {}).filter(Boolean).length}/5 Mind Shards`}
+            title={`${Object.values(inventory.pyramidShards || {}).filter(v => v !== null).length}/5 Mind Shards`}
           >
             {[
-              { realm: 'inchworm', color: '#00CED1' },
-              { realm: 'owl', color: '#4B0082' },
-              { realm: 'cat', color: '#FF8C00' },
-              { realm: 'frog', color: '#228B22' },
-              { realm: 'rabbit', color: '#8B4513' },
-            ].map((layer, index) => (
-              <div
-                key={layer.realm}
-                style={{
-                  width: `${4 + index * 3}px`,
-                  height: '2px',
-                  background: inventory.pyramidShards?.[layer.realm] ? layer.color : 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: index === 0 ? '1px 1px 0 0' : index === 4 ? '0 0 1px 1px' : '0',
-                }}
-              />
-            ))}
+              { realm: 'owl' },        // Layer 5 - capstone
+              { realm: 'inchworm' },   // Layer 4
+              { realm: 'cat' },        // Layer 3
+              { realm: 'frog' },       // Layer 2
+              { realm: 'rabbit' },     // Layer 1 - base
+            ].map((layer, index) => {
+              const shardData = inventory.pyramidShards?.[layer.realm];
+              const hasShard = shardData !== null && shardData !== undefined;
+              const shardColor = hasShard ? (shardData.color || '#FFFF00') : 'rgba(255, 255, 255, 0.2)';
+              return (
+                <div
+                  key={layer.realm}
+                  style={{
+                    width: `${4 + index * 3}px`,
+                    height: '2px',
+                    background: shardColor,
+                    borderRadius: index === 0 ? '1px 1px 0 0' : index === 4 ? '0 0 1px 1px' : '0',
+                  }}
+                />
+              );
+            })}
           </div>
 
           {/* Realm buttons - vertical column */}
@@ -1556,7 +1555,7 @@ function GameContent() {
         onClose={() => setShowDifficultySelect(false)}
         onSelect={handleDifficultySelect}
         realmName={selectedRealm ? realmNames[selectedRealm] : ''}
-        bestScores={gameState.bestScores}
+        bestScores={inventory.bestScores}
       />
 
       {/* Reset Confirmation Modal */}
@@ -1646,15 +1645,24 @@ function GameContent() {
         <VictoryCeremony
           ceremony={victoryCeremony}
           onComplete={() => {
-            // Add pyramid shard for the completed realm
+            // Add pyramid shard for the completed realm with difficulty color
             const completedRealm = victoryCeremony.realm;
+            const difficulty = victoryCeremony.difficulty || realmDifficulty;
             if (completedRealm) {
-              inventory.addPyramidShard(completedRealm);
+              inventory.addPyramidShard(completedRealm, difficulty);
+            }
+
+            // Save best score for this realm/difficulty combo
+            const realmName = realmNames[completedRealm] || completedRealm;
+            const difficultyKey = difficulty?.key || 'NORMAL';
+            const result = victoryCeremony.result || {};
+            if (result.score !== undefined) {
+              inventory.saveBestScore(realmName, difficultyKey, result.score, result.time || 0);
             }
 
             // Check if pyramid will be complete after adding this shard
             // Count existing shards + the one we just added (5 total shards needed)
-            const existingShards = Object.values(inventory.pyramidShards || {}).filter(Boolean).length;
+            const existingShards = Object.values(inventory.pyramidShards || {}).filter(v => v !== null).length;
             const willBeComplete = existingShards + 1 >= 5;
 
             // Mark as fading instead of removing immediately
@@ -1671,7 +1679,7 @@ function GameContent() {
         />
       )}
 
-      {/* Mind Fusion Spell Sequence - when all 4 pyramid shards collected */}
+      {/* Mind Fusion Spell Sequence - when all 5 pyramid shards collected */}
       {showMindFusionSpell && (
         <MindFusionSpell
           onComplete={() => {

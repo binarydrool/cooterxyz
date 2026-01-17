@@ -118,6 +118,7 @@ export default function DifficultySelect({
             const scoreKey = `${realmName.toLowerCase()}_${diff.key}`;
             const best = bestScores[scoreKey];
             const isSelected = selected === diff.key;
+            const isImpossible = diff.key === 'IMPOSSIBLE';
 
             return (
               <button
@@ -129,11 +130,11 @@ export default function DifficultySelect({
                   justifyContent: 'space-between',
                   padding: '12px 16px',
                   background: isSelected
-                    ? 'rgba(212, 175, 55, 0.15)'
+                    ? isImpossible ? 'rgba(0, 0, 0, 0.6)' : 'rgba(212, 175, 55, 0.15)'
                     : 'rgba(255, 255, 255, 0.03)',
                   border: '1px solid',
                   borderColor: isSelected
-                    ? 'rgba(212, 175, 55, 0.4)'
+                    ? isImpossible ? 'rgba(80, 0, 0, 0.8)' : 'rgba(212, 175, 55, 0.4)'
                     : 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '8px',
                   cursor: 'pointer',
@@ -186,6 +187,46 @@ export default function DifficultySelect({
               </button>
             );
           })}
+        </div>
+
+        {/* Info Notes */}
+        <div style={{
+          padding: '12px 20px',
+          background: 'rgba(0, 0, 0, 0.4)',
+          borderTop: '1px solid rgba(80, 0, 0, 0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}>
+          {/* Midnight Portal Note */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: '#000',
+              border: '1px solid #444',
+              flexShrink: 0,
+            }} />
+            <span style={{
+              color: '#666',
+              fontSize: '11px',
+              lineHeight: '1.4',
+            }}>
+              Complete <strong style={{ color: '#888' }}>all 5 realms</strong> on <strong style={{ color: '#aaa' }}>Impossible</strong> difficulty to earn <strong style={{ color: '#333', textShadow: '0 0 5px #600' }}>Black Shards</strong> and unlock the <strong style={{ color: '#500' }}>Midnight Portal</strong>.
+            </span>
+          </div>
+          {/* Score Storage Note */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            <span style={{ color: '#555', fontSize: '10px', flexShrink: 0 }}>💾</span>
+            <span style={{
+              color: '#555',
+              fontSize: '10px',
+              lineHeight: '1.4',
+            }}>
+              Scores are saved locally in your browser. To preserve your scores permanently, sign a transaction to log them on-chain.
+            </span>
+          </div>
         </div>
 
         {/* Footer */}

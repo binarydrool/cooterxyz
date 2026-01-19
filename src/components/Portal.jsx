@@ -31,6 +31,11 @@ const PORTAL_STYLES = {
     particleCount: 70, sandSpeed: 0.7, swirlSpeed: 0.6,
     innerRings: 2, pulseRate: 2.0, hasSparkles: true,
   },
+  elf: {
+    primary: '#FFD700', secondary: '#FFA500', sand: '#FFE4B5',
+    particleCount: 150, sandSpeed: 1.0, swirlSpeed: 0.9,
+    innerRings: 5, pulseRate: 3.5, hasFlames: true, hasStars: true,
+  },
 };
 
 // Individual sand grain that orbits the ring

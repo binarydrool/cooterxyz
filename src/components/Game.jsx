@@ -829,6 +829,12 @@ function GameContent() {
       // Only allow interactions in hub - disable during realm gameplay
       if (activeRealm !== 'hub') return;
 
+      // Y key - cast Mind Fusion Spell when all shards collected
+      if ((e.key === 'y' || e.key === 'Y') && inventory.isPyramidComplete() && !showMindFusionSpell) {
+        setShowMindFusionSpell(true);
+        return;
+      }
+
       if ((e.key === 'e' || e.key === 'E') && interactTarget) {
         if (interactTarget.type === 'portal') {
           // Enter the portal's realm
@@ -855,7 +861,7 @@ function GameContent() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [interactTarget, activeRealm]);
+  }, [interactTarget, activeRealm, inventory, showMindFusionSpell]);
 
   const handleCameraModeChange = useCallback((mode) => {
     setCameraMode(mode);
@@ -954,6 +960,25 @@ function GameContent() {
       inventory.addGrain('cyan');
     }
   }, [inventory]);
+
+  // Stock shards - give player all 5 pyramid shards for testing
+  const handleStockShards = useCallback(() => {
+    // Add all 5 shards at Normal difficulty (level 3, yellow)
+    inventory.addPyramidShard('rabbit', 3);
+    inventory.addPyramidShard('frog', 3);
+    inventory.addPyramidShard('cat', 3);
+    inventory.addPyramidShard('owl', 3);
+    inventory.addPyramidShard('inchworm', 3);
+    // Also unlock the elf realm
+    setUnlockedRealms(prev => ({ ...prev, elf: true }));
+  }, [inventory]);
+
+  // Y key handler - cast Mind Fusion Spell when all shards collected
+  const handleCastFusion = useCallback(() => {
+    if (inventory.isPyramidComplete() && !showMindFusionSpell) {
+      setShowMindFusionSpell(true);
+    }
+  }, [inventory, showMindFusionSpell]);
 
   // Handle interaction (E key or button press) - disabled during realm gameplay
   const handleInteract = useCallback(() => {
@@ -1296,6 +1321,30 @@ function GameContent() {
             <path d="M12 5v14M5 12h14"/>
           </svg>
           {!isMobile && 'Stock'}
+        </button>
+
+        {/* Shards button (for testing) */}
+        <button
+          onClick={handleStockShards}
+          style={{
+            background: 'rgba(255, 200, 100, 0.2)',
+            border: '1px solid rgba(255, 200, 100, 0.4)',
+            borderRadius: '6px',
+            color: '#ffd700',
+            fontSize: isMobile ? '9px' : '11px',
+            fontWeight: 500,
+            cursor: 'pointer',
+            padding: isMobile ? '3px 6px' : '4px 10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+          }}
+          title="Add all 5 pyramid shards for testing (Y casts fusion spell)"
+        >
+          <svg width={isMobile ? 10 : 12} height={isMobile ? 10 : 12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polygon points="12,2 22,20 2,20"/>
+          </svg>
+          {!isMobile && 'Shards'}
         </button>
 
         {/* Reset button */}
@@ -1670,7 +1719,7 @@ function GameContent() {
             // Clear ceremony after fade animation completes
             setTimeout(() => {
               setVictoryCeremony(null);
-              // If this was the 4th shard, trigger Mind Fusion Spell!
+              // If this was the 5th shard, trigger Mind Fusion Spell!
               if (willBeComplete) {
                 setShowMindFusionSpell(true);
               }
@@ -1684,8 +1733,8 @@ function GameContent() {
         <MindFusionSpell
           onComplete={() => {
             setShowMindFusionSpell(false);
-            // After mind fusion spell, the elf realm should now be accessible
-            // The pyramid is complete and the noon portal is open!
+            // After mind fusion spell, unlock the elf realm and open the noon portal!
+            setUnlockedRealms(prev => ({ ...prev, elf: true }));
           }}
         />
       )}

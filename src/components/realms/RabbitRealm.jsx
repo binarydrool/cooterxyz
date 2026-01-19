@@ -979,7 +979,7 @@ export default function RabbitRealm({
   hasPyramidShard = false,
 }) {
   // Handle both object and string difficulty formats
-  const difficultyKey = typeof difficulty === 'object' ? difficulty.key?.toLowerCase() : difficulty;
+  const difficultyKey = typeof difficulty === 'object' ? difficulty.key?.toLowerCase() : difficulty?.toLowerCase();
   const settings = DIFFICULTY_SETTINGS[difficultyKey] || DIFFICULTY_SETTINGS.normal;
   const mazeSize = settings.mazeSize; // Maze size scales with difficulty
   const { playSound, startAutumnMusic, stopAutumnMusic } = useAudio();
@@ -1028,21 +1028,8 @@ export default function RabbitRealm({
   });
   const [elfFound, setElfFound] = useState(false);
 
-  // 3 Golden Essences - spread across the maze
-  const [essences, setEssences] = useState(() => {
-    // Place essences at strategic locations in the maze
-    const positions = [
-      { x: mazeSize * 0.25, z: mazeSize * 0.75 },  // Top-left quadrant
-      { x: mazeSize * 0.75, z: mazeSize * 0.25 },  // Bottom-right quadrant
-      { x: mazeSize * 0.5, z: mazeSize * 0.5 },    // Center
-    ];
-    return positions.map((pos, i) => ({
-      id: i,
-      x: pos.x + (Math.random() - 0.5) * 3,
-      z: pos.z + (Math.random() - 0.5) * 3,
-      collected: false,
-    }));
-  });
+  // 3 Golden Essences - will be placed on valid walkable cells after maze generates
+  const [essences, setEssences] = useState([]);
   const [essencesCollected, setEssencesCollected] = useState(0);
 
   // Fox spawning
@@ -1117,19 +1104,7 @@ export default function RabbitRealm({
     setShowIntroModal(true);
     setGameStarted(false);
 
-    // Reset essences with new positions
-    const newEssencePositions = [
-      { x: mazeSize * 0.25, z: mazeSize * 0.75 },
-      { x: mazeSize * 0.75, z: mazeSize * 0.25 },
-      { x: mazeSize * 0.5, z: mazeSize * 0.5 },
-    ];
-    setEssences(newEssencePositions.map((pos, i) => ({
-      id: i,
-      x: pos.x + (Math.random() - 0.5) * 3,
-      z: pos.z + (Math.random() - 0.5) * 3,
-      collected: false,
-    })));
-    setEssencesCollected(0);
+    // Essences will be re-placed by the useEffect when maze changes
 
     // Reset refs
     keysRef.current = {};
@@ -1177,6 +1152,41 @@ export default function RabbitRealm({
       active: true,
       respawnTimer: 0,
     })));
+
+    // Place 3 golden essences on valid walkable cells, spread across the maze
+    // Filter cells into quadrants to ensure good distribution
+    const center = mazeSize / 2;
+    const topLeftCells = openCells.filter(c => c.x < center && c.z > center);
+    const bottomRightCells = openCells.filter(c => c.x > center && c.z < center);
+    const centerCells = openCells.filter(c =>
+      Math.abs(c.x - center) < center * 0.3 && Math.abs(c.z - center) < center * 0.3
+    );
+
+    const essencePositions = [];
+    // Pick one from each area (or random if area is empty)
+    if (topLeftCells.length > 0) {
+      essencePositions.push(topLeftCells[Math.floor(Math.random() * topLeftCells.length)]);
+    } else {
+      essencePositions.push(shuffled[Math.floor(Math.random() * shuffled.length)]);
+    }
+    if (bottomRightCells.length > 0) {
+      essencePositions.push(bottomRightCells[Math.floor(Math.random() * bottomRightCells.length)]);
+    } else {
+      essencePositions.push(shuffled[Math.floor(Math.random() * shuffled.length)]);
+    }
+    if (centerCells.length > 0) {
+      essencePositions.push(centerCells[Math.floor(Math.random() * centerCells.length)]);
+    } else {
+      essencePositions.push(shuffled[Math.floor(Math.random() * shuffled.length)]);
+    }
+
+    setEssences(essencePositions.map((pos, i) => ({
+      id: i,
+      x: pos.x,
+      z: pos.z,
+      collected: false,
+    })));
+    setEssencesCollected(0);
   }, [maze, settings, getOpenCells, mazeSize]);
 
   // Spawn particles

@@ -346,6 +346,51 @@ function OwlPortal({ secondAngleRef, isUnlocked }) {
   );
 }
 
+// Noon Portal - at 12 o'clock position, appears after Mind Fusion Spell
+function NoonPortal({ isUnlocked }) {
+  const groupRef = useRef();
+  const PORTAL_HEIGHT = CLOCK_THICKNESS / 2 + 1.5; // Slightly higher than others
+  const PORTAL_SCALE = 0.9; // Larger portal for the final realm
+
+  useFrame(({ clock }) => {
+    if (groupRef.current && isUnlocked) {
+      const t = clock.getElapsedTime();
+      // Position at 12 o'clock, near AEIOU
+      groupRef.current.position.x = 0;
+      groupRef.current.position.y = PORTAL_HEIGHT + Math.sin(t * 1.2) * 0.15;
+      groupRef.current.position.z = CLOCK_RADIUS * 0.75; // Between center and edge at 12 o'clock
+      // Slowly rotate for magical effect
+      groupRef.current.rotation.y = t * 0.3;
+    }
+  });
+
+  if (!isUnlocked) {
+    return null;
+  }
+
+  return (
+    <group ref={groupRef}>
+      <Portal
+        position={[0, 0, 0]} // Position is controlled by parent group
+        animal="elf"
+        isOpen={true}
+        size={PORTAL_SCALE}
+      />
+      {/* Golden glow ring around the portal */}
+      <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.6, 0.08, 16, 32]} />
+        <meshStandardMaterial
+          color="#FFD700"
+          emissive="#FF8C00"
+          emissiveIntensity={0.8}
+          metalness={0.9}
+          roughness={0.2}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 // Fireflies floating around the clock
 const FIREFLY_COUNT = 15;
 
@@ -2056,6 +2101,11 @@ const Clock = forwardRef(function Clock({ turtlePosition = [0, 0, 0], onTimeStop
       <OwlPortal
         secondAngleRef={displayedSecondAngle}
         isUnlocked={unlockedRealms?.owl || false}
+      />
+
+      {/* Noon Portal - at 12 o'clock, appears after Mind Fusion Spell */}
+      <NoonPortal
+        isUnlocked={unlockedRealms?.elf || false}
       />
 
       {/* Victory ceremony shard */}
